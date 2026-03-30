@@ -3,54 +3,28 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Esteban Labastidas — Financial Consultant specializing in capital markets, asset management, and investment banking.">
+  <meta name="description" content="Esteban Labastidas — Financial Consultant specializing in capital markets, asset management, and investment banking. Applied economist and researcher based in Bogotá.">
   <meta name="author" content="Esteban Labastidas">
   <meta property="og:title" content="Esteban Labastidas">
-  <meta property="og:description" content="Capital markets, asset management, and strategic consulting.">
+  <meta property="og:description" content="Capital markets, asset management, and strategic consulting. Applied economics and research.">
   <meta property="og:type" content="website">
+
   <title>Esteban Labastidas</title>
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text x='4' y='26' font-size='28' font-family='serif' fill='%231b4965'>E</text></svg>">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' fill='%230c1524'/><text x='5' y='25' font-size='22' font-family='serif' fill='%23b8963e'>E</text></svg>">
+
   <link rel="stylesheet" href="style.css">
-  <style>
-    /* Fix photo crop so face shows properly */
-    .hero__photo img {
-      object-position: center 10%;
-    }
-    /* News section */
-    .news__item {
-      display: flex;
-      gap: 1.5rem;
-      padding: 1rem 0;
-      border-bottom: 1px solid var(--color-border);
-      align-items: flex-start;
-    }
-    .news__item:last-child { border-bottom: none; }
-    .news__date {
-      font-size: 0.78rem;
-      font-weight: 600;
-      color: var(--color-accent);
-      white-space: nowrap;
-      min-width: 90px;
-      padding-top: 0.15rem;
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
-    }
-    .news__content {
-      font-size: 0.95rem;
-      color: var(--color-text-secondary);
-      line-height: 1.7;
-    }
-    @media (max-width: 480px) {
-      .news__item { flex-direction: column; gap: 0.25rem; }
-    }
-  </style>
 </head>
 <body>
 
-  <nav class="nav" id="nav">
+  <!-- ═══════════════════════════════════════════
+       NAVIGATION
+  ═══════════════════════════════════════════ -->
+  <nav class="nav nav--light" id="nav">
     <div class="nav__container">
       <a class="nav__name" href="#hero">Esteban Labastidas</a>
       <button class="nav__toggle" aria-label="Toggle navigation" aria-expanded="false">
@@ -63,44 +37,59 @@
         <li><a href="#papers">Papers</a></li>
         <li><a href="#experience">Experience</a></li>
         <li><a href="#education">Education</a></li>
+        <li><a href="#certifications">Certifications</a></li>
         <li><a href="#projects">Projects</a></li>
+        <li><a href="#visualizations">Visualizations</a></li>
         <li><a href="#contact">Contact</a></li>
       </ul>
     </div>
   </nav>
 
-  <!-- HERO -->
+  <!-- ═══════════════════════════════════════════
+       HERO
+  ═══════════════════════════════════════════ -->
   <section id="hero" class="hero">
     <div class="container">
       <div class="hero__content">
+
         <div class="hero__text">
-          <h1 class="hero__name">Esteban Labastidas</h1>
+          <p class="hero__eyebrow">Bogotá, Colombia &nbsp;·&nbsp; Financial Consulting &nbsp;·&nbsp; Applied Economics</p>
+          <h1 class="hero__name">Esteban<br>Labastidas</h1>
+          <div class="hero__divider"></div>
           <p class="hero__title">Financial Consultant · Capital Markets &amp; Asset Management</p>
-          <p class="hero__subtitle">M.Sc. Applied Economics (Universidad de los Andes) · M.Sc. Finance (EEN)</p>
+          <p class="hero__subtitle">M.Sc. Applied Economics — Universidad de los Andes &nbsp;·&nbsp; M.Sc. Finance — EEN</p>
           <p class="hero__intro">
-            Dynamic professional with expertise in financial consulting, capital markets, investment banking,
-            and asset management. I combine a dual academic background in Industrial Engineering and Economics
-            with advanced quantitative skills to support high-impact decisions at leading financial institutions.
+            Dynamic professional with expertise in financial consulting, capital markets, investment
+            banking, and asset management. Combining a dual background in Industrial Engineering and
+            Economics with advanced quantitative skills to support high-impact decisions at leading
+            financial institutions.
           </p>
           <div class="hero__links">
-            <a href="assets/docs/CV_Esteban_Labastidas.pdf" target="_blank" rel="noopener">CV</a>
-            <a href="mailto:estebanlabastidasm@javeriana.edu.co">Email</a>
-            <a href="https://github.com/Stebandido77" target="_blank" rel="noopener">GitHub</a>
             <a href="https://www.linkedin.com/in/esteban-labastidas-cmsa%C2%AE-8272a019a/" target="_blank" rel="noopener">LinkedIn</a>
+            <a href="https://github.com/Stebandido77" target="_blank" rel="noopener">GitHub</a>
+            <a href="mailto:estebanlabastidasm@javeriana.edu.co">Email</a>
+            <!-- <a href="#" target="_blank" rel="noopener">Google Scholar</a> -->
           </div>
         </div>
+
         <div class="hero__photo">
           <img src="assets/img/DSC06561.jpg" alt="Esteban Labastidas">
         </div>
+
       </div>
     </div>
   </section>
 
-  <!-- ABOUT -->
-  <section id="about" class="section section--alt fade-in">
+  <!-- ═══════════════════════════════════════════
+       ABOUT
+  ═══════════════════════════════════════════ -->
+  <section id="about" class="section fade-in">
     <div class="container">
-      <h2 class="section__title">About</h2>
-      <div class="about__text">
+      <div class="section__header">
+        <span class="section__eyebrow">About</span>
+        <h2 class="section__title">Background &amp; Approach</h2>
+      </div>
+      <div class="about__body">
         <p>
           I am a dynamic professional with a completed Master's degree in Finance and Financial Management
           from the European School of Management and Business, currently pursuing a second Master's in Applied
@@ -132,28 +121,38 @@
     </div>
   </section>
 
-  <!-- RESEARCH INTERESTS -->
-  <section id="research-interests" class="section fade-in">
+  <!-- ═══════════════════════════════════════════
+       RESEARCH INTERESTS
+  ═══════════════════════════════════════════ -->
+  <section id="research-interests" class="section section--alt fade-in">
     <div class="container">
-      <h2 class="section__title">Research Interests</h2>
-      <ul class="interests__list">
-        <li>Economic Behavior and Decision Making</li>
-        <li>Education and policy analysis</li>
-        <li>Time Series Econometrics</li>
-        <li>Financial Markets and Risk</li>
-        <li>Derivatives Valuation and Pricing</li>
-        <li>Asset Management and Portfolio Strategy</li>
-        <li>Development Economics and Social Outcomes</li>
-        <li>Data-Driven Policy Analysis</li>
-      </ul>
+      <div class="section__header">
+        <span class="section__eyebrow">Research</span>
+        <h2 class="section__title">Research Interests</h2>
+      </div>
+      <div class="interests__grid">
+        <div class="interests__item">Economic Behavior and Decision Making</div>
+        <div class="interests__item">Education and Policy Analysis</div>
+        <div class="interests__item">Time Series Econometrics</div>
+        <div class="interests__item">Financial Markets and Risk</div>
+        <div class="interests__item">Derivatives Valuation and Pricing</div>
+        <div class="interests__item">Asset Management and Portfolio Strategy</div>
+        <div class="interests__item">Development Economics and Social Outcomes</div>
+        <div class="interests__item">Data-Driven Policy Analysis</div>
+      </div>
     </div>
   </section>
 
-  <!-- LATEST NEWS -->
-  <section id="news" class="section section--alt fade-in">
+  <!-- ═══════════════════════════════════════════
+       LATEST NEWS
+  ═══════════════════════════════════════════ -->
+  <section id="news" class="section fade-in">
     <div class="container">
-      <h2 class="section__title">Latest News</h2>
-      <div class="news">
+      <div class="section__header">
+        <span class="section__eyebrow">Updates</span>
+        <h2 class="section__title">Latest News</h2>
+      </div>
+      <div class="news__list">
         <article class="news__item">
           <div class="news__date">Mar 2026</div>
           <div class="news__content">
@@ -164,7 +163,7 @@
         <article class="news__item">
           <div class="news__date">Mar 2026</div>
           <div class="news__content">
-            Published on X: <a href="https://x.com/Stbandido_/status/2033785801872384477" target="_blank" rel="noopener"><strong>Escribir cuando callar es cómodo</strong></a> — a reflection on writing as an act of transcendence; how, since the earliest civilizations, writing has been humanity's way of refusing to disappear entirely.
+            Published on X: <a href="https://x.com/Stbandido_/status/2021030767325839814" target="_blank" rel="noopener"><strong>Escribir cuando callar es cómodo</strong></a> — a reflection on writing as an act of transcendence; how, since the earliest civilizations, writing has been humanity's way of refusing to disappear entirely.
           </div>
         </article>
         <article class="news__item">
@@ -177,14 +176,7 @@
         <article class="news__item">
           <div class="news__date">Feb 2026</div>
           <div class="news__content">
-            Published on X: <a href="https://x.com/Stbandido_/status/2021030767325839814" target="_blank" rel="noopener"><strong>Salario mínimo, informalidad y estructura del ingreso en Colombia</strong></a> — an analysis of where the minimum wage actually sits within Colombia's real income distribution, beyond the usual inflation vs. business pressure debate.
-          </div>
-        </article>
-        <article class="news__item">
-          <div class="news__date">Jan 2026</div>
-          <div class="news__content">
-            Promoted to Consultant II at Management Solutions, leading client-facing workstreams in capital markets,
-            risk analytics, and treasury system implementation for tier-1 financial institutions.
+            Published on X: <a href="https://x.com/Stbandido_/status/2033785801872384477" target="_blank" rel="noopener"><strong>Salario mínimo, informalidad y estructura del ingreso en Colombia</strong></a> — an analysis of where the minimum wage actually sits within Colombia's real income distribution, beyond the usual inflation vs. business pressure debate.
           </div>
         </article>
         <article class="news__item">
@@ -198,282 +190,530 @@
     </div>
   </section>
 
-  <!-- PAPERS -->
-  <section id="papers" class="section fade-in">
+  <!-- ═══════════════════════════════════════════
+       WORKING PAPERS & RESEARCH
+  ═══════════════════════════════════════════ -->
+  <section id="papers" class="section section--alt fade-in">
     <div class="container">
-      <h2 class="section__title">Working Papers &amp; Research</h2>
-
-      <article class="paper">
-        <div class="paper__header">
-          <h3 class="paper__title">Inflation Forecasting in Colombia: A Time Series Approach</h3>
-          <span class="paper__badge paper__badge--working">Working Paper</span>
-        </div>
-        <p class="paper__meta">2025 – Present · Universidad de los Andes</p>
-        <p class="paper__abstract">
-          Benchmarking inflation forecasting models for Colombia — Random Walk, AR, ARX, BVAR with
-          Minnesota prior, and TVP-BVAR-SV (Primiceri 2005) — with emphasis on density forecast
-          calibration and monetary transmission time-variation. Targeting Q2 2026 submission.
-        </p>
-      </article>
-
-      <article class="paper">
-        <div class="paper__header">
-          <h3 class="paper__title">Effects of Coca Crops on Academic Performance in Colombia (2018–2021)</h3>
-          <span class="paper__badge paper__badge--published">Research Paper</span>
-        </div>
-        <p class="paper__meta">November 2023 · Pontificia Universidad Javeriana / Sekia Research Group</p>
-        <p class="paper__abstract">
-          Municipal-level analysis using SABER 11 test scores to quantify the effect of coca cultivation
-          on educational outcomes. Finds that a one standard deviation increase in cultivated hectares
-          reduces average scores by approximately 0.03 standard deviations. Winner of the FENADECO
-          Research Seedbeds Call and Javeriana's Economics Research Competition.
-        </p>
-      </article>
-
-      <article class="paper">
-        <div class="paper__header">
-          <h3 class="paper__title">Media Bias in Coverage of Social Protests in Colombia</h3>
-          <span class="paper__badge paper__badge--working">Working Paper</span>
-        </div>
-        <p class="paper__meta">October 2023 · CINEP / Sekia Research Group</p>
-        <p class="paper__abstract">
-          Collaboration with CINEP to assess potential biases in news coverage of social protests.
-          Structured the research database and conducted exploratory analysis of reporting trends
-          across Colombian outlets.
-        </p>
-      </article>
-
-      <article class="paper">
-        <div class="paper__header">
-          <h3 class="paper__title">Born This Way</h3>
-          <span class="paper__badge paper__badge--working">Working Paper</span>
-        </div>
-        <p class="paper__meta">March 2023 · Sekia Research Group · Interdisciplinary collaboration</p>
-        <p class="paper__abstract">
-          Interdisciplinary working paper developed in collaboration with medical students.
-          Contributed to statistical design, data analysis, and interpretation of results
-          in a study relevant to health demographics and social policy in Colombia.
-        </p>
-      </article>
-    </div>
-  </section>
-
-  <!-- EXPERIENCE -->
-  <section id="experience" class="section section--alt fade-in">
-    <div class="container">
-      <h2 class="section__title">Experience</h2>
-
-      <div class="experience__entry">
-        <div class="experience__header">
-          <h3 class="experience__role">Consultant II</h3>
-          <span class="experience__date">Sep 2025 – Present</span>
-        </div>
-        <p class="experience__org">Management Solutions · Bogotá, Colombia</p>
-        <ul class="experience__details">
-          <li>Lead client-facing workstreams with C-level and senior executives at tier-1 financial institutions across capital markets strategy, asset management advisory, and regulatory alignment.</li>
-          <li>Advise on investment product structuring, derivatives valuation, and risk-adjusted performance measurement for banking, asset management, and investment banking clients.</li>
-          <li>Built a fully functional SA-CCR exposure and valuation engine for FX and Rates derivatives portfolios, aligned with SFC regulation and used for regulatory capital calculation and stress testing.</li>
-          <li>Participated in the end-to-end implementation of Calypso (Nasdaq) for Front Office, Middle Office, and Back Office — configuring pricing tools, trade workflows, and market data integrations.</li>
-          <li>Delivered PnL attribution, VaR, exposure profiles, and scenario analysis to Front Office and Risk teams; produced investment performance reports and asset allocation benchmarking for steering committees.</li>
-          <li>Collaborated on investment proposals, commercial decks, and RfPs supporting business development in capital markets and asset management advisory.</li>
-        </ul>
+      <div class="section__header">
+        <span class="section__eyebrow">Working Papers &amp; Research</span>
+        <h2 class="section__title">Academic Work</h2>
       </div>
 
-      <div class="experience__entry">
-        <div class="experience__header">
-          <h3 class="experience__role">Consultant</h3>
-          <span class="experience__date">Jan 2025 – Sep 2025</span>
-        </div>
-        <p class="experience__org">Management Solutions · Bogotá, Colombia</p>
-        <ul class="experience__details">
-          <li>Delivered strategic engagements for top-tier banks and financial institutions focused on investment product design, capital markets analysis, and financial optimization.</li>
-          <li>Performed market analysis and valuation of fixed income, equity, and derivatives instruments in the Colombian financial market.</li>
-          <li>Designed and presented investment dashboards and financial models for executive stakeholders to inform asset allocation and capital planning decisions.</li>
-          <li>Led front-to-back efficiency and profitability assessments for capital markets desks, including process optimization and digital tool development.</li>
-        </ul>
-      </div>
+      <div class="papers__list">
 
-      <div class="experience__entry">
-        <div class="experience__header">
-          <h3 class="experience__role">ED&amp;SE Intern</h3>
-          <span class="experience__date">Jun 2024 – Jan 2025</span>
-        </div>
-        <p class="experience__org">JP Morgan Chase</p>
-        <ul class="experience__details">
-          <li>Built data pipelines and dashboards to support internal investment-related processes and performance monitoring across financial operations.</li>
-          <li>Developed automated tools to track investment performance metrics and surface analytical insights for internal stakeholders across finance and HR domains.</li>
-          <li>Applied data analytics to identify trends in financial and workforce data, supporting strategy and investment planning for senior decision-makers.</li>
-        </ul>
-      </div>
+        <article class="paper">
+          <div class="paper__index">01</div>
+          <div class="paper__body">
+            <div class="paper__header">
+              <h3 class="paper__title">Inflation Forecasting in Colombia: A Time Series Approach</h3>
+              <span class="paper__badge paper__badge--working">Working Paper</span>
+            </div>
+            <p class="paper__meta">2025 – Present &nbsp;·&nbsp; Universidad de los Andes</p>
+            <p class="paper__abstract">
+              Benchmarking inflation forecasting models for Colombia — Random Walk, AR, ARX, BVAR with
+              Minnesota prior, and TVP-BVAR-SV (Primiceri 2005) — with emphasis on density forecast
+              calibration and monetary transmission time-variation. Targeting Q2 2026 submission.
+            </p>
+          </div>
+        </article>
 
-      <div class="experience__entry">
-        <div class="experience__header">
-          <h3 class="experience__role">Research Group Leader</h3>
-          <span class="experience__date">Aug 2023 – Present</span>
-        </div>
-        <p class="experience__org">Sekia Research Group · Pontificia Universidad Javeriana</p>
-        <ul class="experience__details">
-          <li>Define research priorities and coordinate delivery across econometrics, data analysis, academic writing, and presentation tracks.</li>
-          <li>Lead project management for academic publications and external research collaborations with institutions such as CINEP.</li>
-        </ul>
+        <article class="paper">
+          <div class="paper__index">02</div>
+          <div class="paper__body">
+            <div class="paper__header">
+              <h3 class="paper__title">Effects of Coca Crops on Academic Performance in Colombia (2018–2021)</h3>
+              <span class="paper__badge paper__badge--published">Research Paper</span>
+            </div>
+            <p class="paper__meta">November 2023 &nbsp;·&nbsp; Pontificia Universidad Javeriana / Sekia Research Group</p>
+            <p class="paper__abstract">
+              Municipal-level analysis using SABER 11 test scores to quantify the effect of coca cultivation
+              on educational outcomes. Finds that a one standard deviation increase in cultivated hectares
+              reduces average scores by approximately 0.03 standard deviations. Winner of the FENADECO
+              Research Seedbeds Call and Javeriana's Economics Research Competition.
+            </p>
+          </div>
+        </article>
+
+        <article class="paper">
+          <div class="paper__index">03</div>
+          <div class="paper__body">
+            <div class="paper__header">
+              <h3 class="paper__title">Media Bias in Coverage of Social Protests in Colombia</h3>
+              <span class="paper__badge paper__badge--working">Working Paper</span>
+            </div>
+            <p class="paper__meta">October 2023 &nbsp;·&nbsp; CINEP / Sekia Research Group</p>
+            <p class="paper__abstract">
+              Collaboration with CINEP to assess potential biases in news coverage of social protests.
+              Structured the research database and conducted exploratory analysis of reporting trends
+              across Colombian outlets.
+            </p>
+          </div>
+        </article>
+
+        <article class="paper">
+          <div class="paper__index">04</div>
+          <div class="paper__body">
+            <div class="paper__header">
+              <h3 class="paper__title">Born This Way</h3>
+              <span class="paper__badge paper__badge--working">Working Paper</span>
+            </div>
+            <p class="paper__meta">March 2023 &nbsp;·&nbsp; Sekia Research Group &nbsp;·&nbsp; Interdisciplinary collaboration</p>
+            <p class="paper__abstract">
+              Interdisciplinary working paper developed in collaboration with medical students.
+              Contributed to statistical design, data analysis, and interpretation of results
+              in a study relevant to health demographics and social policy in Colombia.
+            </p>
+          </div>
+        </article>
+
       </div>
     </div>
   </section>
 
-  <!-- EDUCATION -->
-  <section id="education" class="section fade-in">
+  <!-- ═══════════════════════════════════════════
+       EXPERIENCE
+  ═══════════════════════════════════════════ -->
+  <section id="experience" class="section fade-in">
     <div class="container">
-      <h2 class="section__title">Education</h2>
-
-      <div class="education__entry">
-        <div class="education__header">
-          <h3>M.Sc. Applied Economics</h3>
-          <span class="education__date">2026 – 2027 (expected)</span>
-        </div>
-        <p class="education__org">Universidad de los Andes · Bogotá, Colombia</p>
+      <div class="section__header">
+        <span class="section__eyebrow">Professional Experience</span>
+        <h2 class="section__title">Career</h2>
       </div>
 
-      <div class="education__entry">
-        <div class="education__header">
-          <h3>M.Sc. Finance and Financial Management</h3>
-          <span class="education__date">2024 – 2025</span>
-        </div>
-        <p class="education__org">Escuela Europea de Negocios · Spain</p>
-      </div>
+      <div class="timeline">
 
-      <div class="education__entry">
-        <div class="education__header">
-          <h3>B.S. Industrial Engineering</h3>
-          <span class="education__date">2020 – 2025</span>
+        <div class="timeline__entry">
+          <div class="timeline__header">
+            <h3 class="timeline__role">Consultant II</h3>
+            <span class="timeline__date">Sep 2025 – Present</span>
+          </div>
+          <p class="timeline__org">Management Solutions &nbsp;·&nbsp; Bogotá, Colombia</p>
+          <ul class="timeline__details">
+            <li>Lead client-facing workstreams with C-level and senior executives at tier-1 financial institutions across capital markets strategy, asset management advisory, and regulatory alignment.</li>
+            <li>Advise on investment product structuring, derivatives valuation, and risk-adjusted performance measurement for banking, asset management, and investment banking clients.</li>
+            <li>Built a fully functional SA-CCR exposure and valuation engine for FX and Rates derivatives portfolios, aligned with SFC regulation and used for regulatory capital calculation and stress testing.</li>
+            <li>Participated in the end-to-end implementation of Calypso (Nasdaq) for Front Office, Middle Office, and Back Office — configuring pricing tools, trade workflows, and market data integrations.</li>
+            <li>Delivered PnL attribution, VaR, exposure profiles, and scenario analysis to Front Office and Risk teams; produced investment performance reports and asset allocation benchmarking for steering committees.</li>
+            <li>Collaborated on investment proposals, commercial decks, and RfPs supporting business development in capital markets and asset management advisory.</li>
+          </ul>
         </div>
-        <p class="education__org">Pontificia Universidad Javeriana · Bogotá, Colombia</p>
+
+        <div class="timeline__entry">
+          <div class="timeline__header">
+            <h3 class="timeline__role">Consultant</h3>
+            <span class="timeline__date">Jan 2025 – Sep 2025</span>
+          </div>
+          <p class="timeline__org">Management Solutions &nbsp;·&nbsp; Bogotá, Colombia</p>
+          <ul class="timeline__details">
+            <li>Delivered strategic engagements for top-tier banks and financial institutions focused on investment product design, capital markets analysis, and financial optimization.</li>
+            <li>Performed market analysis and valuation of fixed income, equity, and derivatives instruments in the Colombian financial market.</li>
+            <li>Designed and presented investment dashboards and financial models for executive stakeholders to inform asset allocation and capital planning decisions.</li>
+            <li>Led front-to-back efficiency and profitability assessments for capital markets desks, including process optimization and digital tool development.</li>
+          </ul>
+        </div>
+
+        <div class="timeline__entry">
+          <div class="timeline__header">
+            <h3 class="timeline__role">ED&amp;SE Intern</h3>
+            <span class="timeline__date">Jun 2024 – Jan 2025</span>
+          </div>
+          <p class="timeline__org">JP Morgan Chase</p>
+          <ul class="timeline__details">
+            <li>Built data pipelines and dashboards to support internal investment-related processes and performance monitoring across financial operations.</li>
+            <li>Developed automated tools to track investment performance metrics and surface analytical insights for internal stakeholders across finance and HR domains.</li>
+            <li>Applied data analytics to identify trends in financial and workforce data, supporting strategy and investment planning for senior decision-makers.</li>
+          </ul>
+        </div>
+
+        <div class="timeline__entry">
+          <div class="timeline__header">
+            <h3 class="timeline__role">Research Group Leader</h3>
+            <span class="timeline__date">Aug 2023 – Present</span>
+          </div>
+          <p class="timeline__org">Sekia Research Group &nbsp;·&nbsp; Pontificia Universidad Javeriana</p>
+          <ul class="timeline__details">
+            <li>Define research priorities and coordinate delivery across econometrics, data analysis, academic writing, and presentation tracks.</li>
+            <li>Lead project management for academic publications and external research collaborations with institutions such as CINEP.</li>
+          </ul>
+        </div>
+
       </div>
     </div>
   </section>
 
-  <!-- PROJECTS -->
+  <!-- ═══════════════════════════════════════════
+       EDUCATION
+  ═══════════════════════════════════════════ -->
+  <section id="education" class="section section--alt fade-in">
+    <div class="container">
+      <div class="section__header">
+        <span class="section__eyebrow">Academic Formation</span>
+        <h2 class="section__title">Education</h2>
+      </div>
+
+      <div class="credentials__grid">
+
+        <div class="credential">
+          <div>
+            <p class="credential__degree">M.Sc. Applied Economics</p>
+            <p class="credential__institution">Universidad de los Andes &nbsp;·&nbsp; Bogotá, Colombia</p>
+            <p class="credential__note">In progress</p>
+          </div>
+          <p class="credential__years">2026 – 2027</p>
+        </div>
+
+        <div class="credential">
+          <div>
+            <p class="credential__degree">M.Sc. Finance and Financial Management</p>
+            <p class="credential__institution">Escuela Europea de Negocios &nbsp;·&nbsp; Spain</p>
+          </div>
+          <p class="credential__years">2024 – 2025</p>
+        </div>
+
+        <div class="credential">
+          <div>
+            <p class="credential__degree">B.S. Industrial Engineering</p>
+            <p class="credential__institution">Pontificia Universidad Javeriana &nbsp;·&nbsp; Bogotá, Colombia</p>
+          </div>
+          <p class="credential__years">2020 – 2025</p>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════
+       CERTIFICATIONS
+  ═══════════════════════════════════════════ -->
+  <section id="certifications" class="section fade-in">
+    <div class="container">
+      <div class="section__header">
+        <span class="section__eyebrow">Professional Credentials</span>
+        <h2 class="section__title">Certifications</h2>
+      </div>
+      <div class="certs__grid">
+
+        <div class="cert__card">
+          <p class="cert__name">CMSA® — Capital Markets &amp; Securities Analyst</p>
+          <p class="cert__org">Corporate Finance Institute (CFI)</p>
+          <p class="cert__year"><!-- Add year --></p>
+        </div>
+
+        <!-- Add more certifications as needed:
+        <div class="cert__card">
+          <p class="cert__name">Certification Name</p>
+          <p class="cert__org">Issuing Organization</p>
+          <p class="cert__year">Year</p>
+        </div>
+        -->
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════
+       SELECTED PROJECTS
+  ═══════════════════════════════════════════ -->
   <section id="projects" class="section section--alt fade-in">
     <div class="container">
-      <h2 class="section__title">Selected Projects</h2>
-
-      <div class="project__entry">
-        <h3 class="project__title">SA-CCR Exposure &amp; Valuation Engine</h3>
-        <p class="project__meta">Python · Management Solutions · 2025</p>
-        <p>
-          Built a fully functional valuation and SA-CCR counterparty credit risk exposure calculator for
-          FX and Rates derivatives portfolios. Aligned with SFC regulation and used for regulatory capital
-          measurement, stress testing, and risk reporting at a tier-1 Colombian financial institution.
-        </p>
+      <div class="section__header">
+        <span class="section__eyebrow">Applied Work</span>
+        <h2 class="section__title">Selected Projects</h2>
       </div>
 
-      <div class="project__entry">
-        <h3 class="project__title">Calypso Treasury System Implementation</h3>
-        <p class="project__meta">Calypso/Nasdaq · Management Solutions · 2025</p>
-        <p>
-          Participated in the end-to-end implementation of the Calypso treasury system for Front, Middle,
-          and Back Office functions. Configured pricing tools, trade workflows, market data integrations,
-          and accounting rules for a major Colombian state-owned financial institution.
-        </p>
-      </div>
+      <div class="projects__grid">
 
-      <div class="project__entry">
-        <h3 class="project__title">Inflation Forecasting Model — Colombia</h3>
-        <p class="project__meta">R, Python · Universidad de los Andes · 2025–Present</p>
-        <p>
-          Developing and benchmarking time series models (RW, AR, ARX, BVAR, TVP-BVAR-SV) for inflation
-          forecasting in Colombia, with focus on density forecast calibration and monetary transmission
-          time-variation analysis targeting academic publication.
-        </p>
-      </div>
+        <div class="project__card">
+          <h3 class="project__title">SA-CCR Exposure &amp; Valuation Engine</h3>
+          <div class="project__tags">
+            <span class="project__tag">Python</span>
+            <span class="project__tag">Derivatives</span>
+            <span class="project__tag">Regulatory Risk</span>
+          </div>
+          <p class="project__desc">
+            Built a fully functional valuation and SA-CCR counterparty credit risk exposure calculator for
+            FX and Rates derivatives portfolios. Aligned with SFC regulation and used for regulatory capital
+            measurement, stress testing, and risk reporting at a tier-1 Colombian financial institution.
+          </p>
+        </div>
 
-      <div class="project__entry">
-        <h3 class="project__title">Investment Performance Dashboards &amp; Automation</h3>
-        <p class="project__meta">Python, Power BI · JP Morgan Chase · 2024</p>
-        <p>
-          Designed and deployed internal dashboards and automated workflows to monitor investment performance
-          metrics, reduce manual reporting effort, and surface actionable insights across financial operations.
-        </p>
-      </div>
+        <div class="project__card">
+          <h3 class="project__title">Calypso Treasury System Implementation</h3>
+          <div class="project__tags">
+            <span class="project__tag">Calypso / Nasdaq</span>
+            <span class="project__tag">Capital Markets</span>
+          </div>
+          <p class="project__desc">
+            Participated in the end-to-end implementation of the Calypso treasury system for Front, Middle,
+            and Back Office functions. Configured pricing tools, trade workflows, market data integrations,
+            and accounting rules for a major Colombian state-owned financial institution.
+          </p>
+        </div>
 
-      <div class="project__entry">
-        <h3 class="project__title">Media Bias Dataset Construction</h3>
-        <p class="project__meta">R, Python · CINEP / Sekia Research Group · 2023</p>
-        <p>
-          Structured and analyzed datasets to assess potential bias patterns in news coverage of social
-          protests in Colombia. Performed exploratory analysis and synthesis of reporting trends across
-          major Colombian media outlets.
-        </p>
+        <div class="project__card">
+          <h3 class="project__title">Inflation Forecasting Model — Colombia</h3>
+          <div class="project__tags">
+            <span class="project__tag">R</span>
+            <span class="project__tag">Python</span>
+            <span class="project__tag">BVAR / TVP-BVAR-SV</span>
+          </div>
+          <p class="project__desc">
+            Developing and benchmarking time series models for inflation forecasting in Colombia, with focus
+            on density forecast calibration and monetary transmission time-variation analysis targeting
+            academic publication.
+          </p>
+        </div>
+
+        <div class="project__card">
+          <h3 class="project__title">Investment Performance Dashboards &amp; Automation</h3>
+          <div class="project__tags">
+            <span class="project__tag">Python</span>
+            <span class="project__tag">Power BI</span>
+          </div>
+          <p class="project__desc">
+            Designed and deployed internal dashboards and automated workflows to monitor investment performance
+            metrics, reduce manual reporting effort, and surface actionable insights across financial operations
+            at JP Morgan Chase.
+          </p>
+        </div>
+
+        <div class="project__card">
+          <h3 class="project__title">Media Bias Dataset Construction</h3>
+          <div class="project__tags">
+            <span class="project__tag">R</span>
+            <span class="project__tag">Python</span>
+            <span class="project__tag">NLP</span>
+          </div>
+          <p class="project__desc">
+            Structured and analyzed datasets to assess potential bias patterns in news coverage of social
+            protests in Colombia. Performed exploratory analysis and synthesis of reporting trends across
+            major Colombian media outlets in collaboration with CINEP.
+          </p>
+        </div>
+
       </div>
     </div>
   </section>
 
-  <!-- CONTACT -->
-  <section id="contact" class="section fade-in">
+  <!-- ═══════════════════════════════════════════
+       DATA VISUALIZATIONS
+  ═══════════════════════════════════════════ -->
+  <section id="visualizations" class="section fade-in">
     <div class="container">
-      <h2 class="section__title">Contact</h2>
-      <p class="contact__intro">
-        I am open to research collaborations, consulting opportunities, asset management and investment
-        banking roles, and conversations about applied economics and financial markets. Feel free to reach out.
+      <div class="section__header">
+        <span class="section__eyebrow">Quantitative Work</span>
+        <h2 class="section__title">Data Visualizations</h2>
+      </div>
+      <p class="viz__intro">
+        A selection of maps, charts, and exploratory analyses developed across research and consulting
+        projects. Each piece applies geospatial methods, econometric techniques, or quantitative data
+        analysis to applied problems in economics and urban policy.
       </p>
-      <ul class="contact__list">
-        <li>
-          <strong>Email</strong>
-          <a href="mailto:estebanlabastidasm@javeriana.edu.co">estebanlabastidasm@javeriana.edu.co</a>
-        </li>
-        <li>
-          <strong>LinkedIn</strong>
-          <a href="https://www.linkedin.com/in/esteban-labastidas-cmsa%C2%AE-8272a019a/" target="_blank" rel="noopener">LinkedIn Profile</a>
-        </li>
-        <li>
-          <strong>GitHub</strong>
-          <a href="https://github.com/Stebandido77" target="_blank" rel="noopener">github.com/Stebandido77</a>
-        </li>
-        <li>
-          <strong>Location</strong>
-          Bogotá, Colombia
-        </li>
-      </ul>
+      <div class="viz__grid">
+
+        <figure class="viz__card">
+          <a href="assets/visualizations/bogota_crime_lamps.jpg" target="_blank" rel="noopener" class="viz__link">
+            <img src="assets/visualizations/bogota_crime_lamps.jpg" alt="Crime Victims and Public Lighting in Bogotá" loading="lazy">
+          </a>
+          <figcaption class="viz__caption">
+            <span class="viz__tag">Spatial Analytics</span>
+            <h3 class="viz__title">Crime Victims and Public Lighting in Bogotá</h3>
+            <p class="viz__desc">
+              Spatial analysis mapping the distribution of crime victims across Bogotá's localities against
+              public lighting coverage. Explores the relationship between infrastructure gaps and
+              victimization rates using disaggregated municipal data.
+            </p>
+          </figcaption>
+        </figure>
+
+        <figure class="viz__card">
+          <a href="assets/visualizations/metro_poverty_map.jpg" target="_blank" rel="noopener" class="viz__link">
+            <img src="assets/visualizations/metro_poverty_map.jpg" alt="Multidimensional Poverty and Metro Corridor" loading="lazy">
+          </a>
+          <figcaption class="viz__caption">
+            <span class="viz__tag">Urban Policy</span>
+            <h3 class="viz__title">Multidimensional Poverty and Metro Corridor</h3>
+            <p class="viz__desc">
+              Overlay of Bogotá's multidimensional poverty index with the planned metro line corridor.
+              Assesses the degree to which the first metro line serves the city's most deprived
+              neighborhoods and its potential redistributive impact.
+            </p>
+          </figcaption>
+        </figure>
+
+        <figure class="viz__card">
+          <a href="assets/visualizations/canopy_height.jpg" target="_blank" rel="noopener" class="viz__link">
+            <img src="assets/visualizations/canopy_height.jpg" alt="Urban Canopy Height Mapping" loading="lazy">
+          </a>
+          <figcaption class="viz__caption">
+            <span class="viz__tag">Geospatial Data</span>
+            <h3 class="viz__title">Urban Canopy Height Mapping</h3>
+            <p class="viz__desc">
+              High-resolution mapping of urban tree canopy height using geospatial data. Part of broader
+              analysis on urban green infrastructure, heat island effects, and environmental equity across
+              Bogotá's urban fabric.
+            </p>
+          </figcaption>
+        </figure>
+
+        <figure class="viz__card">
+          <a href="assets/visualizations/gdp_distribution.jpg" target="_blank" rel="noopener" class="viz__link">
+            <img src="assets/visualizations/gdp_distribution.jpg" alt="GDP Distribution Across Colombian Departments" loading="lazy">
+          </a>
+          <figcaption class="viz__caption">
+            <span class="viz__tag">Economic Visualization</span>
+            <h3 class="viz__title">GDP Distribution Across Colombian Departments</h3>
+            <p class="viz__desc">
+              Visualization of GDP concentration across Colombia's 32 departments, highlighting regional
+              economic disparities and the dominant share of Bogotá D.C. and Antioquia in national
+              output — context for spatial development policy analysis.
+            </p>
+          </figcaption>
+        </figure>
+
+      </div>
     </div>
   </section>
 
+  <!-- ═══════════════════════════════════════════
+       CONTACT  (dark section)
+  ═══════════════════════════════════════════ -->
+  <section id="contact" class="section section--dark fade-in">
+    <div class="container">
+      <div class="section__header">
+        <span class="section__eyebrow">Get in touch</span>
+      </div>
+      <div class="contact__layout">
+
+        <div>
+          <h2 class="contact__heading">Let's Connect</h2>
+          <p class="contact__subtext">
+            I am open to research collaborations, consulting opportunities, asset management and
+            investment banking roles, and conversations about applied economics and financial markets.
+            Feel free to reach out.
+          </p>
+          <a href="mailto:estebanlabastidasm@javeriana.edu.co" class="btn btn--gold">Send an Email</a>
+        </div>
+
+        <div class="contact__info">
+          <div class="contact__item">
+            <span class="contact__label">Email</span>
+            <span class="contact__value">
+              <a href="mailto:estebanlabastidasm@javeriana.edu.co">estebanlabastidasm@javeriana.edu.co</a>
+            </span>
+          </div>
+          <div class="contact__item">
+            <span class="contact__label">LinkedIn</span>
+            <span class="contact__value">
+              <a href="https://www.linkedin.com/in/esteban-labastidas-cmsa%C2%AE-8272a019a/" target="_blank" rel="noopener">LinkedIn Profile</a>
+            </span>
+          </div>
+          <div class="contact__item">
+            <span class="contact__label">GitHub</span>
+            <span class="contact__value">
+              <a href="https://github.com/Stebandido77" target="_blank" rel="noopener">github.com/Stebandido77</a>
+            </span>
+          </div>
+          <div class="contact__item">
+            <span class="contact__label">Location</span>
+            <span class="contact__value">Bogotá, Colombia</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════
+       CV DOWNLOAD STRIP
+  ═══════════════════════════════════════════ -->
+  <div class="cv-strip">
+    <div class="container">
+      <div class="cv-strip__inner">
+        <div>
+          <p class="cv-strip__label">Curriculum Vitae</p>
+          <p class="cv-strip__sub">Updated 2025 &nbsp;·&nbsp; Financial Consulting &amp; Applied Economics</p>
+        </div>
+        <a href="assets/docs/CV_Esteban_Labastidas.pdf" class="btn--cv" target="_blank" rel="noopener">Download CV</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       FOOTER
+  ═══════════════════════════════════════════ -->
   <footer class="footer">
     <div class="container">
-      <p>&copy; 2026 Esteban Labastidas. All rights reserved.</p>
+      <div class="footer__inner">
+        <p class="footer__copy">&copy; 2026 Esteban Labastidas. All rights reserved.</p>
+        <nav class="footer__links" aria-label="Footer navigation">
+          <a href="#hero">Top</a>
+          <a href="#papers">Research</a>
+          <a href="#experience">Experience</a>
+          <a href="#contact">Contact</a>
+          <a href="assets/docs/CV_Esteban_Labastidas.pdf" target="_blank" rel="noopener">CV</a>
+        </nav>
+      </div>
     </div>
   </footer>
 
+  <!-- ═══════════════════════════════════════════
+       JAVASCRIPT
+  ═══════════════════════════════════════════ -->
   <script>
-    const nav = document.getElementById('nav');
-    window.addEventListener('scroll', () => {
-      nav.classList.toggle('nav--scrolled', window.scrollY > 20);
-    });
+    (function () {
+      'use strict';
 
-    const toggle = document.querySelector('.nav__toggle');
-    const links = document.querySelector('.nav__links');
-    toggle.addEventListener('click', () => {
-      const isOpen = links.classList.toggle('nav__links--open');
-      toggle.classList.toggle('nav__toggle--active', isOpen);
-      toggle.setAttribute('aria-expanded', isOpen);
-    });
+      var nav = document.getElementById('nav');
 
-    document.querySelectorAll('.nav__links a').forEach(link => {
-      link.addEventListener('click', () => {
-        links.classList.remove('nav__links--open');
-        toggle.classList.remove('nav__toggle--active');
-        toggle.setAttribute('aria-expanded', false);
-      });
-    });
-
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          entry.target.classList.add('is-visible');
-          observer.unobserve(entry.target);
+      // ── Nav: light (over dark hero) ↔ scrolled (solid white)
+      function updateNav() {
+        if (window.scrollY > 60) {
+          nav.classList.remove('nav--light');
+          nav.classList.add('nav--scrolled');
+        } else {
+          nav.classList.add('nav--light');
+          nav.classList.remove('nav--scrolled');
         }
-      });
-    }, { threshold: 0.08 });
+      }
 
-    document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+      window.addEventListener('scroll', updateNav, { passive: true });
+      updateNav(); // run on load
+
+      // ── Mobile menu toggle
+      var toggle = document.querySelector('.nav__toggle');
+      var links  = document.querySelector('.nav__links');
+
+      toggle.addEventListener('click', function () {
+        var isOpen = links.classList.toggle('nav__links--open');
+        toggle.classList.toggle('nav__toggle--active', isOpen);
+        toggle.setAttribute('aria-expanded', String(isOpen));
+      });
+
+      links.querySelectorAll('a').forEach(function (link) {
+        link.addEventListener('click', function () {
+          links.classList.remove('nav__links--open');
+          toggle.classList.remove('nav__toggle--active');
+          toggle.setAttribute('aria-expanded', 'false');
+        });
+      });
+
+      // ── Fade-in on scroll (IntersectionObserver)
+      var observer = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('is-visible');
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.08 });
+
+      document.querySelectorAll('.fade-in').forEach(function (el) {
+        observer.observe(el);
+      });
+    })();
   </script>
+
 </body>
 </html>
