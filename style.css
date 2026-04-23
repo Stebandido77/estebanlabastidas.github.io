@@ -635,20 +635,13 @@ body.is-paper .drawer-toggle span { background: var(--ink); }
 }
 .hero.is-loaded .curve-band { opacity: 1; }
 
-/* Peak marker — the only gold label (per brief: "excepto el pico") */
+/* Peak marker — label removed in iteration 04, only a tiny dot remains */
 .curve-peak {
   opacity: 0;
   transition: opacity 0.6s var(--ease) 1.8s;
 }
 .hero.is-loaded .curve-peak { opacity: 1; }
 .curve-peak circle { fill: var(--gold); }
-.curve-peak line   { stroke: var(--gold); stroke-width: 1; stroke-dasharray: 2 2; opacity: 0.7; }
-.curve-peak text   {
-  font-family: var(--mono);
-  font-size: 10px;
-  fill: var(--gold);
-  letter-spacing: 0.14em;
-}
 
 .curve-forecast-label {
   opacity: 0;
@@ -729,6 +722,25 @@ body.is-paper .drawer-toggle span { background: var(--ink); }
   color: var(--cream-2);
 }
 
+/* ─── 11A-bis · HERO BIO NOTE ───────────────────────────────────────── */
+.hero__bio {
+  margin-top: 2.25rem;
+  padding-top: 1.25rem;
+  border-top: 1px dashed var(--gold-mid);
+  font-family: var(--sans);
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: var(--cream-2);
+  max-width: 620px;
+  letter-spacing: -0.003em;
+}
+.hero__bio em {
+  font-family: var(--display);
+  font-style: italic;
+  color: var(--gold);
+  letter-spacing: 0;
+}
+
 /* ─── 11B · PORTRAIT (right column) ─────────────────────────────────── */
 /* Fix 1: photo shown natural — no grayscale/sepia/contrast beyond 1.02.
    Kept: 1px gold border + offset frame (the cuadrito desplazado). */
@@ -772,6 +784,49 @@ body.is-paper .drawer-toggle span { background: var(--ink); }
   /* natural colors · fix 1 */
   filter: contrast(1.02);
 }
+
+/* Research interests — compact list below the portrait */
+.hero__interests {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--gold-mid);
+}
+.hero__interests-label {
+  font-family: var(--mono);
+  font-size: 0.58rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 0.75rem;
+  text-align: right;
+}
+.hero__interests ul {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+.hero__interests li {
+  font-family: var(--serif);
+  font-variation-settings: "opsz" 14, "SOFT" 40;
+  font-size: 0.82rem;
+  line-height: 1.35;
+  color: var(--cream-2);
+  letter-spacing: 0;
+  text-align: right;
+  padding-right: 0.15rem;
+}
+.hero__interests li::before {
+  content: "— ";
+  color: var(--gold);
+  margin-right: 0.25em;
+}
+.hero__interests-rule {
+  height: 1px;
+  background: var(--cream-4);
+  margin: 0.4rem 0 0.4rem auto;
+  width: 80px;
+}
+.hero__interests-rule::before { content: none; }
 
 /* ─── 11C · SCROLL INDICATOR ────────────────────────────────────────── */
 .hero__scroll {
@@ -1420,32 +1475,49 @@ body.is-paper .drawer-toggle span { background: var(--ink); }
   gap: 0.85rem;
 }
 .credential-item {
-  padding: 1.25rem 1.5rem;
+  padding: 1.35rem 1.5rem 1.1rem;
   background: var(--paper-2);
   border: 1px solid var(--rule-paper);
   border-top: 2px solid var(--gold);
   transition: transform 0.25s var(--ease), background 0.25s var(--ease);
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
 }
 .credential-item:hover { transform: translateY(-2px); background: var(--paper); }
-.credential-item__name {
-  font-family: var(--display);
-  font-size: 1.4rem;
-  color: var(--ink);
-  margin-bottom: 0.2rem;
-}
-.credential-item__detail {
-  font-family: var(--sans);
-  font-size: 0.9375rem;
-  color: var(--ink-2);
-  margin-bottom: 0.4rem;
-}
-.credential-item__org {
+
+.credential-item__label {
   font-family: var(--mono);
-  font-size: 0.62rem;
-  letter-spacing: 0.14em;
+  font-size: 0.64rem;
+  letter-spacing: 0.22em;
   text-transform: uppercase;
   color: var(--gold);
 }
+.credential-item__name {
+  font-family: var(--display);
+  font-size: 1.3rem;
+  line-height: 1.2;
+  color: var(--ink);
+  font-weight: 400;
+}
+.credential-item__org {
+  font-family: var(--sans);
+  font-size: 0.86rem;
+  color: var(--ink-3);
+  letter-spacing: 0;
+  text-transform: none;
+}
+.credential-item__status {
+  margin-top: auto;
+  padding-top: 0.85rem;
+  border-top: 1px dashed var(--rule-paper);
+  font-family: var(--mono);
+  font-size: 0.58rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+.credential-item__status--done   { color: var(--ink-3); }
+.credential-item__status--active { color: var(--gold); font-weight: 500; }
 
 
 /* ─── 18 · CHAPTER VII · THE EYE · PLATES ───────────────────────────── */
@@ -1775,15 +1847,22 @@ body.is-paper .drawer-toggle span { background: var(--ink); }
   .hero__body     { grid-column: 1; grid-row: 1; }
   .hero__portrait {
     grid-column: 1; grid-row: 2;
-    width: 220px;
+    width: 100%;
+    max-width: 420px;
     justify-self: start;
     margin-top: 0.5rem;
   }
+  .hero__portrait-frame { max-width: 240px; }
   .hero__portrait-caption { text-align: left; }
   .hero__curve { top: 8rem; opacity: 0.35; }
   .hero.is-loaded .hero__curve { opacity: 0.35; }
   .hero__meta { grid-template-columns: repeat(2, 1fr); }
   .hero__scroll { display: none; }
+
+  /* Interests list: left-align on mobile */
+  .hero__interests-label,
+  .hero__interests li { text-align: left; }
+  .hero__interests-rule { margin-left: 0; }
 
   .pillars   { grid-template-columns: 1fr; }
   .projects  { grid-template-columns: 1fr; }
@@ -1801,8 +1880,9 @@ body.is-paper .drawer-toggle span { background: var(--ink); }
 
   .hero__name { font-size: clamp(3rem, 14vw, 5.5rem); }
   .hero__thesis { font-size: 1.1rem; padding-left: 0.85rem; }
-  .hero__portrait { width: 180px; }
+  .hero__portrait-frame { max-width: 200px; }
   .hero__meta { grid-template-columns: 1fr; }
+  .hero__bio { font-size: 0.9rem; }
 
   .chronicle__item {
     grid-template-columns: 1fr;
@@ -1833,7 +1913,7 @@ body.is-paper .drawer-toggle span { background: var(--ink); }
   .invitation-quote { font-size: 1.45rem; padding-left: 1rem; }
   .invitation-cta a { font-size: 0.95rem; }
 
-  .hero__portrait { width: 150px; }
+  .hero__portrait-frame { max-width: 170px; }
   .hero__portrait-frame::before { inset: 7px -7px -7px 7px; }
 
   .chapter-head__numeral { font-size: 3rem; }
