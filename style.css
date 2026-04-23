@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════════════
    ESTEBAN LABASTIDAS · THE QUANT'S NOTEBOOK
-   Vol. II · MMXXVI
+   Vol. II · MMXXVI — iteration 02
    ═══════════════════════════════════════════════════════════════════════ */
 
 
@@ -31,7 +31,7 @@
   --cream-3:      rgba(242, 235, 218, 0.45);
   --cream-4:      rgba(242, 235, 218, 0.22);
 
-  /* Accents — disciplined use */
+  /* Accents */
   --gold:         #b8925a;
   --gold-soft:    rgba(184, 146, 90, 0.12);
   --gold-mid:     rgba(184, 146, 90, 0.35);
@@ -47,6 +47,7 @@
   --tick-dn:      #b4645e;
 
   /* Typography */
+  --sans:      "Geist", "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   --serif:     "Fraunces", "Iowan Old Style", "Georgia", serif;
   --display:   "Instrument Serif", "Fraunces", "Georgia", serif;
   --mono:      "JetBrains Mono", ui-monospace, "SF Mono", "Menlo", monospace;
@@ -54,7 +55,8 @@
   /* Layout */
   --masthead-h:  40px;
   --sidebar-w:   240px;
-  --reading-w:   760px;
+  --max-w:       1400px;
+  --col-gap:     1.5rem;
 
   /* Motion */
   --ease:         cubic-bezier(.22, .61, .36, 1);
@@ -73,14 +75,14 @@ html {
 }
 
 body {
-  font-family: var(--serif);
-  font-size: 1rem;
-  line-height: 1.7;
+  font-family: var(--sans);
+  font-size: 16px;
+  line-height: 1.62;
   color: var(--cream);
   background: var(--navy-deep);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  font-variation-settings: "opsz" 14, "SOFT" 40;
+  letter-spacing: -0.005em;
   text-rendering: optimizeLegibility;
   overflow-x: hidden;
 }
@@ -111,6 +113,7 @@ a { color: inherit; text-decoration: none; }
   align-items: center;
   flex-wrap: wrap;
   gap: 0.75em;
+  letter-spacing: 0.18em;
 }
 .dateline__sep { opacity: 0.5; }
 .dateline__rule {
@@ -122,8 +125,6 @@ a { color: inherit; text-decoration: none; }
 }
 
 em { font-style: italic; }
-
-/* Make Fraunces italic look stronger in display moments */
 .chapter--navy em, .chapter--navy-deep em { color: var(--gold); }
 
 
@@ -276,9 +277,7 @@ body.is-paper .sidebar__mark-sub { color: var(--ink-3); }
 
 .chapters { display: flex; flex-direction: column; }
 
-.chapters li {
-  position: relative;
-}
+.chapters li { position: relative; }
 .chapters a {
   display: grid;
   grid-template-columns: 38px 1fr;
@@ -286,7 +285,7 @@ body.is-paper .sidebar__mark-sub { color: var(--ink-3); }
   align-items: baseline;
   padding: 0.55rem 0 0.55rem 0.35rem;
   color: var(--cream-3);
-  transition: color 0.3s var(--ease), transform 0.3s var(--ease);
+  transition: color 0.3s var(--ease), transform 0.3s var(--ease), padding-left 0.3s var(--ease);
   border-left: 2px solid transparent;
 }
 body.is-paper .chapters a { color: var(--ink-3); }
@@ -373,51 +372,62 @@ body.is-paper .drawer-toggle span { background: var(--ink); }
 
 .chapter {
   position: relative;
-  padding: 6.5rem 4rem 7rem;
+  padding: 6.5rem clamp(2rem, 4vw, 4rem) 7rem;
   min-height: 60vh;
   transition: background 0.5s var(--ease), color 0.5s var(--ease);
 }
-.chapter--hero  { padding: 3rem 4rem 5rem; min-height: calc(100vh - var(--masthead-h)); }
+.chapter--hero  { padding: 3rem clamp(2rem, 4vw, 4rem) 4rem; min-height: calc(100vh - var(--masthead-h)); }
 .chapter--final { padding-bottom: 5rem; }
 
 .chapter--navy,
-.chapter--navy-deep {
-  background: var(--navy);
-  color: var(--cream);
-}
+.chapter--navy-deep { background: var(--navy);       color: var(--cream); }
 .chapter--navy-deep { background: var(--navy-deep); }
+.chapter--paper     { background: var(--paper);     color: var(--ink); }
 
-.chapter--paper {
-  background: var(--paper);
-  color: var(--ink);
+/* 12-column grid ·········································· */
+.chapter__inner {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  column-gap: var(--col-gap);
+  row-gap: 2.25rem;
+  max-width: var(--max-w);
+  margin: 0 auto;
+  position: relative;
 }
 
-.chapter__inner {
-  max-width: var(--reading-w);
-  margin: 0;
-  position: relative;
+/* chapter__row — nested 12-col grid for intro + marginalia pairs */
+.chapter__row {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  column-gap: var(--col-gap);
+  row-gap: 1.5rem;
+  align-items: start;
 }
 
 
 /* ─── 08 · CHAPTER HEADER ───────────────────────────────────────────── */
 .chapter-head {
-  position: relative;
-  margin-bottom: 2.5rem;
-  padding-top: 1rem;
+  grid-column: 1 / 11;
+  display: grid;
+  grid-template-columns: 100px 1fr;
+  column-gap: var(--col-gap);
+  align-items: start;
+  padding-top: 0.5rem;
 }
 
 .chapter-head__numeral {
-  position: absolute;
-  top: -0.6rem;
-  left: -3.6rem;
   font-family: var(--display);
   font-style: italic;
-  font-size: 5rem;
-  line-height: 1;
+  font-size: clamp(4rem, 7vw, 6.5rem);
+  line-height: 0.9;
   color: var(--gold);
   opacity: 0.92;
   user-select: none;
+  grid-column: 1;
 }
+
+.chapter-head__text { grid-column: 2; padding-top: 0.6rem; }
 
 .chapter-head__title {
   font-family: var(--display);
@@ -427,24 +437,24 @@ body.is-paper .drawer-toggle span { background: var(--ink); }
   letter-spacing: -0.015em;
   margin-top: 0.55rem;
 }
-.chapter-head__title em {
-  font-style: italic;
-  color: var(--gold);
-}
+.chapter-head__title em { font-style: italic; color: var(--gold); }
 
-/* Chapter intro paragraph */
+/* Chapter intro · narrative prose, cols 1-7 */
 .chapter-intro {
-  font-family: var(--serif);
-  font-variation-settings: "opsz" 18, "SOFT" 50;
-  font-size: 1.1rem;
-  line-height: 1.68;
-  max-width: 620px;
-  margin-bottom: 3rem;
+  grid-column: 1 / 8;
+  font-family: var(--sans);
+  font-size: 1rem;
+  line-height: 1.62;
+  font-weight: 400;
+  max-width: 62ch;
 }
-.chapter--navy .chapter-intro, .chapter--navy-deep .chapter-intro { color: var(--cream-2); }
-.chapter--paper .chapter-intro { color: var(--ink-2); }
+.chapter--navy .chapter-intro,
+.chapter--navy-deep .chapter-intro { color: var(--cream-2); }
+.chapter--paper .chapter-intro     { color: var(--ink-2); }
 
-/* Drop cap variant */
+/* When inside chapter__row, let the row own the column placement */
+.chapter__row .chapter-intro { grid-column: 1 / 8; }
+
 .chapter-intro--dropcap { overflow: visible; }
 .dropcap {
   float: left;
@@ -453,12 +463,85 @@ body.is-paper .drawer-toggle span { background: var(--ink); }
   color: var(--gold);
   font-size: 4.5rem;
   line-height: 0.85;
-  padding: 0.4rem 0.6rem 0 0;
+  padding: 0.45rem 0.55rem 0 0;
   margin-top: 0.05em;
 }
 
 
-/* ─── 09 · ASTERISM DIVIDERS ────────────────────────────────────────── */
+/* ─── 09 · MARGINALIA ───────────────────────────────────────────────── */
+.marginalia {
+  grid-column: 9 / 13;
+  font-family: var(--sans);
+  font-size: 0.86rem;
+  line-height: 1.55;
+  border-left: 1px solid var(--gold-mid);
+  padding: 0.1rem 0 0.1rem 1rem;
+  margin-top: 0.35rem;
+  align-self: start;
+}
+
+.marginalia__label {
+  font-family: var(--mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.22em;
+  color: var(--gold);
+  text-transform: uppercase;
+  margin-bottom: 0.8rem;
+}
+
+.marginalia__body { color: var(--ink-2); }
+.chapter--navy .marginalia__body,
+.chapter--navy-deep .marginalia__body { color: var(--cream-2); }
+
+/* Stats-variant (research) */
+.marginalia__stats { display: flex; flex-direction: column; gap: 0.45rem; }
+.marginalia__stats > div {
+  display: grid;
+  grid-template-columns: 2rem 1fr;
+  column-gap: 0.75rem;
+  align-items: baseline;
+}
+.marginalia__stats dt {
+  font-family: var(--display);
+  font-style: italic;
+  font-size: 1.5rem;
+  color: var(--gold);
+  line-height: 1;
+}
+.marginalia__stats dd {
+  font-family: var(--mono);
+  font-size: 0.64rem;
+  letter-spacing: 0.14em;
+  color: var(--cream-3);
+  text-transform: uppercase;
+}
+.chapter--paper .marginalia__stats dd { color: var(--ink-3); }
+
+/* Key-value variant (invitation) */
+.marginalia__kv { display: flex; flex-direction: column; gap: 0.6rem; }
+.marginalia__kv > div {
+  display: grid;
+  grid-template-columns: 5.5rem 1fr;
+  gap: 0.75rem;
+  padding-bottom: 0.45rem;
+  border-bottom: 1px dashed var(--gold-mid);
+}
+.marginalia__kv > div:last-child { border-bottom: none; }
+.marginalia__kv dt {
+  font-family: var(--mono);
+  font-size: 0.58rem;
+  letter-spacing: 0.18em;
+  color: var(--gold);
+  text-transform: uppercase;
+}
+.marginalia__kv dd {
+  font-family: var(--sans);
+  font-size: 0.9rem;
+  color: var(--cream);
+}
+
+
+/* ─── 10 · ASTERISM DIVIDERS ────────────────────────────────────────── */
 .asterism {
   text-align: center;
   font-family: var(--display);
@@ -470,56 +553,94 @@ body.is-paper .drawer-toggle span { background: var(--ink); }
 }
 .asterism--navy-paper { background: var(--paper); }
 
-/* Following an asterism, the next chapter edge is softened */
-.chapter + .asterism { margin-top: 0; }
 
-
-/* ─── 10 · CHAPTER I · OPENING / HERO ───────────────────────────────── */
+/* ─── 11 · CHAPTER I · OPENING / HERO ───────────────────────────────── */
 .hero {
-  display: grid;
-  grid-template-columns: 1fr 300px;
-  grid-template-rows: auto 1fr auto;
-  column-gap: 3rem;
-  row-gap: 2rem;
-  align-items: start;
-  min-height: calc(100vh - var(--masthead-h) - 8rem);
+  row-gap: 1.75rem;
+}
+.hero > * { z-index: 1; }
+
+.dateline--hero  { grid-column: 1 / -1; }
+
+.hero__name {
+  grid-column: 1 / -1;
+  font-family: var(--display);
+  font-weight: 400;
+  line-height: 0.9;
+  letter-spacing: -0.02em;
+  font-size: clamp(4rem, 11vw, 9rem);
+  color: var(--cream);
+  margin-top: 0.5rem;
+}
+.hero__name-first { display: block; }
+.hero__name-last  { display: block; }
+.hero__name-last em { font-style: italic; color: var(--gold); }
+
+.hero__thesis {
+  grid-column: 1 / 10;
+  font-family: var(--display);
+  font-style: italic;
+  font-size: clamp(1.25rem, 2.1vw, 1.65rem);
+  line-height: 1.35;
+  color: var(--cream);
+  max-width: 720px;
+  padding-left: 1rem;
+  border-left: 1px solid var(--gold-mid);
+  margin-top: 0.25rem;
+}
+.hero__thesis .qm { color: var(--gold); font-style: normal; padding: 0 0.05em; }
+
+/* ─── 11A · HERO INFLATION BAND ─────────────────────────────────────── */
+.hero__band {
+  grid-column: 1 / -1;
+  margin-top: 2rem;
+  border-top: 1px solid var(--gold-mid);
+  padding-top: 1rem;
   position: relative;
 }
 
-.hero__curve {
-  grid-column: 1 / -1;
-  grid-row: 1 / 3;
-  width: 100%;
-  max-width: 780px;
-  height: auto;
-  opacity: 0;
-  transform: translateY(8px);
-  pointer-events: none;
-  z-index: 0;
-  align-self: start;
-  justify-self: start;
-  margin-top: 6.5rem;
-  transition: opacity 0.9s var(--ease), transform 0.9s var(--ease);
+.hero__band-label {
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.22em;
+  color: var(--gold);
+  text-transform: uppercase;
+  margin-bottom: 0.9rem;
+  display: flex;
+  gap: 0.65rem;
+  align-items: center;
+  flex-wrap: wrap;
 }
-.hero.is-loaded .hero__curve { opacity: 0.62; transform: translateY(0); }
+.hero__band-sep { color: var(--cream-4); }
+
+.hero__band-stage {
+  position: relative;
+  width: 100%;
+  height: clamp(260px, 22vw, 320px);
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity 0.6s var(--ease), transform 0.6s var(--ease);
+}
+.hero.is-loaded .hero__band-stage { opacity: 1; transform: translateY(0); }
+
+.hero__curve {
+  position: absolute;
+  inset: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+}
 
 .curve-grid line {
   stroke: var(--cream-4);
   stroke-width: 1;
   stroke-dasharray: 2 5;
+  vector-effect: non-scaling-stroke;
 }
 .curve-axis text {
   font-family: var(--mono);
-  font-size: 9px;
+  font-size: 10px;
   fill: var(--cream-3);
-  letter-spacing: 0.08em;
-}
-.curve-ticks line { stroke: var(--cream-3); stroke-width: 1; }
-.curve-ticks text {
-  font-family: var(--mono);
-  font-size: 9px;
-  fill: var(--cream-3);
-  letter-spacing: 0.14em;
+  letter-spacing: 0.1em;
 }
 
 .curve-observed {
@@ -527,164 +648,152 @@ body.is-paper .drawer-toggle span { background: var(--ink); }
   stroke-width: 1.6;
   stroke-linecap: round;
   stroke-linejoin: round;
-  stroke-dasharray: 1400;
-  stroke-dashoffset: 1400;
-  transition: stroke-dashoffset 2.5s var(--ease);
+  stroke-dasharray: 3000;
+  stroke-dashoffset: 3000;
+  transition: stroke-dashoffset 2.8s var(--ease);
+  vector-effect: non-scaling-stroke;
 }
 .hero.is-loaded .curve-observed { stroke-dashoffset: 0; }
 
 .curve-forecast {
   stroke: var(--oxblood);
   stroke-width: 1.4;
-  stroke-dasharray: 4 4;
+  stroke-dasharray: 5 5;
   opacity: 0;
-  transition: opacity 0.6s var(--ease) 2.1s;
+  transition: opacity 0.6s var(--ease) 2.4s;
+  vector-effect: non-scaling-stroke;
 }
-.hero.is-loaded .curve-forecast { opacity: 0.9; stroke-dasharray: 4 4; }
+.hero.is-loaded .curve-forecast { opacity: 0.95; }
 
 .curve-band {
   opacity: 0;
-  transition: opacity 0.6s var(--ease) 2.1s;
+  transition: opacity 0.6s var(--ease) 2.4s;
 }
 .hero.is-loaded .curve-band { opacity: 1; }
 
 .curve-peak {
   opacity: 0;
-  transition: opacity 0.6s var(--ease) 1.8s;
+  transition: opacity 0.6s var(--ease) 2.0s;
 }
 .hero.is-loaded .curve-peak { opacity: 1; }
 .curve-peak circle { fill: var(--signal); }
-.curve-peak line   { stroke: var(--signal); stroke-width: 1; stroke-dasharray: 2 2; }
-.curve-peak text {
+.curve-peak line   { stroke: var(--signal); stroke-width: 1; stroke-dasharray: 2 2; vector-effect: non-scaling-stroke; }
+.curve-peak text   {
   font-family: var(--mono);
-  font-size: 9px;
+  font-size: 10px;
   fill: var(--signal);
-  letter-spacing: 0.14em;
+  letter-spacing: 0.12em;
 }
+
+.curve-present {
+  opacity: 0;
+  transition: opacity 0.5s var(--ease) 2.6s;
+}
+.hero.is-loaded .curve-present { opacity: 1; }
+.curve-present circle { fill: var(--cream); }
 
 .curve-forecast-label {
   opacity: 0;
-  transition: opacity 0.6s var(--ease) 2.6s;
+  transition: opacity 0.6s var(--ease) 2.8s;
 }
 .hero.is-loaded .curve-forecast-label { opacity: 1; }
-.curve-forecast-label text {
+.curve-forecast-label circle { fill: var(--oxblood); }
+.curve-forecast-label text   {
   font-family: var(--mono);
-  font-size: 9px;
+  font-size: 10px;
   fill: var(--oxblood);
-  letter-spacing: 0.14em;
-  text-anchor: end;
+  letter-spacing: 0.12em;
 }
 
-.hero__body {
-  grid-column: 1 / 2;
-  grid-row: 1 / 3;
+/* x-axis ticks (outside svg for easier responsive) */
+.hero__band-ticks {
   position: relative;
+  height: 1.1rem;
+  margin-top: 0.4rem;
+  border-top: 1px solid var(--rule-navy);
+  padding-top: 0.4rem;
+}
+.hero__band-ticks span {
+  position: absolute;
+  left: var(--x);
+  transform: translateX(-50%);
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.14em;
+  color: var(--cream-3);
+}
+.hero__band-ticks span:last-child { color: var(--oxblood); }
+
+/* ─── 11B · PORTRAIT inside the band ────────────────────────────────── */
+.hero__portrait {
+  position: absolute;
+  left: 70%;                             /* aligns with viewBox x=980 present point */
+  bottom: 34%;                           /* photo bottom ~ curve present y (y≈170 in 0-280) */
+  transform: translateX(-50%);
+  width: clamp(95px, 10vw, 145px);
   z-index: 2;
-  padding-top: 1.5rem;
-  max-width: 680px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
 }
 
-.dateline--hero { margin-bottom: 2rem; }
-
-.hero__name {
-  font-family: var(--display);
-  font-weight: 400;
-  line-height: 0.88;
-  letter-spacing: -0.02em;
-  font-size: clamp(4.5rem, 12vw, 10rem);
-  color: var(--cream);
-  margin-bottom: 1.6rem;
-  display: block;
+.hero__portrait-frame {
+  aspect-ratio: 4 / 5;
+  border: 1px solid var(--gold-mid);
+  overflow: hidden;
+  background: var(--navy-mid);
 }
-.hero__name-first { display: block; }
-.hero__name-last  { display: block; }
-.hero__name-last em {
-  font-style: italic;
+.hero__portrait-frame img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  object-position: center 18%;
+  filter: contrast(1.02);
+}
+
+.hero__portrait-caption {
+  font-family: var(--mono);
+  font-size: 0.54rem;
+  letter-spacing: 0.18em;
   color: var(--gold);
+  text-transform: uppercase;
+  display: flex;
+  gap: 0.35em;
+  justify-content: center;
+  flex-wrap: wrap;
+  line-height: 1.3;
 }
+.hero__portrait-sep { color: var(--cream-4); }
 
-.hero__thesis {
-  font-family: var(--display);
-  font-style: italic;
-  font-size: clamp(1.2rem, 2vw, 1.55rem);
-  line-height: 1.4;
-  color: var(--cream);
-  max-width: 580px;
-  margin-bottom: 2.5rem;
-  padding-left: 1rem;
-  border-left: 1px solid var(--gold-mid);
-}
-
+/* ─── 11C · HERO META (4 columns, full width) ───────────────────────── */
 .hero__meta {
+  grid-column: 1 / -1;
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  column-gap: 2rem;
-  row-gap: 1rem;
-  max-width: 680px;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  margin-top: 2.25rem;
 }
 .hero__meta > div {
-  padding-top: 0.7rem;
+  padding-top: 0.75rem;
   border-top: 1px solid var(--gold-mid);
 }
 .hero__meta dt {
   font-family: var(--mono);
-  font-size: 0.6rem;
-  letter-spacing: 0.18em;
+  font-size: 0.58rem;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--gold);
-  margin-bottom: 0.3rem;
+  margin-bottom: 0.45rem;
 }
 .hero__meta dd {
-  font-family: var(--serif);
-  font-size: 0.9rem;
+  font-family: var(--sans);
+  font-size: 0.88rem;
   line-height: 1.45;
   color: var(--cream-2);
 }
 
-/* portrait */
-.hero__portrait {
-  grid-column: 2 / 3;
-  grid-row: 1 / 3;
-  z-index: 2;
-  align-self: start;
-  margin-top: 4rem;
-  width: 280px;
-  justify-self: end;
-}
-.hero__portrait-caption {
-  font-family: var(--mono);
-  font-size: 0.6rem;
-  letter-spacing: 0.22em;
-  color: var(--gold);
-  margin-bottom: 0.75rem;
-  text-align: right;
-}
-.hero__portrait-frame {
-  position: relative;
-  aspect-ratio: 4 / 5;
-}
-.hero__portrait-frame::before {
-  content: "";
-  position: absolute;
-  inset: 10px -10px -10px 10px;
-  border: 1px solid var(--gold-mid);
-  z-index: 0;
-}
-.hero__portrait-frame img {
-  position: relative;
-  z-index: 1;
-  width: 100%; height: 100%;
-  object-fit: cover;
-  object-position: center 15%;
-  filter: grayscale(30%) contrast(1.03) sepia(14%) hue-rotate(-8deg);
-}
-
-/* scroll indicator */
+/* ─── 11D · SCROLL INDICATOR ────────────────────────────────────────── */
 .hero__scroll {
-  grid-column: 1 / -1;
-  grid-row: 3;
-  align-self: end;
-  z-index: 2;
+  grid-column: 1 / 5;
   display: flex;
   align-items: center;
   gap: 1rem;
@@ -692,7 +801,7 @@ body.is-paper .drawer-toggle span { background: var(--ink); }
   font-size: 0.64rem;
   letter-spacing: 0.2em;
   color: var(--gold);
-  padding-top: 2rem;
+  margin-top: 2rem;
 }
 .hero__scroll-line {
   position: relative;
@@ -715,12 +824,13 @@ body.is-paper .drawer-toggle span { background: var(--ink); }
 }
 
 
-/* ─── 11 · CHAPTER II · THE METHOD · PILLARS ────────────────────────── */
+/* ─── 12 · CHAPTER II · THE METHOD · PILLARS ────────────────────────── */
 .pillars {
+  grid-column: 1 / -1;
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(2, 1fr);
   gap: 1.25rem;
-  margin-top: 1.25rem;
+  margin-top: 1rem;
 }
 
 .pillar {
@@ -772,9 +882,9 @@ body.is-paper .drawer-toggle span { background: var(--ink); }
 }
 
 .pillar__body {
-  font-family: var(--serif);
-  font-size: 0.95rem;
-  line-height: 1.6;
+  font-family: var(--sans);
+  font-size: 0.9375rem;       /* 15px */
+  line-height: 1.55;
   color: var(--ink-2);
   margin-bottom: 1rem;
 }
@@ -789,8 +899,9 @@ body.is-paper .drawer-toggle span { background: var(--ink); }
 }
 
 
-/* ─── 12 · CHAPTER III · THE WORK · PAPERS ──────────────────────────── */
+/* ─── 13 · CHAPTER III · THE WORK · PAPERS ──────────────────────────── */
 .papers {
+  grid-column: 1 / -1;
   display: flex;
   flex-direction: column;
 }
@@ -808,10 +919,7 @@ body.is-paper .drawer-toggle span { background: var(--ink); }
   transition: background 0.3s var(--ease), padding 0.3s var(--ease);
 }
 .paper__row:hover { background: rgba(242, 235, 218, 0.02); padding-left: 0.5rem; }
-.paper__row:focus-visible {
-  outline: 1px solid var(--gold);
-  outline-offset: 4px;
-}
+.paper__row:focus-visible { outline: 1px solid var(--gold); outline-offset: 4px; }
 
 .paper__head {
   display: flex;
@@ -890,13 +998,16 @@ body.is-paper .drawer-toggle span { background: var(--ink); }
 }
 .paper__venue em { color: var(--cream); font-style: italic; }
 
+/* Abstracts stay in Fraunces — genuine academic voice */
 .paper__peek {
   font-family: var(--serif);
+  font-variation-settings: "opsz" 18, "SOFT" 40;
   font-size: 0.98rem;
   line-height: 1.6;
   color: var(--cream-2);
   max-width: 60ch;
   margin-bottom: 1rem;
+  letter-spacing: 0;
 }
 
 .paper__tags {
@@ -915,21 +1026,16 @@ body.is-paper .drawer-toggle span { background: var(--ink); }
   color: var(--signal);
   transition: transform 0.3s var(--ease), color 0.3s var(--ease);
 }
-.paper__row:hover .paper__action {
-  color: var(--gold);
-  transform: translateX(4px);
-}
+.paper__row:hover .paper__action { color: var(--gold); transform: translateX(4px); }
 
 
-/* ─── 13 · PAPER SIDE PANEL ─────────────────────────────────────────── */
+/* ─── 14 · PAPER SIDE PANEL ─────────────────────────────────────────── */
 .panel-overlay {
-  position: fixed;
-  inset: 0;
+  position: fixed; inset: 0;
   background: rgba(10, 22, 40, 0.55);
   backdrop-filter: blur(4px);
   z-index: 100;
-  opacity: 0;
-  visibility: hidden;
+  opacity: 0; visibility: hidden;
   transition: opacity 0.35s var(--ease), visibility 0.35s var(--ease);
 }
 .panel-overlay.is-open { opacity: 1; visibility: visible; }
@@ -972,10 +1078,7 @@ body.is-paper .drawer-toggle span { background: var(--ink); }
 }
 .panel__close:hover { color: var(--gold); }
 
-.panel__body {
-  padding: 1.75rem;
-  overflow-y: auto;
-}
+.panel__body { padding: 1.75rem; overflow-y: auto; }
 
 .panel__status {
   font-family: var(--mono);
@@ -989,7 +1092,7 @@ body.is-paper .drawer-toggle span { background: var(--ink); }
 }
 .panel__status[data-class="prep"]      { color: var(--gold); }
 .panel__status[data-class="progress"]  { color: var(--signal); }
-.panel__status[data-class="published"] { color: var(--cream); border-color: var(--cream-3); }
+.panel__status[data-class="published"] { color: var(--cream);   border-color: var(--cream-3); }
 .panel__status[data-class="working"]   { color: var(--cream-3); border-color: var(--cream-4); }
 
 .panel__title {
@@ -1027,6 +1130,7 @@ body.is-paper .drawer-toggle span { background: var(--ink); }
   color: var(--gold);
   margin-bottom: 0.65rem;
 }
+/* panel abstract stays in Fraunces (it's an academic abstract) */
 .panel__abstract {
   font-family: var(--serif);
   font-variation-settings: "opsz" 18;
@@ -1034,6 +1138,7 @@ body.is-paper .drawer-toggle span { background: var(--ink); }
   line-height: 1.7;
   color: var(--cream-2);
   margin-bottom: 1.75rem;
+  letter-spacing: 0;
 }
 .panel__tags {
   font-family: var(--mono);
@@ -1045,12 +1150,13 @@ body.is-paper .drawer-toggle span { background: var(--ink); }
 }
 
 
-/* ─── 14 · CHAPTER IV · THE VOICE ───────────────────────────────────── */
+/* ─── 15 · CHAPTER IV · THE VOICE ───────────────────────────────────── */
 .essays {
+  grid-column: 1 / -1;
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(2, 1fr);
   gap: 1.25rem;
-  margin-bottom: 2.5rem;
+  margin-bottom: 2rem;
 }
 
 .essay-card {
@@ -1084,8 +1190,8 @@ body.is-paper .drawer-toggle span { background: var(--ink); }
 .essay-card__title em { color: var(--gold); font-style: italic; }
 
 .essay-card__excerpt {
-  font-family: var(--serif);
-  font-size: 0.94rem;
+  font-family: var(--sans);
+  font-size: 0.9375rem;
   line-height: 1.55;
   color: var(--ink-2);
   flex: 1;
@@ -1115,7 +1221,7 @@ body.is-paper .drawer-toggle span { background: var(--ink); }
 .essay-card:hover .essay-card__link { letter-spacing: 0.22em; }
 
 .voice__cta {
-  text-align: left;
+  grid-column: 1 / 10;
   padding-top: 1rem;
   border-top: 1px solid var(--rule-paper);
 }
@@ -1141,10 +1247,11 @@ body.is-paper .drawer-toggle span { background: var(--ink); }
 .voice__cta a:hover::after { transform: scaleX(1); }
 
 
-/* ─── 15 · CHAPTER V · THE CRAFT · PROJECTS ─────────────────────────── */
+/* ─── 16 · CHAPTER V · THE CRAFT · PROJECTS ─────────────────────────── */
 .projects {
+  grid-column: 1 / -1;
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(2, 1fr);
   gap: 1.25rem;
 }
 
@@ -1187,28 +1294,34 @@ body.is-paper .drawer-toggle span { background: var(--ink); }
   border-bottom: 1px solid var(--rule-navy);
 }
 .project__body {
-  font-family: var(--serif);
-  font-size: 0.94rem;
+  font-family: var(--sans);
+  font-size: 0.9375rem;
   line-height: 1.58;
   color: var(--cream-2);
 }
 
 
-/* ─── 16 · CHAPTER VI · THE PATH ────────────────────────────────────── */
+/* ─── 17 · CHAPTER VI · THE PATH ────────────────────────────────────── */
 .path-block {
-  margin-bottom: 3.5rem;
+  grid-column: 1 / -1;
+  margin-bottom: 2.5rem;
 }
+.path-block:last-child { margin-bottom: 0; }
+
 .path-block__label {
   font-family: var(--mono);
   font-size: 0.68rem;
   letter-spacing: 0.22em;
   color: var(--gold);
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.25rem;
   padding-bottom: 0.5rem;
   border-bottom: 1px solid var(--rule-paper);
 }
 
-/* VI.A · Experience */
+/* Experience sub-row: trajectory + marginalia */
+.path-block__inner { grid-column: 1 / 11; }
+.marginalia--path { grid-column: 11 / 13; }
+
 .trajectory {
   position: relative;
   padding-left: 2rem;
@@ -1255,18 +1368,18 @@ body.is-paper .drawer-toggle span { background: var(--ink); }
   margin-bottom: 0.2rem;
 }
 .trajectory__org {
-  font-family: var(--serif);
+  font-family: var(--sans);
   font-style: italic;
-  font-size: 0.95rem;
+  font-size: 0.9375rem;
   color: var(--ink-2);
   margin-bottom: 0.85rem;
 }
 .trajectory__body {
-  font-family: var(--serif);
-  font-size: 0.92rem;
-  line-height: 1.66;
+  font-family: var(--sans);
+  font-size: 0.9375rem;
+  line-height: 1.6;
   color: var(--ink-2);
-  max-width: 60ch;
+  max-width: 62ch;
 }
 
 /* VI.B · Formation */
@@ -1336,8 +1449,8 @@ body.is-paper .drawer-toggle span { background: var(--ink); }
   margin-bottom: 0.2rem;
 }
 .credential-item__detail {
-  font-family: var(--serif);
-  font-size: 0.92rem;
+  font-family: var(--sans);
+  font-size: 0.9375rem;
   color: var(--ink-2);
   margin-bottom: 0.4rem;
 }
@@ -1350,10 +1463,11 @@ body.is-paper .drawer-toggle span { background: var(--ink); }
 }
 
 
-/* ─── 17 · CHAPTER VII · THE EYE · PLATES ───────────────────────────── */
+/* ─── 18 · CHAPTER VII · THE EYE · PLATES ───────────────────────────── */
 .plates {
+  grid-column: 1 / -1;
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(2, 1fr);
   gap: 1.5rem;
 }
 
@@ -1378,9 +1492,8 @@ body.is-paper .drawer-toggle span { background: var(--ink); }
   width: 100%; height: 100%;
   object-fit: cover;
   transition: transform 0.7s var(--ease);
-  filter: saturate(0.9);
 }
-.plate:hover .plate__link img { transform: scale(1.04); filter: saturate(1.05); }
+.plate:hover .plate__link img { transform: scale(1.04); }
 
 .plate__overlay {
   position: absolute;
@@ -1399,9 +1512,7 @@ body.is-paper .drawer-toggle span { background: var(--ink); }
 }
 .plate:hover .plate__overlay { opacity: 1; }
 
-.plate__cap {
-  padding: 1.25rem 1.4rem 1.35rem;
-}
+.plate__cap { padding: 1.25rem 1.4rem 1.35rem; }
 .plate__no {
   font-family: var(--mono);
   font-size: 0.62rem;
@@ -1425,15 +1536,16 @@ body.is-paper .drawer-toggle span { background: var(--ink); }
   margin-bottom: 0.55rem;
 }
 .plate__desc {
-  font-family: var(--serif);
-  font-size: 0.85rem;
+  font-family: var(--sans);
+  font-size: 0.875rem;
   line-height: 1.55;
   color: var(--cream-2);
 }
 
 
-/* ─── 18 · CHAPTER VIII · THE CHRONICLE ─────────────────────────────── */
+/* ─── 19 · CHAPTER VIII · THE CHRONICLE ─────────────────────────────── */
 .chronicle {
+  grid-column: 1 / 11;
   display: flex;
   flex-direction: column;
 }
@@ -1465,9 +1577,9 @@ body.is-paper .drawer-toggle span { background: var(--ink); }
   grid-column: 2;
 }
 .chronicle__body {
-  font-family: var(--serif);
-  font-size: 0.98rem;
-  line-height: 1.7;
+  font-family: var(--sans);
+  font-size: 0.9375rem;
+  line-height: 1.62;
   color: var(--ink-2);
   grid-column: 3;
 }
@@ -1479,24 +1591,27 @@ body.is-paper .drawer-toggle span { background: var(--ink); }
 .chronicle__body a:hover { color: var(--gold); border-color: var(--gold); }
 
 
-/* ─── 19 · CHAPTER IX · THE INVITATION ──────────────────────────────── */
+/* ─── 20 · CHAPTER IX · THE INVITATION ──────────────────────────────── */
 .invitation-quote {
+  grid-column: 1 / 9;
   font-family: var(--display);
   font-style: italic;
-  font-size: clamp(1.75rem, 3.5vw, 2.75rem);
+  font-size: clamp(1.75rem, 3.3vw, 2.65rem);
   line-height: 1.3;
   color: var(--cream);
   max-width: 680px;
-  margin-bottom: 3.5rem;
   padding-left: 1.5rem;
   border-left: 1px solid var(--gold-mid);
 }
 
+.marginalia--contact { grid-column: 10 / 13; }
+
 .contacts {
+  grid-column: 1 / -1;
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 0.9rem;
-  margin-bottom: 3.5rem;
+  margin-top: 2rem;
 }
 
 .contact-card {
@@ -1521,7 +1636,7 @@ body.is-paper .drawer-toggle span { background: var(--ink); }
   color: var(--gold);
 }
 .contact-card__value {
-  font-family: var(--serif);
+  font-family: var(--sans);
   font-size: 0.95rem;
   line-height: 1.35;
   color: var(--cream);
@@ -1539,8 +1654,10 @@ body.is-paper .drawer-toggle span { background: var(--ink); }
 }
 
 .invitation-cta {
-  padding-top: 2rem;
+  grid-column: 1 / 10;
+  padding-top: 1.5rem;
   border-top: 1px solid var(--rule-navy);
+  margin-top: 0.5rem;
 }
 .invitation-cta a {
   font-family: var(--mono);
@@ -1551,25 +1668,20 @@ body.is-paper .drawer-toggle span { background: var(--ink); }
   align-items: center;
   gap: 0.75em;
 }
-.invitation-cta__arrow {
-  display: inline-block;
-  transition: transform 0.35s var(--ease);
-}
-.invitation-cta a:hover .invitation-cta__arrow {
-  transform: translateX(8px);
-}
+.invitation-cta__arrow { display: inline-block; transition: transform 0.35s var(--ease); }
+.invitation-cta a:hover .invitation-cta__arrow { transform: translateX(8px); }
 
 
-/* ─── 20 · COLOPHON ─────────────────────────────────────────────────── */
+/* ─── 21 · COLOPHON ─────────────────────────────────────────────────── */
 .colophon {
   background: #07101c;
   color: var(--cream-3);
-  padding: 1.75rem 4rem;
+  padding: 1.75rem clamp(2rem, 4vw, 4rem);
   border-top: 1px solid var(--rule-navy);
-  margin-left: 0;
 }
 .colophon__inner {
-  max-width: var(--reading-w);
+  max-width: var(--max-w);
+  margin: 0 auto;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -1579,44 +1691,52 @@ body.is-paper .drawer-toggle span { background: var(--ink); }
   font-size: 0.66rem;
   letter-spacing: 0.12em;
 }
-.colophon__note em { font-family: var(--display); font-style: italic; color: var(--cream-2); font-size: 0.74rem; letter-spacing: 0.04em; }
+.colophon__note em {
+  font-family: var(--display);
+  font-style: italic;
+  color: var(--cream-2);
+  font-size: 0.74rem;
+  letter-spacing: 0.04em;
+}
 
 .colophon__nav { display: flex; gap: 1.25rem; }
 .colophon__nav a { transition: color 0.25s var(--ease); }
 .colophon__nav a:hover { color: var(--gold); }
 
 
-/* ─── 21 · REVEALS ──────────────────────────────────────────────────── */
+/* ─── 22 · REVEALS ──────────────────────────────────────────────────── */
 .reveal {
   opacity: 0;
   transform: translateY(16px);
   transition: opacity 0.8s var(--ease), transform 0.8s var(--ease);
   transition-delay: calc(var(--reveal-delay, 0) * 1ms);
 }
-.reveal.is-visible {
-  opacity: 1;
-  transform: translateY(0);
-}
+.reveal.is-visible { opacity: 1; transform: translateY(0); }
 
 
-/* ─── 22 · RESPONSIVE ───────────────────────────────────────────────── */
+/* ─── 23 · RESPONSIVE ───────────────────────────────────────────────── */
 
-/* ≤ 1200px */
+/* ≤ 1200px — tighten sidebar, keep 12-col grid */
 @media (max-width: 1200px) {
-  :root { --sidebar-w: 210px; --reading-w: 700px; }
-  .chapter { padding: 6rem 3rem 6.5rem; }
-  .chapter--hero { padding: 2.5rem 3rem 4rem; }
-  .chapter-head__numeral { left: -3rem; font-size: 4.5rem; }
-  .colophon { padding: 1.75rem 3rem; }
-
-  .hero {
-    grid-template-columns: 1fr 260px;
-    column-gap: 2rem;
-  }
-  .hero__portrait { width: 240px; }
+  :root { --sidebar-w: 210px; --col-gap: 1.25rem; }
+  .chapter-head { grid-template-columns: 84px 1fr; }
 }
 
-/* ≤ 960px */
+/* ≤ 1024px — collapse to 6-col logical */
+@media (max-width: 1024px) {
+  .chapter-intro,
+  .chapter__row .chapter-intro { grid-column: 1 / 9; }
+  .marginalia                   { grid-column: 9 / 13; font-size: 0.82rem; }
+  .chronicle                    { grid-column: 1 / -1; }
+  .path-block__inner            { grid-column: 1 / 13; }
+  .marginalia--path             { grid-column: 1 / 13; margin-top: 1.5rem; }
+  .marginalia--contact          { grid-column: 1 / -1; margin-top: 1.5rem; }
+  .invitation-quote             { grid-column: 1 / -1; }
+
+  .hero__portrait { width: clamp(100px, 13vw, 140px); }
+}
+
+/* ≤ 960px — drawer + single-column grids */
 @media (max-width: 960px) {
   :root { --sidebar-w: 0px; }
 
@@ -1629,45 +1749,43 @@ body.is-paper .drawer-toggle span { background: var(--ink); }
   }
   body.is-paper .sidebar { background: var(--paper); }
   .sidebar.is-open { transform: translateX(0); box-shadow: 0 0 60px rgba(0,0,0,0.3); }
-
   .drawer-toggle { display: flex; }
-
   .main { margin-left: 0; }
 
   .chapter { padding: 5rem 2rem 5.5rem; }
   .chapter--hero { padding: 2.5rem 2rem 3rem; }
-  .chapter-head__numeral {
-    position: static;
-    display: block;
-    margin-bottom: 0.25rem;
-    font-size: 3.5rem;
-  }
   .colophon { padding: 1.75rem 2rem; }
 
-  /* Hero: stack */
-  .hero {
+  /* header becomes stacked */
+  .chapter-head {
+    grid-column: 1 / -1;
     grid-template-columns: 1fr;
-    min-height: auto;
+    row-gap: 0.35rem;
   }
-  .hero__portrait {
-    grid-column: 1;
-    grid-row: 3;
-    width: 240px;
-    margin-top: 2rem;
-    justify-self: start;
-  }
-  .hero__portrait-caption { text-align: left; }
-  .hero__curve { grid-row: 1; margin-top: 3.5rem; opacity: 0.35 !important; }
-  .hero__body { grid-column: 1; grid-row: 2; }
+  .chapter-head__numeral { font-size: 3.75rem; }
+  .chapter-head__text    { padding-top: 0; }
+
+  /* stack intro + marginalia */
+  .chapter-intro,
+  .chapter__row .chapter-intro,
+  .marginalia,
+  .voice__cta,
+  .invitation-quote,
+  .invitation-cta { grid-column: 1 / -1; }
+  .marginalia { margin-top: 1.25rem; }
+
+  /* Hero stays as its own grid; portrait shrinks */
+  .hero__thesis { grid-column: 1 / -1; }
+  .hero__band-stage { height: clamp(240px, 40vw, 320px); }
+  .hero__meta { grid-template-columns: repeat(2, 1fr); }
   .hero__scroll { display: none; }
 
-  .pillars { grid-template-columns: 1fr; }
-  .projects { grid-template-columns: 1fr; }
-  .essays { grid-template-columns: 1fr; }
-  .plates { grid-template-columns: 1fr; }
-  .contacts { grid-template-columns: 1fr 1fr; }
+  .pillars   { grid-template-columns: 1fr; }
+  .projects  { grid-template-columns: 1fr; }
+  .essays    { grid-template-columns: 1fr; }
+  .plates    { grid-template-columns: 1fr; }
+  .contacts  { grid-template-columns: repeat(2, 1fr); }
   .credentials { grid-template-columns: 1fr; }
-  .hero__meta { grid-template-columns: 1fr; }
 }
 
 /* ≤ 720px */
@@ -1676,8 +1794,13 @@ body.is-paper .drawer-toggle span { background: var(--ink); }
   .chapter--hero { padding: 2rem 1.5rem 3rem; }
   .colophon { padding: 1.5rem; }
 
-  .hero__name { font-size: clamp(3.25rem, 14vw, 6rem); }
-  .hero__thesis { font-size: 1.15rem; padding-left: 0.85rem; }
+  .hero__name { font-size: clamp(3rem, 14vw, 5.5rem); }
+  .hero__thesis { font-size: 1.1rem; padding-left: 0.85rem; }
+
+  .hero__band-stage { height: 230px; }
+  .hero__portrait { width: 96px; left: 72%; bottom: 28%; }
+  .hero__portrait-caption { font-size: 0.48rem; letter-spacing: 0.14em; }
+  .hero__meta { grid-template-columns: 1fr; }
 
   .chronicle__item {
     grid-template-columns: 1fr;
@@ -1703,36 +1826,42 @@ body.is-paper .drawer-toggle span { background: var(--ink); }
   .chapter { padding: 4rem 1.15rem 4rem; }
   .chapter--hero { padding: 1.75rem 1.15rem 2.5rem; }
   .asterism { padding: 2rem 0; font-size: 0.95rem; letter-spacing: 0.7em; }
+
   .contacts { grid-template-columns: 1fr; }
-  .invitation-quote { font-size: 1.5rem; padding-left: 1rem; }
+  .invitation-quote { font-size: 1.45rem; padding-left: 1rem; }
   .invitation-cta a { font-size: 0.95rem; }
 
-  .hero__portrait { width: 200px; }
-  .hero__portrait-frame::before { inset: 7px -7px -7px 7px; }
-  .chapter-head__numeral { font-size: 2.85rem; }
-  .chapter-head__title { font-size: 2.2rem; }
+  .hero__portrait { width: 84px; left: 75%; bottom: 24%; }
+  .hero__band-stage { height: 200px; }
+  .hero__band-ticks span { font-size: 0.56rem; }
+
+  .chapter-head__numeral { font-size: 3rem; }
+  .chapter-head__title { font-size: 2rem; }
 }
 
 
-/* ─── 23 · REDUCED MOTION ───────────────────────────────────────────── */
+/* ─── 24 · REDUCED MOTION ───────────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
+  *, *::before, *::after {
     animation-duration: 0.001ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
     scroll-behavior: auto !important;
   }
-  .hero__curve, .hero.is-loaded .curve-observed { stroke-dashoffset: 0 !important; opacity: 0.6 !important; transform: none !important; }
-  .hero.is-loaded .curve-forecast, .hero.is-loaded .curve-band, .hero.is-loaded .curve-peak, .hero.is-loaded .curve-forecast-label { opacity: 1; }
+  .hero.is-loaded .curve-observed { stroke-dashoffset: 0 !important; }
+  .hero__band-stage,
+  .hero.is-loaded .curve-forecast,
+  .hero.is-loaded .curve-band,
+  .hero.is-loaded .curve-peak,
+  .hero.is-loaded .curve-present,
+  .hero.is-loaded .curve-forecast-label { opacity: 1 !important; transform: none !important; }
   .reveal { opacity: 1 !important; transform: none !important; }
   .pulse { animation: none; }
   .hero__scroll-line::after { animation: none; }
 }
 
 
-/* ─── 24 · FOCUS STATES ─────────────────────────────────────────────── */
+/* ─── 25 · FOCUS STATES ─────────────────────────────────────────────── */
 a:focus-visible,
 button:focus-visible {
   outline: 1px solid var(--gold);
