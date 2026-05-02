@@ -429,11 +429,11 @@
             <button class="paper__row" data-paper="02" aria-expanded="false">
               <header class="paper__head">
                 <span class="paper__num">No. 02 · 2026</span>
-                <span class="paper__status paper__status--prep">IN PREPARATION</span>
+                <span class="paper__status paper__status--review"><span class="pulse"></span>WORKING PAPER · UNDER REVIEW</span>
               </header>
               <h3 class="paper__title">A Hybrid Early-Warning System for Inflation in an Emerging Market</h3>
               <p class="paper__subtitle">Combining Econometric Models, an Agent-Based Decomposition with Heterogeneous Expectations, a Large Language Model, and a Multi-Output Agent Architecture</p>
-              <p class="paper__venue">Forthcoming submission to <em>MAPRA</em></p>
+              <p class="paper__venue">Working paper · SSRN · under review</p>
               <p class="paper__peek">
                 &ldquo;We propose a hybrid early-warning framework that fuses classical
                 econometric forecasting with an agent-based decomposition of inflation
@@ -704,6 +704,21 @@
             </p>
           </article>
 
+          <article class="project reveal" data-reveal-delay="480">
+            <p class="project__no">№ 07</p>
+            <h3 class="project__title">pulso — GEIH Microdata Loader</h3>
+            <p class="project__tags">PYTHON · OPEN SOURCE · DANE · LABOR ECONOMICS · DATA INFRASTRUCTURE</p>
+            <p class="project__body">
+              Open-source Python library for single-line access to Colombia&rsquo;s
+              <em>Gran Encuesta Integrada de Hogares</em> (GEIH) — DANE&rsquo;s monthly
+              household survey covering 2006 to the present. Handles download, parsing,
+              and cross-epoch harmonization across the 2022 methodological redesign,
+              including the GEIH Empalme series. Built under a multi-agent
+              architect/builder/curator workflow.
+              <a class="project__link" href="https://github.com/Stebandido77/pulso" target="_blank" rel="noopener">github.com/Stebandido77/pulso ↗</a>
+            </p>
+          </article>
+
         </div>
 
       </div>
@@ -953,6 +968,18 @@
         <ol class="chronicle">
 
           <li class="chronicle__item reveal">
+            <p class="chronicle__date">MAY 2026</p>
+            <p class="chronicle__body">
+              Released
+              <a href="https://github.com/Stebandido77/pulso" target="_blank" rel="noopener"><em>pulso</em></a>
+              — an open-source Python library for loading and harmonizing GEIH
+              microdata from Colombia&rsquo;s DANE across the 2022 methodological
+              redesign. Built as research infrastructure for ongoing labor and
+              inflation work.
+            </p>
+          </li>
+
+          <li class="chronicle__item reveal">
             <p class="chronicle__date">APR 2026</p>
             <p class="chronicle__body">
               Preparing submission of the hybrid early-warning system working paper to
@@ -1123,6 +1150,7 @@
       <p class="panel__abstract-label">ABSTRACT</p>
       <p class="panel__abstract" id="panelAbstract">—</p>
       <p class="panel__tags" id="panelTags">—</p>
+      <a class="panel__link" id="panelLink" href="#" target="_blank" rel="noopener" hidden>READ ↗</a>
     </div>
   </aside>
 
@@ -1141,13 +1169,15 @@
     },
     "02": {
       "num": "No. 02 · 2026",
-      "status": "IN PREPARATION",
-      "statusClass": "prep",
+      "status": "WORKING PAPER · UNDER REVIEW",
+      "statusClass": "review",
       "title": "A Hybrid Early-Warning System for Inflation in an Emerging Market",
       "subtitle": "Combining Econometric Models, an Agent-Based Decomposition with Heterogeneous Expectations, a Large Language Model, and a Multi-Output Agent Architecture",
-      "venue": "Forthcoming submission to MAPRA",
+      "venue": "Working paper · SSRN · under review",
       "abstract": "We propose a hybrid early-warning framework that fuses classical econometric forecasting with an agent-based decomposition of inflation expectations under heterogeneity, augmented by a Large Language Model for real-time narrative signal extraction and orchestrated through a multi-output agent architecture. Applied to Colombian CPI, the system outperforms benchmark econometric models in regime-change detection and short-horizon density calibration, while surfacing interpretable policy signals for monetary authorities.",
-      "tags": "LLM · AGENT-BASED · MULTI-AGENT · INFLATION · EARLY WARNING"
+      "tags": "LLM · AGENT-BASED · MULTI-AGENT · INFLATION · EARLY WARNING",
+      "link": "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=6625578",
+      "linkLabel": "READ ON SSRN ↗"
     },
     "03": {
       "num": "No. 03 · 2026",

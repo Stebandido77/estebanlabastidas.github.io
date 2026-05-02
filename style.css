@@ -1188,6 +1188,23 @@ body.is-paper .drawer-toggle span { background: var(--ink); }
   padding-top: 1.25rem;
   border-top: 1px solid var(--rule-navy);
 }
+.panel__link {
+  display: inline-block;
+  margin-top: 1.5rem;
+  padding: 0.75rem 1.25rem;
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: var(--ink);
+  border: 1px solid currentColor;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+.panel__link:hover {
+  background: var(--ink);
+  color: var(--paper);
+}
 
 
 /* ─── 15 · CHAPTER IV · THE VOICE ───────────────────────────────────── */
@@ -1338,6 +1355,19 @@ body.is-paper .drawer-toggle span { background: var(--ink); }
   font-size: 0.9375rem;
   line-height: 1.58;
   color: var(--cream-2);
+}
+.project__link {
+  display: inline-block;
+  margin-top: 0.75rem;
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 0.25em;
+}
+.project__link:hover {
+  text-decoration-thickness: 2px;
 }
 
 

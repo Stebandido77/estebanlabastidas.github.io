@@ -113,6 +113,7 @@
   const panelVenue   = document.getElementById('panelVenue');
   const panelAbs     = document.getElementById('panelAbstract');
   const panelTags    = document.getElementById('panelTags');
+  const panelLink    = document.getElementById('panelLink');
 
   let papersData = {};
   const dataScript = document.getElementById('papersData');
@@ -132,6 +133,16 @@
     panelVenue.textContent  = d.venue;
     panelAbs.textContent    = d.abstract;
     panelTags.textContent   = d.tags;
+    if (panelLink) {
+      if (d.link) {
+        panelLink.href = d.link;
+        panelLink.textContent = d.linkLabel || 'READ ↗';
+        panelLink.hidden = false;
+      } else {
+        panelLink.removeAttribute('href');
+        panelLink.hidden = true;
+      }
+    }
 
     panel.classList.add('is-open');
     panel.setAttribute('aria-hidden', 'false');
