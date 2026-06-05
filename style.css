@@ -245,31 +245,19 @@ body.is-paper .sidebar {
 }
 
 .sidebar__mark {
-  display: flex;
-  flex-direction: column;
-  gap: 0.6em;
-  margin-bottom: 0.5rem;
+  display: block;
+  margin-bottom: 0.75rem;
+  text-decoration: none;
 }
-.sidebar__mark-letter {
+.sidebar__mark-name {
   font-family: var(--display);
   font-style: italic;
-  font-size: 2.2rem;
-  line-height: 1;
+  font-size: 1.15rem;
+  line-height: 1.15;
   color: var(--gold);
+  display: inline-block;
 }
-.sidebar__mark-rule {
-  width: 28px; height: 1px;
-  background: currentColor;
-  opacity: 0.45;
-}
-.sidebar__mark-sub {
-  font-family: var(--mono);
-  font-size: 0.58rem;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  color: var(--cream-3);
-}
-body.is-paper .sidebar__mark-sub { color: var(--ink-3); }
+body.is-paper .sidebar__mark-name { color: var(--gold); }
 
 /* chapters */
 .sidebar__nav { flex: 1; min-height: 0; overflow-y: auto; }
@@ -1841,6 +1829,7 @@ body.is-paper .drawer-toggle span { background: var(--ink); }
   }
   body.is-paper .sidebar { background: var(--paper); }
   .sidebar.is-open { transform: translateX(0); box-shadow: 0 0 60px rgba(0,0,0,0.3); }
+  .sidebar__mark { margin-top: 2.25rem; }
   .drawer-toggle { display: flex; }
   .main { margin-left: 0; }
 
