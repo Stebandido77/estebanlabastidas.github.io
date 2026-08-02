@@ -61,17 +61,12 @@
       entries.forEach((entry) => {
         if (entry.isIntersecting) {
           const id = entry.target.id;
-          const mood = entry.target.dataset.mood;
 
           // active sidebar item
           sideLinks.forEach((li) => {
             const a = li.querySelector('a');
             li.classList.toggle('is-active', a && a.getAttribute('href') === '#' + id);
           });
-
-          // mood switch (paper vs navy) drives masthead + sidebar colors
-          if (mood === 'paper') body.classList.add('is-paper');
-          else body.classList.remove('is-paper');
 
           body.setAttribute('data-active-chapter', id);
         }
