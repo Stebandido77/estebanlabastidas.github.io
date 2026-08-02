@@ -2384,7 +2384,7 @@ code {
     grid-template-columns: minmax(0, 1fr) 240px;
     column-gap: 2.5rem;
   }
-  .hero__curve { top: 7.5rem; }
+  .hero__curve { top: 7rem; width: min(480px, 68%); }
   .hero__portrait { padding-left: 1.75rem; }
 
   .hero__meta { grid-template-columns: repeat(2, minmax(0, 1fr)); }
