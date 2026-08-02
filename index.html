@@ -31,6 +31,10 @@
       .hero, .hero * { opacity: 1 !important; transform: none !important; }
       .hero .hero__curve { opacity: 0.5 !important; }
       .hero .curve-observed { stroke-dashoffset: 0 !important; }
+      .chapter-head, .chapter-head * { opacity: 1 !important; transform: none !important; clip-path: none !important; }
+      .chapter::before { transform: none !important; }
+      .ticker-item { position: static !important; opacity: 1 !important; display: none; }
+      .ticker-item:first-child { display: flex; }
     </style>
   </noscript>
 </head>
@@ -241,8 +245,10 @@
             <p class="hero__interests-label">RESEARCH INTERESTS</p>
             <ul>
               <li>Time Series Econometrics</li>
-              <li>Bayesian Methods &amp; Density Forecasting</li>
-              <li>Monetary Policy &amp; Inflation Dynamics</li>
+              <li>Applied Microeconometrics</li>
+              <li>Financial Decision-Making</li>
+              <li>Game Theory</li>
+              <li>Education</li>
               <li>Development Economics</li>
               <li class="hero__interests-rule"></li>
               <li>Mergers &amp; Acquisitions</li>

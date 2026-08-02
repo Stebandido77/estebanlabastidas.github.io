@@ -18,17 +18,23 @@
     });
   }
 
-  /* ─── 02 · TICKER ROTATION ──────────────────────────────────────── */
+  /* ─── 02 · TICKER TAPE ──────────────────────────────────────────── */
+  /* Continuous terminal-style tape: items into a track, cloned once for
+     a seamless -50% loop. Reduced motion keeps the static first item. */
   const ticker = document.getElementById('ticker');
   if (ticker) {
     const items = Array.from(ticker.querySelectorAll('.ticker-item'));
-    let idx = 0;
-    if (items.length > 1 && !prefersReducedMotion) {
-      setInterval(() => {
-        items[idx].classList.remove('is-active');
-        idx = (idx + 1) % items.length;
-        items[idx].classList.add('is-active');
-      }, 5000);
+    if (items.length && !prefersReducedMotion) {
+      const track = document.createElement('div');
+      track.className = 'ticker__track';
+      items.forEach((it) => { it.classList.remove('is-active'); track.appendChild(it); });
+      items.forEach((it) => {
+        const clone = it.cloneNode(true);
+        clone.setAttribute('aria-hidden', 'true');
+        track.appendChild(clone);
+      });
+      ticker.appendChild(track);
+      ticker.classList.add('ticker--tape');
     }
   }
 
@@ -52,9 +58,27 @@
     updateProgress();
   }
 
-  /* ─── 04 · SCROLL SPY + MOOD SWITCHER ──────────────────────────── */
+  /* ─── 04 · SCROLL SPY + SLIDING MARKER ─────────────────────────── */
   const chapters = document.querySelectorAll('.chapter');
   const sideLinks = document.querySelectorAll('.chapters li');
+  const chaptersList = document.querySelector('.chapters');
+
+  let marker = null;
+  if (chaptersList) {
+    marker = document.createElement('li');
+    marker.className = 'chapters__marker';
+    marker.setAttribute('aria-hidden', 'true');
+    chaptersList.appendChild(marker);
+  }
+
+  const moveMarker = () => {
+    if (!marker) return;
+    const li = chaptersList.querySelector('li.is-active');
+    if (!li) { marker.style.opacity = '0'; return; }
+    marker.style.opacity = '1';
+    marker.style.transform = 'translateY(' + li.offsetTop + 'px)';
+    marker.style.height = li.offsetHeight + 'px';
+  };
 
   if (chapters.length && 'IntersectionObserver' in window) {
     const spy = new IntersectionObserver((entries) => {
@@ -69,6 +93,7 @@
           });
 
           body.setAttribute('data-active-chapter', id);
+          moveMarker();
         }
       });
     }, {
@@ -77,6 +102,29 @@
     });
 
     chapters.forEach((c) => spy.observe(c));
+  }
+
+  window.addEventListener('resize', moveMarker, { passive: true });
+
+  /* ─── 04B · CHAPTER HEAD ENTRANCES ─────────────────────────────── */
+  const heads = document.querySelectorAll('.chapter-head');
+  const markEntered = (head) => {
+    head.classList.add('is-visible');
+    const ch = head.closest('.chapter');
+    if (ch) ch.classList.add('is-entered');
+  };
+  if (heads.length && 'IntersectionObserver' in window && !prefersReducedMotion) {
+    const headObs = new IntersectionObserver((entries, obs) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          markEntered(entry.target);
+          obs.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.25, rootMargin: '0px 0px -8% 0px' });
+    heads.forEach((h) => headObs.observe(h));
+  } else {
+    heads.forEach(markEntered);
   }
 
   /* ─── 05 · REVEALS (staggered) ─────────────────────────────────── */
