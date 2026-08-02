@@ -160,6 +160,28 @@
     statEls.forEach((el) => statObs.observe(el));
   }
 
+  /* ─── 04D · TRAJECTORY SPINE ───────────────────────────────────── */
+  /* The amber timeline spine draws as the reader scrolls through the
+     experience list. Transform-only, rAF-throttled. */
+  const trajectory = document.querySelector('.trajectory');
+  if (trajectory && !prefersReducedMotion) {
+    let spineTicking = false;
+    const updateSpine = () => {
+      const r = trajectory.getBoundingClientRect();
+      const p = Math.min(1, Math.max(0, (window.innerHeight * 0.72 - r.top) / r.height));
+      trajectory.style.setProperty('--spine', p.toFixed(4));
+      spineTicking = false;
+    };
+    window.addEventListener('scroll', () => {
+      if (!spineTicking) {
+        window.requestAnimationFrame(updateSpine);
+        spineTicking = true;
+      }
+    }, { passive: true });
+    window.addEventListener('resize', updateSpine, { passive: true });
+    updateSpine();
+  }
+
   /* ─── 05 · REVEALS (staggered) ─────────────────────────────────── */
   const revealEls = document.querySelectorAll('.reveal');
   if (revealEls.length && 'IntersectionObserver' in window && !prefersReducedMotion) {
