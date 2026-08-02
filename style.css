@@ -1025,79 +1025,136 @@ em { font-style: italic; }
 }
 
 
-/* ─── 12 · CHAPTER II · THE METHOD · PILLARS ────────────────────────── */
+/* ─── 12 · CHAPTER II · THE METHOD · PILLARS ── ruled ledger rows ─────
+   Four full-width ruled rows: giant italic letter | name | body | icon.
+   Icons draw themselves stroke-by-stroke on reveal; hovering a row grows
+   an amber spine and washes the row from the left. ─────────────────── */
 .pillars {
   grid-column: 1 / -1;
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 1.25rem;
-  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  margin-top: 1.5rem;
+  border-top: 1px solid var(--line-2);
 }
 
 .pillar {
   position: relative;
-  padding: 1.75rem 1.6rem 1.4rem;
-  background: var(--paper-2);
-  border: 1px solid var(--rule-paper);
-  border-bottom: 3px solid transparent;
-  transition: transform 0.35s var(--ease), border-bottom-color 0.35s var(--ease), background 0.35s var(--ease);
-}
-.pillar:hover {
-  transform: translateY(-3px);
-  border-bottom-color: var(--gold);
-  background: var(--paper);
+  display: grid;
+  grid-template-columns: 96px minmax(210px, 260px) 1fr 64px;
+  column-gap: 2.5rem;
+  align-items: start;
+  padding: 2.1rem 1.25rem 2.1rem 0.75rem;
+  border-bottom: 1px solid var(--line-1);
+  transition: background 0.45s var(--ease), padding-left 0.45s var(--ease);
 }
 
-.pillar__top {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  margin-bottom: 0.75rem;
+/* letter + icon live inside .pillar__top — flatten into the row grid */
+.pillar__top { display: contents; }
+
+/* growing amber spine + wash on hover */
+.pillar::before {
+  content: "";
+  position: absolute;
+  left: 0; top: 12%; bottom: 12%;
+  width: 2px;
+  background: var(--amber);
+  transform: scaleY(0);
+  transform-origin: center;
+  transition: transform 0.45s var(--ease-swift);
 }
+.pillar:hover {
+  background: linear-gradient(90deg, rgba(199, 154, 94, 0.05), transparent 55%);
+  padding-left: 1.5rem;
+}
+.pillar:hover::before { transform: scaleY(1); }
+
 .pillar__letter {
+  grid-column: 1;
+  grid-row: 1 / span 2;
   font-family: var(--display);
   font-style: italic;
-  font-size: 1.9rem;
-  line-height: 1;
-  color: var(--gold);
+  font-size: 3.4rem;
+  line-height: 0.9;
+  color: var(--amber);
+  opacity: 0.85;
+  transition: opacity 0.35s var(--ease), transform 0.45s var(--ease);
 }
+.pillar:hover .pillar__letter { opacity: 1; transform: translateX(4px); }
+
 .pillar__icon {
-  width: 44px; height: 44px;
-  stroke: var(--ink-3);
+  grid-column: 4;
+  grid-row: 1 / span 2;
+  justify-self: end;
+  width: 52px; height: 52px;
+  stroke: var(--text-3);
   fill: none;
   stroke-width: 1;
   stroke-linecap: round;
-  transition: transform 0.5s var(--ease), stroke 0.35s var(--ease);
+  transition: stroke 0.4s var(--ease), transform 0.5s var(--ease);
 }
-.pillar__icon circle { fill: var(--ink-3); stroke: none; }
-.pillar:hover .pillar__icon { transform: rotate(15deg); stroke: var(--gold); }
-.pillar:hover .pillar__icon circle { fill: var(--gold); }
+.pillar__icon line,
+.pillar__icon path {
+  stroke-dasharray: 130;
+  stroke-dashoffset: 130;
+  transition: stroke-dashoffset 1.3s var(--ease-swift) 0.35s;
+}
+.pillar.is-visible .pillar__icon line,
+.pillar.is-visible .pillar__icon path { stroke-dashoffset: 0; }
+.pillar__icon circle {
+  fill: var(--text-3);
+  stroke: none;
+  transform: scale(0);
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: transform 0.5s var(--ease) 0.9s, fill 0.4s var(--ease);
+}
+.pillar.is-visible .pillar__icon circle { transform: scale(1); }
+.pillar:hover .pillar__icon { stroke: var(--amber); transform: rotate(8deg); }
+.pillar:hover .pillar__icon circle { fill: var(--amber); }
 
 .pillar__name {
+  grid-column: 2;
+  grid-row: 1;
   font-family: var(--display);
-  font-size: 1.75rem;
-  line-height: 1.15;
-  color: var(--ink);
-  margin-bottom: 0.55rem;
+  font-size: clamp(1.6rem, 2.2vw, 2.1rem);
+  line-height: 1.1;
+  color: var(--text-1);
   font-weight: 400;
+  transition: color 0.35s var(--ease);
 }
+.pillar:hover .pillar__name { color: var(--amber-hi); }
 
 .pillar__body {
+  grid-column: 3;
+  grid-row: 1;
   font-family: var(--sans);
-  font-size: 0.9375rem;       /* 15px */
-  line-height: 1.55;
-  color: var(--ink-2);
-  margin-bottom: 1rem;
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  color: var(--text-2);
+  max-width: 60ch;
 }
 
 .pillar__tags {
+  grid-column: 3;
+  grid-row: 2;
   font-family: var(--mono);
-  font-size: 0.58rem;
-  letter-spacing: 0.14em;
-  color: var(--gold);
-  padding-top: 0.8rem;
-  border-top: 1px solid var(--rule-paper);
+  font-size: 0.6rem;
+  letter-spacing: 0.16em;
+  color: var(--amber);
+  margin-top: 1.1rem;
+  opacity: 0.85;
 }
+.pillar__tags::before {
+  content: "";
+  display: inline-block;
+  width: 22px;
+  height: 1px;
+  background: var(--amber-dim);
+  vertical-align: middle;
+  margin-right: 0.8em;
+  transition: width 0.4s var(--ease), background 0.4s var(--ease);
+}
+.pillar:hover .pillar__tags::before { width: 40px; background: var(--amber); }
 
 
 /* ─── 13 · CHAPTER III · THE WORK · PAPERS ──────────────────────────── */
@@ -2130,7 +2187,18 @@ em { font-style: italic; }
   .hero__interests li { text-align: left; }
   .hero__interests-rule { margin-left: 0; }
 
-  .pillars   { grid-template-columns: 1fr; }
+  /* Pillars: letter | name+icon row, body + tags below */
+  .pillar {
+    grid-template-columns: 60px 1fr 44px;
+    column-gap: 1.25rem;
+    padding: 1.6rem 0.5rem 1.6rem 0.25rem;
+  }
+  .pillar__letter { grid-column: 1; grid-row: 1 / span 3; font-size: 2.4rem; }
+  .pillar__name   { grid-column: 2; grid-row: 1; align-self: center; }
+  .pillar__icon   { grid-column: 3; grid-row: 1; width: 38px; height: 38px; }
+  .pillar__body   { grid-column: 2 / 4; grid-row: 2; margin-top: 0.7rem; }
+  .pillar__tags   { grid-column: 2 / 4; grid-row: 3; }
+
   .projects  { grid-template-columns: 1fr; }
   .essays    { grid-template-columns: 1fr; }
   .plates    { grid-template-columns: 1fr; }
