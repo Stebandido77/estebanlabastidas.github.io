@@ -127,6 +127,39 @@
     heads.forEach(markEntered);
   }
 
+  /* ─── 04C · STAT COUNT-UP ──────────────────────────────────────── */
+  /* Marginalia counters roll up from zero on reveal; the exact
+     original string (incl. zero-padding) is restored at the end. */
+  const statEls = document.querySelectorAll('.marginalia__stats dt');
+  if (statEls.length && 'IntersectionObserver' in window && !prefersReducedMotion) {
+    const animateStat = (el) => {
+      const original = el.textContent;
+      const target = parseInt(original, 10);
+      if (isNaN(target)) return;
+      const width = original.trim().length;
+      const dur = 900;
+      let t0 = null;
+      const tick = (t) => {
+        if (t0 === null) t0 = t;
+        const p = Math.min(1, (t - t0) / dur);
+        const eased = 1 - Math.pow(1 - p, 3);
+        el.textContent = String(Math.round(eased * target)).padStart(width, '0');
+        if (p < 1) requestAnimationFrame(tick);
+        else el.textContent = original;
+      };
+      requestAnimationFrame(tick);
+    };
+    const statObs = new IntersectionObserver((entries, obs) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          animateStat(entry.target);
+          obs.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.6 });
+    statEls.forEach((el) => statObs.observe(el));
+  }
+
   /* ─── 05 · REVEALS (staggered) ─────────────────────────────────── */
   const revealEls = document.querySelectorAll('.reveal');
   if (revealEls.length && 'IntersectionObserver' in window && !prefersReducedMotion) {
