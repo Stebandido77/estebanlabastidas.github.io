@@ -10,7 +10,7 @@ EOS.register('about', {
     </div>
     <div class="about-r">
       <h2>Esteban<br><em>Labastidas</em></h2>
-      <p class="kicker">Economist · Banker · Builder</p>
+      <p class="kicker">${esc(D.kicker)}</p>
       <p class="thesis">“${esc(D.thesis.replace(/^[\s“"]+|[\s”"]+$/g,''))}”</p>
       <dl class="meta">${D.heroMeta.map(([k,v]) => `<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl>
       <p class="bio">${D.bio}</p>

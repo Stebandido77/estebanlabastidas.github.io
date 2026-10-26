@@ -405,6 +405,24 @@ window.DATA = {
     "x": "https://x.com/Stbandido_"
   },
 
+  /* Textos cortos de la interfaz. */
+  "kicker": "Economist · Banker · Builder",
+  "homeTagline": "Economist · banker · builder. Strategy & Investor Relations at Grupo Aval, Bogotá.",
+  "resumeTitle": "Engineering, economics,<br><em>markets</em>, research.",
+  "credentials": [
+    {"d": "Certified", "t": "CMSA® · Capital Markets &amp; Securities Analyst", "o": "Corporate Finance Institute"},
+    {"d": "In progress", "t": "FMVA® · Financial Modeling &amp; Valuation Analyst", "o": "Corporate Finance Institute"}
+  ],
+  "mail": {
+    "subject": "Hello Esteban",
+    "body": "Hi Esteban,\n\nI saw your notebook and wanted to talk about ",
+    "note": "Research collaborations, M&A and valuation work, policy conversations. If your mail app doesn't open, copy the address."
+  },
+
+  /* Palabras que forman el retrato en About; las de "portraitKeyWords" salen en ámbar. */
+  "portraitWords": ["Economist", "Banker", "Builder", "M&A", "Valuation", "Grupo Aval", "Strategy", "Investor Relations", "Inflation", "Forecasting", "Bayesian", "TVP-BVAR-SV", "Density", "SA-CCR", "Calypso", "Derivatives", "Capital markets", "Uniandes", "Javeriana", "CMSA®", "FMVA®", "Python", "R", "VBA", "LaTeX", "Bogotá", "Sekia", "SSRN", "Emerging markets", "Writer", "@Stbandido_", "pulso", "GEIH", "andina", "TES", "Patrion", "JPMorgan", "Management Solutions", "Models", "Markets", "Spatial", "Econometrics", "Colombia", "DCF", "WACC", "Comps", "Board", "Curves", "Ceteris Paribus", "Saber 11"],
+  "portraitKeyWords": ["Economist", "Banker", "Builder", "M&A", "Valuation", "Inflation"],
+
   /* Música de fondo. Por defecto es generativa (Web Audio), sin archivos ni licencias.
      TODO(esteban): para usar pistas propias, sube los .mp3 (CC0 o con licencia que permita uso web)
      a assets/audio/, crea assets/audio/playlist.json con

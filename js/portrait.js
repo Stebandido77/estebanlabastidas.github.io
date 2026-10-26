@@ -7,8 +7,7 @@
    over file:// fetch() is unavailable, so it falls back to portrait-lum.js. */
 (() => {
 const EOS = window.EOS, {RM} = EOS;
-const WORDS = ['Economist','Banker','Builder','M&A','Valuation','Grupo Aval','Strategy','Investor Relations','Inflation','Forecasting','Bayesian','TVP-BVAR-SV','Density','SA-CCR','Calypso','Derivatives','Capital markets','Uniandes','Javeriana','CMSA®','FMVA®','Python','R','VBA','LaTeX','Bogotá','Sekia','SSRN','Emerging markets','Writer','@Stbandido_','pulso','GEIH','andina','TES','Patrion','JPMorgan','Management Solutions','Models','Markets','Spatial','Econometrics','Colombia','DCF','WACC','Comps','Board','Curves','Ceteris Paribus','Saber 11'];
-const KEY = new Set(['Economist','Banker','Builder','M&A','Valuation','Inflation']);
+const WORDS = EOS.D.portraitWords, KEY = new Set(EOS.D.portraitKeyWords);
 
 let lumP = null;
 const loadLum = () => lumP || (lumP = fetch('assets/data/portrait-lum.bin').then(r => { if (!r.ok) throw 0; return r.arrayBuffer(); }).then(b => new Uint8Array(b))

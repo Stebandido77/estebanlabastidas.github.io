@@ -1,15 +1,13 @@
 /* Mail ("Contact"): compose with Copy and "Open in Mail". */
 (() => {
-const EOS = window.EOS, {D, $} = EOS;
+const EOS = window.EOS, {D, $, esc} = EOS;
 const EMAIL = D.contact.email;
 EOS.register('mail', {
   render: () => `<div class="mail">
     <div class="f"><label for="m-to">To:</label><input id="m-to" value="${EMAIL}" readonly><button class="btn" data-copy>Copy</button></div>
-    <div class="f"><label for="m-sub">Subject:</label><input id="m-sub" value="Hello Esteban"><span></span></div>
-    <textarea id="m-body" aria-label="Message">Hi Esteban,
-
-I saw your notebook and wanted to talk about </textarea>
-    <div class="foot"><small>Research collaborations, M&amp;A and valuation work, policy conversations. If your mail app doesn't open, copy the address.</small>
+    <div class="f"><label for="m-sub">Subject:</label><input id="m-sub" value="${esc(D.mail.subject)}"><span></span></div>
+    <textarea id="m-body" aria-label="Message">${esc(D.mail.body)}</textarea>
+    <div class="foot"><small>${esc(D.mail.note)}</small>
       <span style="display:flex;gap:8px"><a class="btn" href="${D.contact.linkedin}" target="_blank" rel="noopener">LinkedIn ↗</a><a class="btn pri" data-send href="mailto:${EMAIL}">Open in Mail</a></span></div>
   </div>`,
   init(w){

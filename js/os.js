@@ -72,6 +72,7 @@ EOS.renderChrome = () => {
 };
 EOS.renderChrome();
 $$('[data-cv]').forEach(a => a.href = D.contact.cv);
+$('#htag').textContent = D.homeTagline;
 
 /* ── shared derived content (papers, projects) used by Research, Terminal and Spotlight ── */
 const STATUS = {review:['Under editorial review','c-rev'], ssrn:['SSRN','c-ssrn'], soon:['Going to SSRN','c-ssrn'], progress:['In progress','c-prog'], published:['Published','c-pub'], wp:['Working paper','c-wp'], desk:['On the desk','c-desk']};
@@ -178,8 +179,9 @@ function openApp(id, sel){
   }
   if (sel && w._select) w._select(sel);
   focusWin(w); syncDock(); hideHint(); document.body.classList.add('app-open');
-  /* keyboard users land inside the window they opened */
-  if (!EOS.locked && document.activeElement && !w.contains(document.activeElement) && !document.activeElement.closest('.term')) w.focus({preventScroll: true});
+  /* keyboard users land inside the window they opened from a control (not on login, not from Terminal) */
+  const from = document.activeElement;
+  if (from && !w.contains(from) && from.closest('.dock,.menubar,.home,.spot,.win') && !from.closest('.term')) w.focus({preventScroll: true});
   return w;
 }
 function closeWin(w){
