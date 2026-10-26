@@ -20,7 +20,7 @@ EOS.register('markets', {
     const bars = [];
     function mk(o){ let c = o, hi = o, lo = o; const v = o*0.0007; for (let k = 0; k < 8; k++){ c += (rnd()-.5)*v*1.8 + (ANCHOR-c)*.006; hi = Math.max(hi,c); lo = Math.min(lo,c); } return {o, c, hi, lo, vol:.25+rnd()*.9}; }
     let p = ANCHOR - 9; for (let i = 0; i < N; i++){ const b = mk(p); bars.push(b); p = b.c; }
-    let live = {o:p, c:p, hi:p, lo:p, vol:.15}, lastBar = 0, lastTick = 0, lastDraw = 0;
+    let live = {o:p, c:p, hi:p, lo:p, vol:.15}, lastBar = 0, lastTick = 0;
     function tick(now){
       if (now - lastTick > TICK_MS){ lastTick = now; const v = live.o*0.00028; live.c += (rnd()-.5)*v*2 + (ANCHOR-live.c)*.003; live.hi = Math.max(live.hi, live.c); live.lo = Math.min(live.lo, live.c); live.vol += rnd()*.05; }
       if (now - lastBar > BAR_MS){ lastBar = now; bars.push(live); bars.shift(); live = {o:live.c, c:live.c, hi:live.c, lo:live.c, vol:.12}; }
@@ -48,7 +48,8 @@ EOS.register('markets', {
       for (let i = n-1; i >= 0; i -= small ? 30 : 20){ const t = new Date(now - (n-1-i)*60000); x.fillStyle = DIM; x.fillText(fT.format(t), X0 + bw*i + bw/2, vBot + 16);
         x.strokeStyle = GRID; x.setLineDash([2,4]); x.beginPath(); x.moveTo(X0+bw*i+bw/2, top); x.lineTo(X0+bw*i+bw/2, vBot); x.stroke(); x.setLineDash([]); }
       /* moving averages */
-      const ma = (len, col) => { x.strokeStyle = col; x.lineWidth = 1.2; x.beginPath(); all.forEach((b,i) => { const s = all.slice(Math.max(0,i-len+1), i+1), m = s.reduce((a,c)=>a+c.c,0)/s.length; i ? x.lineTo(X0+bw*i+bw/2, Y(m)) : x.moveTo(X0+bw*i+bw/2, Y(m)); }); x.stroke(); };
+      const cum = [0]; all.forEach((b,i) => cum.push(cum[i] + b.c));   /* prefix sums: each MA point is O(1) */
+      const ma = (len, col) => { x.strokeStyle = col; x.lineWidth = 1.2; x.beginPath(); for (let i = 0; i < n; i++){ const k = Math.max(0, i-len+1), m = (cum[i+1]-cum[k])/(i+1-k); i ? x.lineTo(X0+bw*i+bw/2, Y(m)) : x.moveTo(X0+bw*i+bw/2, Y(m)); } x.stroke(); };
       ma(50, 'rgba(236,229,214,.25)'); ma(20, AMB_D);
       /* candles + volume */
       const vmax = Math.max(...all.map(b=>b.vol));
@@ -83,14 +84,18 @@ EOS.register('markets', {
     }
     cv.addEventListener('pointermove', e => { const r = cv.getBoundingClientRect(); mouse = {x:e.clientX - r.left, y:e.clientY - r.top}; if (RM) draw(); });
     cv.addEventListener('pointerleave', () => { mouse = null; if (RM) draw(); });
-    /* runs only while the window is visible and the tab is active */
-    function loop(now){
-      if (document.hidden || w.hidden){ raf = 0; return; }
-      tick(now); if (now - lastDraw > 66){ lastDraw = now; draw(); }
-      raf = requestAnimationFrame(loop);
+    /* ~15 fps: a 66 ms timer advances the feed and asks for one frame; nothing runs while the
+       window is hidden or minimized or the tab is in the background */
+    let timer = 0;
+    function step(){
+      timer = 0;
+      if (document.hidden || w.hidden) return;
+      tick(performance.now());
+      raf = requestAnimationFrame(() => { raf = 0; draw(); });
+      timer = setTimeout(step, 66);
     }
-    const resume = () => { if (RM) { requestAnimationFrame(draw); return; } if (!raf) raf = requestAnimationFrame(loop); };
-    w._stop = () => { cancelAnimationFrame(raf); raf = 0; };
+    const resume = () => { if (RM) { requestAnimationFrame(draw); return; } if (!timer) step(); };
+    w._stop = () => { clearTimeout(timer); cancelAnimationFrame(raf); timer = raf = 0; };
     w._resume = resume;
     document.addEventListener('visibilitychange', () => { if (!document.hidden && !w.hidden) resume(); });
     resume();

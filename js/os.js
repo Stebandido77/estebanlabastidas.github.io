@@ -9,7 +9,9 @@ const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [..
 const phone = () => matchMedia('(max-width:899px)').matches;
 const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 Object.assign(EOS, {D, RM, $, $$, phone, esc, apps: {}});
+if ((navigator.hardwareConcurrency || 8) <= 4 || matchMedia('(pointer:coarse)').matches) document.documentElement.classList.add('lowblur');
 EOS.register = (id, mod) => { EOS.apps[id] = mod; };
+EOS.locked = !document.documentElement.classList.contains('unlocked') && !!document.getElementById('lock');   /* lock.js takes over */
 
 /* ── clock ── */
 const fC = new Intl.DateTimeFormat('en-US',{timeZone:'America/Bogota',weekday:'short',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
@@ -27,8 +29,8 @@ $('#hmkt').innerHTML = [['BANREP',M.banrep],['CPI YOY',M.cpi],['USD/COP',M.usdco
 
 /* ── icons ── */
 const G = {
-  about: `<span class="t" style="font-size:24px;color:#1b150d">EL</span>`,
-  research: `<span class="t" style="font-size:32px;color:#6e4d22">π</span>`,
+  about: `<span class="t" data-t="EL" style="font-size:24px;color:#1b150d"></span>`,
+  research: `<span class="t" data-t="π" style="font-size:32px;color:#6e4d22"></span>`,
   projects: `<svg viewBox="0 0 32 32"><path d="M3 9a2 2 0 0 1 2-2h7l3 3h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" fill="#9cc0ff"/><path d="M3 13h26v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" fill="#dbe8ff"/></svg>`,
   path: `<svg viewBox="0 0 32 32"><rect x="7" y="4" width="18" height="24" rx="2" fill="#fff" stroke="#c9bea9"/><path d="M11 10h10M11 14h10M11 18h7" stroke="#8b2332" stroke-width="1.6" stroke-linecap="round"/><path d="M11 23h6" stroke="#b9ad97" stroke-width="1.6" stroke-linecap="round"/></svg>`,
   notes: `<svg viewBox="0 0 32 32"><rect x="5" y="5" width="22" height="22" rx="3" fill="#fffaf0"/><rect x="5" y="5" width="22" height="6" rx="3" fill="#f2c94c"/><path d="M9 16h14M9 20h14M9 24h9" stroke="#c9bea9" stroke-width="1.4" stroke-linecap="round"/></svg>`,
@@ -85,65 +87,158 @@ const PROJ = D.projects.map(p => { const n = p.no.replace(/\D/g,'');
   return {...p, n, c:D.projectCategories[n]||'oss', plain:p.t.replace(/<span[^>]*>.*?<\/span>/g,'').replace(/<[^>]+>/g,'').replace('&amp;','&').trim()}; });
 Object.assign(EOS, {STATUS, PAPERS, ALLP:[...PAPERS, ...PIPE], PROJ});
 
-/* ── window manager ── */
+/* ── window manager ──
+   Each window keeps its rect in state {x, y, w, h} relative to #wins and is placed with
+   transform: translate3d (never left/top). Drags and resizes write state on pointermove and
+   apply it once per frame. Open / minimize / close animate with the Web Animations API on
+   transform + opacity only, with will-change set just for the duration. */
 const wins = {}; let z = 20, spawn = 0;
+const S = new Map();   /* window → {x, y, w, h, prev, min} */
 EOS.wins = wins;
+const area = () => $('#wins').getBoundingClientRect();
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const SPRING = 'cubic-bezier(.2,.9,.25,1.05)';
+const T = s => `translate3d(${s.x}px,${s.y}px,0)`;
+function place(w){
+  const s = S.get(w);
+  if (phone()) { w.style.transform = ''; return; }
+  w.style.width = s.w + 'px'; w.style.height = s.h + 'px'; w.style.transform = T(s);
+}
+EOS.rect = (w, r) => { Object.assign(S.get(w), r); place(w); };
+EOS.getRect = w => ({...S.get(w)});
 const setTitle = (w, t) => { $('.ttl', w).textContent = t; };
 EOS.setTitle = setTitle;
 function focusWin(w){
+  if (w.classList.contains('front')) return;
   w.style.zIndex = ++z; $$('.win').forEach(x => x.classList.toggle('front', x===w));
   $$('[data-nav]').forEach(b => b.classList.toggle('cur', b.dataset.nav === w.dataset.app));
 }
-function syncDock(){ $$('.dk').forEach(d => d.classList.toggle('run', !!wins[d.dataset.open] && !wins[d.dataset.open].hidden)); }
+function syncDock(){ $$('.dk').forEach(d => { const w = wins[d.dataset.open]; d.classList.toggle('run', !!w && (!w.hidden || S.get(w).min)); }); }
+const topWin = () => $$('.win').filter(x => !x.hidden).sort((a,b) => b.style.zIndex - a.style.zIndex)[0];
+function afterHide(w){
+  w.classList.remove('front');
+  syncDock();
+  const vis = topWin();
+  if (vis) focusWin(vis);
+  else { $$('[data-nav]').forEach(b => b.classList.remove('cur')); document.body.classList.remove('app-open'); }
+  if (w._stop) w._stop();
+}
+
+/* transform that lands the window, scaled down, on its Dock icon (transform-origin 0 0) */
+function dockT(w){
+  const s = S.get(w), d = $(`.dk[data-open="${w.dataset.app}"]`), r = d && d.getBoundingClientRect(), a = area();
+  if (!r || !r.width) return `translate3d(${s.x}px,${s.y + 60}px,0) scale(.85)`;
+  const k = Math.max(r.width / s.w, .04);
+  return `translate3d(${r.left + r.width/2 - a.left - s.w*k/2}px,${r.top + r.height/2 - a.top - s.h*k/2}px,0) scale(${k})`;
+}
+const phoneFrom = () => `translate3d(${innerWidth*.3}px,${innerHeight*.36}px,0) scale(.4)`;   /* scale .4 about 50% 60% */
+function animate(w, frames, opts){
+  if (RM) return Promise.resolve();
+  w.style.willChange = 'transform, opacity';
+  const an = w.animate(frames, opts);
+  return an.finished.catch(() => {}).then(() => { w.style.willChange = ''; });
+}
+/* end (or start) keyframes are left implicit so they track the live inline transform */
+function animateIn(w, from){
+  return animate(w, [{transform: from, opacity: 0}, {opacity: 1, offset: .35}], {duration: 380, easing: SPRING});
+}
+
+function initialRect(a){
+  const ar = area();
+  const W = Math.max(360, Math.min(a.w, ar.width - 80)), H = Math.max(260, Math.min(a.h, ar.height - 100));
+  const x = Math.max(20, (ar.width - W)/2 + (spawn%5)*28 - (spawn?40:0)), y = Math.max(10, (ar.height - H - 80)/2 + (spawn%5)*24 - 20);
+  spawn++;
+  return {x, y, w: W, h: H};
+}
 function openApp(id, sel){
   const a = appById[id]; if(!a) return;
   const mod = EOS.apps[id] || {};
   let w = wins[id];
   if (!w) {
-    w = document.createElement('section'); w.className = 'win opening'; w.dataset.app = id;
+    w = document.createElement('section'); w.className = 'win'; w.dataset.app = id;
     w.setAttribute('role', 'dialog'); w.setAttribute('aria-label', a.name);
-    w.innerHTML = `<div class="tb"><div class="lights"><b data-x title="Close" role="button" aria-label="Close">×</b><b data-min title="Minimize" role="button" aria-label="Minimize">–</b><b data-max title="Zoom" role="button" aria-label="Zoom">+</b></div><button class="back" data-x>‹ Home</button><div class="ttl">${a.name}</div></div>${mod.render ? mod.render() : ''}`;
-    const area = $('#wins').getBoundingClientRect();
-    const W = Math.min(a.w, area.width - 80), H = Math.min(a.h, area.height - 100);
-    const L = Math.max(20, (area.width - W)/2 + (spawn%5)*28 - (spawn?40:0)), T = Math.max(10, (area.height - H - 80)/2 + (spawn%5)*24 - 20);
-    spawn++;
-    Object.assign(w.style, {width:Math.max(W,360)+'px', height:Math.max(H,260)+'px', left:L+'px', top:T+'px'});
+    w.innerHTML = `<div class="tb"><div class="lights"><b data-x title="Close" role="button" aria-label="Close">×</b><b data-min title="Minimize" role="button" aria-label="Minimize">–</b><b data-max title="Zoom" role="button" aria-label="Zoom">+</b></div><button class="back" data-x>‹ Home</button><div class="ttl">${a.name}</div></div>${mod.render ? mod.render() : ''}`
+      + ['n','s','e','w','ne','nw','se','sw'].map(d => `<i class="rz rz-${d}" data-rz="${d}" aria-hidden="true"></i>`).join('');
+    S.set(w, {...(EOS.placeWindow ? EOS.placeWindow(a) : initialRect(a)), prev: null, min: false});
+    place(w);
     $('#wins').appendChild(w); wins[id] = w;
     bindWin(w);
     if (mod.init) mod.init(w, sel);
-    requestAnimationFrame(() => requestAnimationFrame(() => w.classList.remove('opening')));
+    animateIn(w, phone() ? phoneFrom() : dockT(w));
     const dk = $(`.dk[data-open="${id}"]`); if (dk && !RM) { dk.classList.add('bounce'); setTimeout(()=>dk.classList.remove('bounce'),600); }
-  } else {
-    if (w.hidden) { w.hidden = false; w.classList.add('opening'); requestAnimationFrame(() => requestAnimationFrame(() => w.classList.remove('opening'))); if (w._resume) w._resume(); }
-    if (sel && w._select) w._select(sel);
+  } else if (w.hidden) {
+    const s = S.get(w), wasMin = s.min;
+    s.min = false; w.hidden = false; place(w);
+    if (wasMin) animate(w, [{transform: dockT(w), opacity: .2}], {duration: 420, easing: 'cubic-bezier(.2,.8,.3,1)'});
+    else animateIn(w, phone() ? phoneFrom() : dockT(w));
+    if (w._resume) w._resume();
   }
+  if (sel && w._select) w._select(sel);
   focusWin(w); syncDock(); hideHint(); document.body.classList.add('app-open');
   return w;
 }
 function closeWin(w){
-  w.classList.add('closing');
-  setTimeout(() => { w.hidden = true; w.classList.remove('closing'); syncDock();
-    const vis = $$('.win').filter(x=>!x.hidden).sort((a,b)=>b.style.zIndex-a.style.zIndex)[0];
-    if (vis) focusWin(vis); else { $$('[data-nav]').forEach(b => b.classList.remove('cur')); document.body.classList.remove('app-open'); }
-    if (w._stop) w._stop(); }, RM?0:180);
+  if (w.hidden || w._closing) return;
+  w._closing = true;
+  const s = S.get(w), to = phone() ? 'scale(.96)' : `translate3d(${s.x + s.w*.02}px,${s.y + s.h*.02}px,0) scale(.96)`;
+  animate(w, [{transform: to, opacity: 0}], {duration: 160, easing: 'ease-out'})
+    .then(() => { w._closing = false; w.hidden = true; afterHide(w); });
 }
-Object.assign(EOS, {openApp, closeWin, focusWin});
+function minimize(w){
+  if (phone()) return closeWin(w);
+  if (w.hidden || w._closing) return;
+  w._closing = true;
+  animate(w, [{transform: dockT(w), opacity: .2}], {duration: 420, easing: 'cubic-bezier(.55,0,.75,.2)'})
+    .then(() => { w._closing = false; S.get(w).min = true; w.hidden = true; afterHide(w); });
+}
+function zoom(w){
+  const s = S.get(w);
+  if (s.prev) { Object.assign(s, s.prev); s.prev = null; }
+  else { const r = EOS.zoomRect ? EOS.zoomRect() : (ar => ({x:0, y:0, w:ar.width, h:ar.height - 78}))(area());
+    s.prev = {x:s.x, y:s.y, w:s.w, h:s.h}; Object.assign(s, r); }
+  place(w); if (EOS.saveRect) EOS.saveRect(w);
+}
+Object.assign(EOS, {openApp, closeWin, focusWin, minimize, zoom, topWin});
+
 function bindWin(w){
   w.addEventListener('pointerdown', () => focusWin(w));
   $$('[data-x]', w).forEach(b => b.onclick = e => { e.stopPropagation(); closeWin(w); });
-  $('[data-min]', w).onclick = e => { e.stopPropagation(); closeWin(w); };
-  $('[data-max]', w).onclick = e => { e.stopPropagation(); w.classList.toggle('max'); };
+  $('[data-min]', w).onclick = e => { e.stopPropagation(); minimize(w); };
+  $('[data-max]', w).onclick = e => { e.stopPropagation(); zoom(w); };
   const tb = $('.tb', w);
-  tb.ondblclick = e => { if(!e.target.closest('.lights')) w.classList.toggle('max'); };
+  tb.ondblclick = e => { if(!e.target.closest('.lights,button')) zoom(w); };
+  /* drag by the title bar */
   tb.addEventListener('pointerdown', e => {
-    if (phone() || e.target.closest('.lights,button') || w.classList.contains('max')) return;
-    const area = $('#wins').getBoundingClientRect(), r = w.getBoundingClientRect(), ox = e.clientX - r.left, oy = e.clientY - r.top;
-    tb.setPointerCapture(e.pointerId); w.style.transition = 'none';
-    const mv = ev => { w.style.left = Math.min(area.width-80, Math.max(-r.width+120, ev.clientX - area.left - ox))+'px'; w.style.top = Math.min(area.height-60, Math.max(0, ev.clientY - area.top - oy))+'px'; };
-    const up = () => { w.style.transition=''; tb.removeEventListener('pointermove', mv); tb.removeEventListener('pointerup', up); };
-    tb.addEventListener('pointermove', mv); tb.addEventListener('pointerup', up);
+    if (phone() || e.button !== 0 || e.target.closest('.lights,button')) return;
+    const s = S.get(w), a = area(), ox = e.clientX - s.x, oy = e.clientY - s.y;
+    let nx = s.x, ny = s.y, raf = 0, moved = false;
+    tb.setPointerCapture(e.pointerId); w.style.willChange = 'transform';
+    const mv = ev => { moved = true;
+      nx = clamp(ev.clientX - ox, 120 - s.w, a.width - 120); ny = clamp(ev.clientY - oy, 0, a.height - 44);   /* title bar stays reachable */
+      if (!raf) raf = requestAnimationFrame(() => { raf = 0; s.x = nx; s.y = ny; w.style.transform = T(s); }); };
+    const up = () => { cancelAnimationFrame(raf); if (moved) { s.x = nx; s.y = ny; s.prev = null; w.style.transform = T(s); if (EOS.saveRect) EOS.saveRect(w); }
+      w.style.willChange = ''; tb.removeEventListener('pointermove', mv); tb.removeEventListener('pointerup', up); tb.removeEventListener('pointercancel', up); };
+    tb.addEventListener('pointermove', mv); tb.addEventListener('pointerup', up); tb.addEventListener('pointercancel', up);
   });
+  /* resize from edges and corners */
+  $$('[data-rz]', w).forEach(h => h.addEventListener('pointerdown', e => {
+    if (phone() || e.button !== 0) return;
+    e.stopPropagation(); focusWin(w);
+    const s = S.get(w), d = h.dataset.rz, o = {x:s.x, y:s.y, w:s.w, h:s.h, px:e.clientX, py:e.clientY};
+    const nr = {x:o.x, y:o.y, w:o.w, h:o.h}; let raf = 0;
+    h.setPointerCapture(e.pointerId);
+    const mv = ev => { const dx = ev.clientX - o.px, dy = ev.clientY - o.py;
+      if (d.includes('e')) nr.w = Math.max(360, o.w + dx);
+      if (d.includes('s')) nr.h = Math.max(260, o.h + dy);
+      if (d.includes('w')) { nr.w = Math.max(360, o.w - dx); nr.x = o.x + o.w - nr.w; }
+      if (d.includes('n')) { nr.y = clamp(o.y + dy, 0, o.y + o.h - 260); nr.h = o.y + o.h - nr.y; }
+      if (!raf) raf = requestAnimationFrame(() => { raf = 0; Object.assign(s, nr); place(w); }); };
+    const up = () => { cancelAnimationFrame(raf); Object.assign(s, nr, {prev:null}); place(w); if (EOS.saveRect) EOS.saveRect(w);
+      h.removeEventListener('pointermove', mv); h.removeEventListener('pointerup', up); h.removeEventListener('pointercancel', up); };
+    h.addEventListener('pointermove', mv); h.addEventListener('pointerup', up); h.addEventListener('pointercancel', up);
+  }));
 }
+addEventListener('resize', () => { for (const w of Object.values(wins)) place(w); });
 document.addEventListener('click', e => {
   const o = e.target.closest('[data-open]'); if (o) { e.preventDefault(); openApp(o.dataset.open, o.dataset.sel); closeMenus(); }
   if (e.target.closest('[data-closeall]')) { $$('.win').forEach(w => !w.hidden && closeWin(w)); closeMenus(); }
@@ -151,10 +246,11 @@ document.addEventListener('click', e => {
   if (e.target.closest('[data-spot]')) { openSpot(); closeMenus(); }
 });
 function tile(){
-  const vis = $$('.win').filter(w=>!w.hidden); const area = $('#wins').getBoundingClientRect(); const n = vis.length; if(!n) return;
-  const cols = Math.ceil(Math.sqrt(n)), rows = Math.ceil(n/cols), W = (area.width-40)/cols, H = (area.height-100)/rows;
-  vis.forEach((w,i) => { w.classList.remove('max'); Object.assign(w.style,{left:20+(i%cols)*W+'px', top:10+Math.floor(i/cols)*H+'px', width:W-12+'px', height:H-12+'px'}); });
+  const vis = $$('.win').filter(w=>!w.hidden); const ar = area(); const n = vis.length; if(!n) return;
+  const cols = Math.ceil(Math.sqrt(n)), rows = Math.ceil(n/cols), W = (ar.width-40)/cols, H = (ar.height-100)/rows;
+  vis.forEach((w,i) => EOS.rect(w, {x:20+(i%cols)*W, y:10+Math.floor(i/cols)*H, w:W-12, h:H-12, prev:null}));
 }
+EOS.tile = tile;
 
 /* menus */
 function closeMenus(){ $$('.mb.open').forEach(m=>m.classList.remove('open')); }
@@ -199,14 +295,12 @@ function hideHint(){ const h=$('#hint'); if(h) h.style.opacity='0'; }
 
 /* ── entering the desktop (called directly, or by the login screen) ── */
 EOS.defaultWindows = () => {
-  const area = $('#wins').getBoundingClientRect();
-  if (area.width >= 1280){
-    openApp('markets'); const m = wins.markets;
-    const mw = Math.min(620, area.width*.40), mh = Math.min(420, area.height*.52);
-    Object.assign(m.style, {width:mw+'px', height:mh+'px', left:(area.width - mw - 28)+'px', top:'56px'});
-    openApp('about'); const a = wins.about;
-    const aw = Math.min(860, area.width - mw - 90), ah = Math.min(600, area.height - 110);
-    Object.assign(a.style, {width:aw+'px', height:ah+'px', left:'28px', top:Math.max(18,(area.height - ah - 80)/2)+'px'});
+  const ar = area();
+  if (ar.width >= 1280){
+    const mw = Math.min(620, ar.width*.40), mh = Math.min(420, ar.height*.52);
+    EOS.rect(openApp('markets'), {w:mw, h:mh, x:ar.width - mw - 28, y:56});
+    const aw = Math.min(860, ar.width - mw - 90), ah = Math.min(600, ar.height - 110);
+    EOS.rect(openApp('about'), {w:aw, h:ah, x:28, y:Math.max(18,(ar.height - ah - 80)/2)});
   } else openApp('about');
 };
 EOS.enter = () => { if (!phone()) EOS.defaultWindows(); };

@@ -16,15 +16,12 @@ const fade = t => t*t*(3-2*t);
 const vn = (x, y) => { const xi = Math.floor(x) & 255, yi = Math.floor(y) & 255, xf = x - Math.floor(x), yf = y - Math.floor(y);
   const a = PERM[PERM[xi]+yi]/255, b = PERM[PERM[xi+1]+yi]/255, c = PERM[PERM[xi]+yi+1]/255, d = PERM[PERM[xi+1]+yi+1]/255, u = fade(xf), v = fade(yf);
   return a + (b-a)*u + (c-a)*v + (a-b-c+d)*u*v; };
-function field(x, y, t){
-  const v = vn(x+t*.05, y)*.55 + vn(x*2.1 - t*.03 + 11, y*2.1 + 7)*.28 + vn(x*4.3 + 3, y*4.3 - t*.04)*.17;
-  const ridge = Math.exp(-Math.pow((x - 1.8 - y*0.35)*1.2, 2)) * .32;   /* a cordillera running N–S */
-  return v*0.85 + ridge;
-}
+const noise = (x, y, t) => (vn(x+t*.05, y)*.55 + vn(x*2.1 - t*.03 + 11, y*2.1 + 7)*.28 + vn(x*4.3 + 3, y*4.3 - t*.04)*.17) * 0.85;
+const ridge = (x, y) => Math.exp(-Math.pow((x - 1.8 - y*0.35)*1.2, 2)) * .32;   /* a cordillera running N–S */
 
 /* ── contours ── */
 const tm = {x:-1e4, y:-1e4};
-let tW = 0, tH = 0, coarse = false, frameMs = 0, F = null;
+let tW = 0, tH = 0, coarse = false, frameMs = 0, F = null, SB = null, sbKey = '';
 function drawTopo(now){
   const r = topo.getBoundingClientRect(), dpr = Math.min(devicePixelRatio || 1, 2);
   if (r.width !== tW || r.height !== tH) { tW = r.width; tH = r.height; topo.width = Math.round(tW*dpr); topo.height = Math.round(tH*dpr); }
@@ -33,11 +30,15 @@ function drawTopo(now){
   const cols = Math.ceil(tW/cs)+1, rows = Math.ceil(tH/cs)+1, sc = 3.6/Math.max(tW,tH), t = RM ? 0 : now/1000;
   const bx = tW*(narrow?0.28:0.62), by = tH*(narrow?0.56:0.6);                                   /* Bogotá marker */
   if (!F || F.length !== cols*rows) F = new Float32Array(cols*rows);
+  const key = `${cols}x${rows}x${cs}x${tW}x${tH}`;
+  if (key !== sbKey) {   /* static terms, once per size: the cordillera and the sabana (a high, flat basin) */
+    sbKey = key; SB = new Float32Array(cols*rows);
+    for (let j = 0; j < rows; j++) for (let i = 0; i < cols; i++) { const X = i*cs, Y = j*cs;
+      SB[j*cols+i] = ridge(X*sc, Y*sc) - Math.exp(-((X-bx)**2 + (Y-by)**2)/14000) * .10; }
+  }
   for (let j = 0; j < rows; j++) for (let i = 0; i < cols; i++) {
-    const X = i*cs, Y = j*cs; let v = field(X*sc, Y*sc, t);
-    v += Math.exp(-((X-tm.x)**2 + (Y-tm.y)**2)/9000) * .22;             /* the cursor lifts the terrain */
-    v -= Math.exp(-((X-bx)**2 + (Y-by)**2)/14000) * .10;                /* the sabana: a high, flat basin */
-    F[j*cols+i] = v;
+    const X = i*cs, Y = j*cs, dx = X - tm.x, dy = Y - tm.y, d2 = dx*dx + dy*dy;
+    F[j*cols+i] = noise(X*sc, Y*sc, t) + SB[j*cols+i] + (d2 < 65000 ? Math.exp(-d2/9000) * .22 : 0);   /* the cursor lifts the terrain */
   }
   const L = 18;
   for (let k = 1; k < L; k++) {

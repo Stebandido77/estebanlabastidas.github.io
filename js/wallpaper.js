@@ -3,7 +3,7 @@
    which stays as the fallback while it loads or if it fails. Film grain is a 160 px noise
    tile on its own layer, nudged with a transform every ~120 ms (compositor only). */
 (() => {
-const {RM, $} = window.EOS;
+const EOS = window.EOS, {RM, $} = EOS;
 const cv = $('#city'), img = $('#wallimg'), grainEl = $('#grain');
 let photoOk = false;
 
@@ -59,21 +59,27 @@ function renderCity(){
 }
 
 /* ── photo ── */
+/* the procedural skyline is drawn only if the photo fails or is still loading once the desktop
+   is visible (after the login), so it never competes with the first paint */
+let drawn = false;
+const city = () => { if (photoOk || drawn) return; drawn = true; renderCity(); };
 const showPhoto = () => { photoOk = true; img.classList.add('on'); setTimeout(() => { cv.hidden = true; cv.width = cv.height = 0; }, 450); };
-const failPhoto = () => { img.remove(); if (!cv.width) renderCity(); };
+const whenVisible = fn => EOS.locked ? document.addEventListener('eos:unlock', fn, {once:true}) : fn();
 if (img.complete && img.naturalWidth) showPhoto();
 else {
-  renderCity();
   img.addEventListener('load', showPhoto, {once:true});
-  img.addEventListener('error', failPhoto, {once:true});
+  img.addEventListener('error', () => { img.remove(); whenVisible(city); }, {once:true});
+  whenVisible(() => setTimeout(city, 400));
 }
-let rt; addEventListener('resize', () => { if (photoOk) return; clearTimeout(rt); rt = setTimeout(renderCity, 150); });
+let rt; addEventListener('resize', () => { if (photoOk || !drawn) return; clearTimeout(rt); rt = setTimeout(renderCity, 150); });
 
-/* ── film grain ── */
-const g = document.createElement('canvas'); g.width = g.height = 160;
-const gx = g.getContext('2d'), id = gx.createImageData(160,160);
-for (let i = 0; i < id.data.length; i += 4){ const v = Math.random()*255; id.data[i] = id.data[i+1] = id.data[i+2] = v; id.data[i+3] = 16; }
-gx.putImageData(id,0,0);
-grainEl.style.backgroundImage = `url(${g.toDataURL()})`;
-if (!RM) setInterval(() => { if (!document.hidden) grainEl.style.transform = `translate3d(${(Math.random()*160)|0}px,${(Math.random()*160)|0}px,0)`; }, 120);
+/* ── film grain: built in idle time once the desktop is visible ── */
+whenVisible(() => (window.requestIdleCallback || (f => setTimeout(f, 200)))(() => {
+  const g = document.createElement('canvas'); g.width = g.height = 160;
+  const gx = g.getContext('2d'), id = gx.createImageData(160,160), px = new Uint32Array(id.data.buffer);
+  for (let i = 0; i < px.length; i++){ const v = (Math.random()*256)|0; px[i] = (16 << 24) | (v << 16) | (v << 8) | v; }   /* gray, alpha 16 */
+  gx.putImageData(id,0,0);
+  grainEl.style.backgroundImage = `url(${g.toDataURL()})`;
+  if (!RM) setInterval(() => { if (!document.hidden) grainEl.style.transform = `translate3d(${(Math.random()*160)|0}px,${(Math.random()*160)|0}px,0)`; }, 120);
+}));
 })();
