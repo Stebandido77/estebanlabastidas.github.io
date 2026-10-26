@@ -233,7 +233,9 @@ html:not(.unlocked) :is(.menubar,.dock,.home,.hint,.wcap){display:none}
   .dock .dk{width:58px;height:58px} .dock .dk:hover{transform:none} .dock .tip{display:none}
   .dock .dk.mobhide,.dock .sep{display:none}
   #wins{inset:0;z-index:20}
-  .win,.win.front{width:100%!important;height:100%!important;border-radius:0;border:0;padding-top:env(safe-area-inset-top,0px);background:rgba(20,18,15,.97);backdrop-filter:none;-webkit-backdrop-filter:none}
+  /* a full-screen app is fully opaque and the home screen behind it is hidden */
+  .win,.win.front,.win:not(.front){width:100%!important;height:100%!important;border-radius:0;border:0;padding-top:env(safe-area-inset-top,0px);background:#14120f;backdrop-filter:none;-webkit-backdrop-filter:none;filter:none}
+  body.app-open .home{visibility:hidden}
   .rz{display:none}
   .lights{display:none}
   .tb .back{display:inline-flex;all:unset;color:var(--amber-hi);font-size:15px;font-weight:500;cursor:pointer;padding:6px 0}
