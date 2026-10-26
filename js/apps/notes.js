@@ -2,7 +2,7 @@
 (() => {
 const EOS = window.EOS, {D, $, $$, esc} = EOS;
 EOS.register('notes', {
-  render: () => `<div class="wb"><div class="nlist scroll" data-nl></div><div class="note scroll" data-nt></div></div>`,
+  render: () => `<div class="wb split nside"><div class="nlist scroll" data-nl></div><div class="note scroll" data-nt></div></div>`,
   init(w){
     let cur = D.voice[0].id;
     const draw = () => {

@@ -94,7 +94,7 @@ Object.assign(EOS, {STATUS, PAPERS, ALLP:[...PAPERS, ...PIPE], PROJ});
    transform: translate3d (never left/top). Drags and resizes write state on pointermove and
    apply it once per frame. Open / minimize / close animate with the Web Animations API on
    transform + opacity only, with will-change set just for the duration. */
-const wins = {}; let z = 20, spawn = 0;
+const wins = {}; let z = 20, spawn = 0, lastOpened = null;
 const S = new Map();   /* window → {x, y, w, h, prev, min} */
 EOS.wins = wins;
 const area = () => $('#wins').getBoundingClientRect();
@@ -165,14 +165,14 @@ function openApp(id, sel){
       + ['n','s','e','w','ne','nw','se','sw'].map(d => `<i class="rz rz-${d}" data-rz="${d}" aria-hidden="true"></i>`).join('');
     S.set(w, {...(EOS.placeWindow ? EOS.placeWindow(a) : initialRect(a)), prev: null, min: false});
     place(w);
-    $('#wins').appendChild(w); wins[id] = w;
+    $('#wins').appendChild(w); wins[id] = w; lastOpened = w;
     bindWin(w);
     if (mod.init) mod.init(w, sel);
     animateIn(w, phone() ? phoneFrom() : dockT(w));
     const dk = $(`.dk[data-open="${id}"]`); if (dk && !RM) { dk.classList.add('bounce'); setTimeout(()=>dk.classList.remove('bounce'),600); }
   } else if (w.hidden) {
     const s = S.get(w), wasMin = s.min;
-    s.min = false; w.hidden = false; place(w);
+    s.min = false; w.hidden = false; place(w); lastOpened = w;
     if (wasMin) animate(w, [{transform: dockT(w), opacity: .2}], {duration: 420, easing: 'cubic-bezier(.2,.8,.3,1)'});
     else animateIn(w, phone() ? phoneFrom() : dockT(w));
     if (w._resume) w._resume();
@@ -322,15 +322,34 @@ EOS.saveRect = w => { try { const all = loadRects(), s = S.get(w), wa = workArea
   all[w.dataset.app] = {x:Math.round(s.x), y:Math.round(s.y), w:Math.round(s.w), h:Math.round(s.h), aw:Math.round(wa.w), ah:Math.round(wa.h)}; localStorage.setItem(KEY, JSON.stringify(all)); } catch (e) {} };
 const sizeFor = (a, wa) => ({w: Math.max(360, Math.min(a.w, wa.w)), h: Math.max(260, Math.min(a.h, wa.h))});
 const visibleRects = () => $$('.win').filter(w => !w.hidden).map(w => S.get(w));
-/* first window: centered. Next ones: the candidate position (on a grid over the work area) with
-   the least overlap with visible windows, nearest the center on ties. When even the best spot
-   would cover more than 35% of the new window (no real gap), cascade 28 px from the front one */
+/* the largest empty rectangle of the work area, keeping a 12 px gap from visible windows */
+function largestHole(wa, others){
+  const G = 12, obs = others.map(o => ({x:o.x - G, y:o.y - G, w:o.w + 2*G, h:o.h + 2*G}));
+  const cut = (lo, hi, vals) => [...new Set([lo, hi, ...vals.filter(v => v > lo && v < hi)])].sort((p, q) => p - q);
+  const xs = cut(wa.x, wa.x + wa.w, obs.flatMap(o => [o.x, o.x + o.w])), ys = cut(wa.y, wa.y + wa.h, obs.flatMap(o => [o.y, o.y + o.h]));
+  let best = null, ba = 0;
+  for (let i = 0; i < xs.length; i++) for (let j = i + 1; j < xs.length; j++)
+    for (let k = 0; k < ys.length; k++) for (let l = k + 1; l < ys.length; l++) {
+      const r = {x:xs[i], y:ys[k], w:xs[j] - xs[i], h:ys[l] - ys[k]};
+      if (r.w * r.h > ba && !obs.some(o => overlap(r, o) > 0)) { best = r; ba = r.w * r.h; }
+    }
+  return best;
+}
+/* §4.2: first window centered; then the largest free gap, if the window fits there at least at
+   the minimum size (360×260) — shrunk to the gap and centered in it; then the least-overlap
+   spot if it covers under 35% of the window; as a last resort a 28 px cascade from the window
+   opened last */
 EOS.placeWindow = a => {
   const wa = workArea(), saved = savedFor(a.id, wa);
   if (saved) return saved;
   const sz = sizeFor(a, wa), others = visibleRects();
   const center = {x: wa.x + (wa.w - sz.w)/2, y: wa.y + (wa.h - sz.h)/2, ...sz};
   if (!others.length) return center;
+  const hole = largestHole(wa, others);
+  if (hole && hole.w >= 360 && hole.h >= 260) {
+    const w = Math.min(sz.w, hole.w), h = Math.min(sz.h, hole.h);
+    return {x: hole.x + (hole.w - w)/2, y: hole.y + (hole.h - h)/2, w, h};
+  }
   const xs = [], ys = [], nx = 12, ny = 8;
   for (let i = 0; i <= nx; i++) xs.push(wa.x + (wa.w - sz.w)*i/nx);
   for (let j = 0; j <= ny; j++) ys.push(wa.y + (wa.h - sz.h)*j/ny);
@@ -340,11 +359,11 @@ EOS.placeWindow = a => {
     if (o < bo - 1 || (o <= bo + 1 && d < bd)) { best = r; bo = o; bd = d; }
   }
   if (bo < sz.w*sz.h*.35) return best;
-  const t = topWin(), f = t ? S.get(t) : center;
-  let x = f.x + 28, y = f.y + 28;
-  if (x + sz.w > wa.x + wa.w) x = wa.x + (x - wa.x) % Math.max(28, wa.w - sz.w + 1);
-  if (y + sz.h > wa.y + wa.h) y = wa.y + (y - wa.y) % Math.max(28, wa.h - sz.h + 1);
-  return {x, y, ...sz};
+  const last = lastOpened && !lastOpened.hidden ? S.get(lastOpened) : null;
+  let x = (last ? last.x : wa.x) + 28, y = (last ? last.y : wa.y) + 28;
+  if (x + sz.w > wa.x + wa.w) x = wa.x + 28 * (others.length % 4);
+  if (y + sz.h > wa.y + wa.h) y = wa.y + 28 * (others.length % 4);
+  return {x: Math.min(x, wa.x + wa.w - sz.w), y: Math.min(y, wa.y + wa.h - sz.h), ...sz};
 };
 EOS.zoomRect = () => { const wa = workArea(); return {x: wa.x, y: wa.y, w: wa.w, h: wa.h}; };
 /* Window → Arrange: tile the visible windows inside the work area */

@@ -178,6 +178,22 @@
 .mus-vol{flex:1;display:flex} .mus-vol input{width:100%;accent-color:var(--amber)}
 .mus-note{margin:0;font-size:11.5px;line-height:1.5;color:var(--text-2)}
 
+/* narrow windows on the desktop (a window placed in a small gap, or resized by hand):
+   multi-pane apps fold their sidebar into a row of chips, like on the phone */
+.win{container-type:inline-size}
+@media (min-width:900px){
+  @container (max-width:719px){
+    .wb.split{display:grid;grid-template-columns:minmax(0,42%) minmax(0,1fr);grid-template-rows:auto minmax(0,1fr)}
+    .wb.split .side{grid-column:1/-1;width:auto;display:flex;gap:4px;overflow-x:auto;padding:6px 8px;border-right:0;border-bottom:1px solid rgba(0,0,0,.4)}
+    .wb.split .side h5{display:none} .wb.split .side button{width:auto;white-space:nowrap;flex:none}
+    .wb.split .list,.wb.split .nlist{width:auto}
+    .wb.split > :last-child{grid-column:auto}
+    .detail,.note{padding:16px 18px} .detail h3{font-size:24px} .note h3{font-size:20px}
+    .wb.split.nside{grid-template-columns:minmax(0,40%) minmax(0,1fr);grid-template-rows:minmax(0,1fr)}
+    .wb.split.proj{display:flex;flex-direction:column} .wb.split.proj > div:last-child{flex:1;min-height:0}
+  }
+}
+
 /* ── phone ── */
 @media (max-width:899px){
   .wb{flex-direction:column}

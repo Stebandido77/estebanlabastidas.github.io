@@ -4,7 +4,7 @@ const EOS = window.EOS, {$, $$, esc, STATUS, ALLP} = EOS;
 EOS.register('research', {
   render(){
     const cats = [['all','All papers',ALLP.length],...['review','ssrn','soon','progress','published','wp','desk'].map(k => [k, k==='desk'?'On the desk':STATUS[k][0], ALLP.filter(p=>p.k===k).length]).filter(c=>c[2])];
-    return `<div class="wb">
+    return `<div class="wb split">
       <div class="side"><h5>Library</h5>${cats.map(([k,n,c],i) => `<button data-cat="${k}" class="${i?'':'on'}">${esc(n)}<span>${c}</span></button>`).join('')}</div>
       <div class="list scroll" data-list></div>
       <div class="detail scroll" data-detail tabindex="0" role="region" aria-label="Paper details"></div>

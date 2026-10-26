@@ -4,7 +4,7 @@ const EOS = window.EOS, {$, $$, esc, PROJ} = EOS;
 const folder = c => `<svg viewBox="0 0 64 52" aria-hidden="true"><path d="M2 9a4 4 0 0 1 4-4h17l6 6h29a4 4 0 0 1 4 4v31a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4z" fill="${c[0]}"/><path d="M2 17h60v29a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4z" fill="${c[1]}"/></svg>`;
 const FC = {markets:['#9a7440','#d4a868'], research:['#7d2a34','#b04a56'], oss:['#2b5bc0','#4d82e6']};
 EOS.register('projects', {
-  render: () => `<div class="wb">
+  render: () => `<div class="wb split proj">
     <div class="side"><h5>Favorites</h5>
       <button data-pc="all" class="on">All projects<span>${PROJ.length}</span></button>
       <button data-pc="markets">Banking &amp; markets<span>${PROJ.filter(p=>p.c==='markets').length}</span></button>
