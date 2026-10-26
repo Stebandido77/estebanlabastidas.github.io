@@ -9,11 +9,13 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Montserrat:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Archivo:wdth,wght@100..125,400..700&display=swap">
+<script>try{if(sessionStorage.getItem('eos.unlocked'))document.documentElement.classList.add('unlocked')}catch(e){}</script>
 <link rel="stylesheet" href="css/os.css">
 <link rel="stylesheet" href="css/apps.css">
 <script defer src="assets/data/content.js"></script>
 <script defer src="js/os.js"></script>
 <script defer src="js/wallpaper.js"></script>
+<script defer src="js/lock.js"></script>
 </head>
 <body>
 
@@ -27,6 +29,28 @@
 </div>
 <p class="wcap">Bogotá · black &amp; white<br>Photo <a href="https://commons.wikimedia.org/wiki/File:Bogot%C3%A1,_Monserrate,_2023-06_CN-02.jpg" target="_blank" rel="noopener">© Steffen Schmitz</a> · <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener">CC BY-SA 4.0</a></p>
 
+<div class="lock" id="lock" role="dialog" aria-modal="true" aria-label="Login screen. Press Enter to open." tabindex="-1">
+  <canvas id="topo" aria-hidden="true"></canvas>
+  <div class="lk-vig"></div>
+  <div class="lk-mark" id="lkmark" aria-hidden="true"><i></i><span>BOGOTÁ · 4°36′N 74°05′W · 2,640 m</span></div>
+  <div class="lk-stat" aria-hidden="true"><span><b class="lk-kb">ABC</b><svg width="16" height="12" viewBox="0 0 16 12"><path d="M8 11.5 5.6 9a3.4 3.4 0 0 1 4.8 0L8 11.5Zm-4.2-4.3L2.3 5.7a8 8 0 0 1 11.4 0l-1.5 1.5a5.9 5.9 0 0 0-8.4 0Z" fill="#fff"/></svg><svg width="27" height="13" viewBox="0 0 27 13"><rect x=".5" y=".5" width="23" height="12" rx="3.5" fill="none" stroke="#fff" opacity=".45"/><rect x="2" y="2" width="17" height="9" rx="2" fill="#fff"/></svg></span></div>
+  <div class="lk-clock">
+    <p class="lk-date" id="lkdate">—</p>
+    <p class="lk-time" id="lktime">--:--</p>
+  </div>
+  <form class="lk-login" id="lklogin" autocomplete="off">
+    <div class="lk-ava" aria-hidden="true">EL</div>
+    <p class="lk-name">Esteban Labastidas</p>
+    <div class="lk-pw">
+      <label for="lkpw" class="sr">Password</label>
+      <input id="lkpw" type="password" placeholder="Enter Password" aria-describedby="lkhint">
+      <button type="submit" aria-label="Log in"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M2 6h8M6.5 2.5 10 6l-3.5 3.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    </div>
+    <p class="lk-hint" id="lkhint">No password needed — press Enter</p>
+  </form>
+  <p class="lk-cap" aria-hidden="true">fig. 0 — Andes, in contour · move the cursor</p>
+</div>
+
 <header class="menubar">
   <div class="l">
     <div class="mb logo" data-menu tabindex="0" role="button" aria-haspopup="menu" aria-label="EL menu">EL
@@ -35,6 +59,7 @@
         <a data-cv href="assets/docs/CV_Esteban_Labastidas.pdf" target="_blank" rel="noopener">Download CV <kbd>PDF</kbd></a>
         <hr><button data-spot>Search… <kbd>⌘K</kbd></button>
         <hr><button data-closeall>Close all windows</button>
+        <hr><button data-lock>Lock Screen <kbd>⌃⌘Q</kbd></button>
       </div>
     </div>
     <nav class="mnav" id="mnav" aria-label="Pages"></nav>

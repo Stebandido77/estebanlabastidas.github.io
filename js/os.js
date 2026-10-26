@@ -158,6 +158,7 @@ function tile(){
 
 /* menus */
 function closeMenus(){ $$('.mb.open').forEach(m=>m.classList.remove('open')); }
+EOS.closeMenus = closeMenus;
 $$('[data-menu]').forEach(m => {
   m.addEventListener('click', e => { if (e.target.closest('.menu')) return; const o = m.classList.contains('open'); closeMenus(); if(!o) m.classList.add('open'); });
   m.addEventListener('keydown', e => { if ((e.key==='Enter'||e.key===' ') && e.target===m) { e.preventDefault(); m.click(); const f = $('.menu button, .menu a', m); f && f.focus(); } });
