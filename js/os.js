@@ -114,7 +114,7 @@ function openApp(id, sel){
     requestAnimationFrame(() => requestAnimationFrame(() => w.classList.remove('opening')));
     const dk = $(`.dk[data-open="${id}"]`); if (dk && !RM) { dk.classList.add('bounce'); setTimeout(()=>dk.classList.remove('bounce'),600); }
   } else {
-    if (w.hidden) { w.hidden = false; w.classList.add('opening'); requestAnimationFrame(() => requestAnimationFrame(() => w.classList.remove('opening'))); }
+    if (w.hidden) { w.hidden = false; w.classList.add('opening'); requestAnimationFrame(() => requestAnimationFrame(() => w.classList.remove('opening'))); if (w._resume) w._resume(); }
     if (sel && w._select) w._select(sel);
   }
   focusWin(w); syncDock(); hideHint(); document.body.classList.add('app-open');
@@ -169,7 +169,7 @@ document.addEventListener('pointerdown', e => { if (!e.target.closest('[data-men
 let IDX = null;
 const buildIndex = () => [
   ...APPS.map(a => ({g:a.name, s:'Application', a:a.id, k:a.name+' '+a.short+' '+a.nav})),
-  ...APPS.flatMap(a => (EOS.apps[a.id] && EOS.apps[a.id].search) ? EOS.apps[a.id].search() : []),
+  ...['research','projects','path','photos','notes'].flatMap(id => (EOS.apps[id] && EOS.apps[id].search) ? EOS.apps[id].search() : []),
 ];
 let spotSel = 0, spotRes = [], spotPrev = null;
 function openSpot(){ IDX = IDX || buildIndex(); spotPrev = document.activeElement; $('#spot').classList.add('on'); $('#spotq').value=''; renderSpot(); setTimeout(()=>$('#spotq').focus(),20); }
