@@ -3,12 +3,12 @@
 const EOS = window.EOS, {D, $, esc} = EOS;
 EOS.register('about', {
   render: () => `
-  <div class="scroll" style="flex:1"><div class="about">
-    <div>
+  <div class="about">
+    <div class="about-l">
       <div class="pframe"><canvas data-portrait aria-label="Portrait of Esteban Labastidas, formed from words" role="img"></canvas></div>
       <div class="pctl"><button class="btn" data-replay>↻ Replay</button><button class="btn" data-toggle-words>Show words</button></div>
     </div>
-    <div>
+    <div class="about-r">
       <h2>Esteban<br><em>Labastidas</em></h2>
       <p class="kicker">Economist · Banker · Builder</p>
       <p class="thesis">“${esc(D.thesis.replace(/^[\s“"]+|[\s”"]+$/g,''))}”</p>
@@ -17,7 +17,7 @@ EOS.register('about', {
       <div class="tags">${D.interests.map(t => `<span>${esc(t)}</span>`).join('')}</div>
       <div class="acts"><button class="btn pri" data-open="research">Read the papers</button><button class="btn" data-open="projects">See projects</button><button class="btn" data-open="path">Résumé</button><button class="btn" data-open="mail">Write to me</button></div>
     </div>
-  </div></div>`,
+  </div>`,
   init(w){
     const p = EOS.portrait($('[data-portrait]', w));
     const tg = $('[data-toggle-words]', w);

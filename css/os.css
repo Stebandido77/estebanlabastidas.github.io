@@ -88,7 +88,7 @@ button{font:inherit;color:inherit}
   padding-left:max(14px, env(safe-area-inset-left,0px));padding-right:max(14px, env(safe-area-inset-right,0px));padding-top:env(safe-area-inset-top,0px);box-sizing:content-box;
   background:rgba(20,18,15,.55);backdrop-filter:blur(var(--blur-bar)) saturate(1.6);-webkit-backdrop-filter:blur(var(--blur-bar)) saturate(1.6);font-size:13px;font-weight:500}
 .menubar .l,.menubar .r{display:flex;align-items:center;gap:2px;white-space:nowrap}
-.mb{background:none;border:0;padding:3px 9px;border-radius:5px;cursor:default;position:relative}
+.mb{background:none;border:0;padding:3px 8px;border-radius:5px;cursor:default;position:relative}
 .mb:hover,.mb.open{background:rgba(255,255,255,.12)}
 .mb.logo{font-family:var(--display);font-style:italic;font-size:17px;line-height:1;padding:2px 10px;color:var(--amber-hi)}
 .mb.logo .menu{font:400 13px/1.5 var(--ui);color:var(--text)}
@@ -99,15 +99,18 @@ button{font:inherit;color:inherit}
 .menu a:hover,.menu button:hover,.menu a:focus-visible,.menu button:focus-visible{background:var(--amber);color:var(--ink);outline:none}
 .menu kbd{font:inherit;opacity:.55}
 .menu hr{border:0;border-top:1px solid rgba(255,255,255,.1);margin:4px 6px}
-.menubar .r .st{padding:3px 8px;display:flex;align-items:center;gap:6px}
+.menu .mh{display:block;padding:2px 10px;font:600 10.5px var(--ui);letter-spacing:.06em;color:var(--text-2)}
+.menubar .r .st{padding:3px 6px;display:flex;align-items:center;gap:6px}
 .menubar .r .mkt{font:500 11.5px var(--mono);color:var(--text-2)}
 .menubar .r .mkt b{color:var(--amber-hi);font-weight:500}
 .mnav{display:flex;align-items:center;gap:0}
 .mnav .mb{font-weight:500;color:rgba(236,229,214,.86)}
 .mnav .mb.cur{font-weight:700;color:var(--text)}
 .mb.more{display:none}
-@media (max-width:1240px){ .mnav{display:none} .mb.more{display:block} }
-@media (max-width:1180px){ .menubar .r .mkt{display:none} }
+/* §4.3 breakpoints: pages in the bar from 1240 px, market figures from 1280 px, 46 px dock below 1240 */
+@media (max-width:1239px){ .mnav{display:none} .mb.more{display:block} }
+@media (max-width:1279px){ .menubar .r .mkt{display:none} }
+@media (min-width:900px) and (max-width:1239px){ .dock .dk{width:46px;height:46px} .dock .dk .tip{bottom:62px} }
 
 /* ── dock ── */
 .dock:empty{display:none}

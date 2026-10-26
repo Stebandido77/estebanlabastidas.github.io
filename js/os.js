@@ -210,11 +210,11 @@ function bindWin(w){
   /* drag by the title bar */
   tb.addEventListener('pointerdown', e => {
     if (phone() || e.button !== 0 || e.target.closest('.lights,button')) return;
-    const s = S.get(w), a = area(), ox = e.clientX - s.x, oy = e.clientY - s.y;
+    const s = S.get(w), a = area(), ox = e.clientX - s.x, oy = e.clientY - s.y, lim = EOS.dragLimit ? EOS.dragLimit() : a.height - 44;
     let nx = s.x, ny = s.y, raf = 0, moved = false;
     tb.setPointerCapture(e.pointerId); w.style.willChange = 'transform';
     const mv = ev => { moved = true;
-      nx = clamp(ev.clientX - ox, 120 - s.w, a.width - 120); ny = clamp(ev.clientY - oy, 0, a.height - 44);   /* title bar stays reachable */
+      nx = clamp(ev.clientX - ox, 120 - s.w, a.width - 120); ny = clamp(ev.clientY - oy, 0, lim);   /* title bar stays reachable */
       if (!raf) raf = requestAnimationFrame(() => { raf = 0; s.x = nx; s.y = ny; w.style.transform = T(s); }); };
     const up = () => { cancelAnimationFrame(raf); if (moved) { s.x = nx; s.y = ny; s.prev = null; w.style.transform = T(s); if (EOS.saveRect) EOS.saveRect(w); }
       w.style.willChange = ''; tb.removeEventListener('pointermove', mv); tb.removeEventListener('pointerup', up); tb.removeEventListener('pointercancel', up); };
@@ -238,19 +238,13 @@ function bindWin(w){
     h.addEventListener('pointermove', mv); h.addEventListener('pointerup', up); h.addEventListener('pointercancel', up);
   }));
 }
-addEventListener('resize', () => { for (const w of Object.values(wins)) place(w); });
 document.addEventListener('click', e => {
   const o = e.target.closest('[data-open]'); if (o) { e.preventDefault(); openApp(o.dataset.open, o.dataset.sel); closeMenus(); }
   if (e.target.closest('[data-closeall]')) { $$('.win').forEach(w => !w.hidden && closeWin(w)); closeMenus(); }
-  if (e.target.closest('[data-tile]')) { tile(); closeMenus(); }
+  if (e.target.closest('[data-tile]')) { EOS.tile(); closeMenus(); }
   if (e.target.closest('[data-spot]')) { openSpot(); closeMenus(); }
 });
-function tile(){
-  const vis = $$('.win').filter(w=>!w.hidden); const ar = area(); const n = vis.length; if(!n) return;
-  const cols = Math.ceil(Math.sqrt(n)), rows = Math.ceil(n/cols), W = (ar.width-40)/cols, H = (ar.height-100)/rows;
-  vis.forEach((w,i) => EOS.rect(w, {x:20+(i%cols)*W, y:10+Math.floor(i/cols)*H, w:W-12, h:H-12, prev:null}));
-}
-EOS.tile = tile;
+
 
 /* menus */
 function closeMenus(){ $$('.mb.open').forEach(m=>m.classList.remove('open')); }
@@ -293,14 +287,87 @@ document.addEventListener('keydown', e => {
 });
 function hideHint(){ const h=$('#hint'); if(h) h.style.opacity='0'; }
 
+/* ── layout (§4): work area, smart placement, remembered rects, arrange, shortcuts ── */
+/* the rectangle windows open and stay in, in #wins coordinates:
+   12 px under the menubar, 16 px above the Dock, 24 px from each side */
+function workArea(){
+  const wr = area(), mb = $('.menubar').getBoundingClientRect(), dk = $('#dock').getBoundingClientRect();
+  const top = mb.bottom + 12 - wr.top, bottom = (dk.height ? dk.top : innerHeight) - 16 - wr.top;
+  return {x: 24, y: Math.max(0, top), w: wr.width - 48, h: bottom - Math.max(0, top)};
+}
+EOS.workArea = workArea;
+const fits = (r, wa) => r && r.w >= 360 && r.h >= 260 && r.x >= wa.x - 1 && r.y >= wa.y - 1 && r.x + r.w <= wa.x + wa.w + 1 && r.y + r.h <= wa.y + wa.h + 1;
+const overlap = (r, o) => Math.max(0, Math.min(r.x+r.w, o.x+o.w) - Math.max(r.x, o.x)) * Math.max(0, Math.min(r.y+r.h, o.y+o.h) - Math.max(r.y, o.y));
+const KEY = 'eos.rects';
+const loadRects = () => { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) { return {}; } };
+EOS.saveRect = w => { try { const all = loadRects(), s = S.get(w); all[w.dataset.app] = {x:Math.round(s.x), y:Math.round(s.y), w:Math.round(s.w), h:Math.round(s.h)}; localStorage.setItem(KEY, JSON.stringify(all)); } catch (e) {} };
+const sizeFor = (a, wa) => ({w: Math.max(360, Math.min(a.w, wa.w)), h: Math.max(260, Math.min(a.h, wa.h))});
+const visibleRects = () => $$('.win').filter(w => !w.hidden).map(w => S.get(w));
+/* first window: centered. Next ones: the candidate position (on a grid over the work area) with
+   the least overlap with visible windows, nearest the center on ties. When even the best spot
+   would cover more than 35% of the new window (no real gap), cascade 28 px from the front one */
+EOS.placeWindow = a => {
+  const wa = workArea(), saved = loadRects()[a.id];
+  if (fits(saved, wa)) return {...saved};
+  const sz = sizeFor(a, wa), others = visibleRects();
+  const center = {x: wa.x + (wa.w - sz.w)/2, y: wa.y + (wa.h - sz.h)/2, ...sz};
+  if (!others.length) return center;
+  const xs = [], ys = [], nx = 12, ny = 8;
+  for (let i = 0; i <= nx; i++) xs.push(wa.x + (wa.w - sz.w)*i/nx);
+  for (let j = 0; j <= ny; j++) ys.push(wa.y + (wa.h - sz.h)*j/ny);
+  let best = null, bo = Infinity, bd = Infinity;
+  for (const y of ys) for (const x of xs) {
+    const r = {x, y, ...sz}, o = others.reduce((t, q) => t + overlap(r, q), 0), d = (x - center.x)**2 + (y - center.y)**2;
+    if (o < bo - 1 || (o <= bo + 1 && d < bd)) { best = r; bo = o; bd = d; }
+  }
+  if (bo < sz.w*sz.h*.35) return best;
+  const t = topWin(), f = t ? S.get(t) : center;
+  let x = f.x + 28, y = f.y + 28;
+  if (x + sz.w > wa.x + wa.w) x = wa.x + (x - wa.x) % Math.max(28, wa.w - sz.w + 1);
+  if (y + sz.h > wa.y + wa.h) y = wa.y + (y - wa.y) % Math.max(28, wa.h - sz.h + 1);
+  return {x, y, ...sz};
+};
+EOS.zoomRect = () => { const wa = workArea(); return {x: wa.x, y: wa.y, w: wa.w, h: wa.h}; };
+/* Window → Arrange: tile the visible windows inside the work area */
+EOS.tile = () => {
+  const vis = $$('.win').filter(w => !w.hidden), n = vis.length; if (!n) return;
+  const wa = workArea(), g = 12, cols = Math.ceil(Math.sqrt(n * wa.w / wa.h / 1.4)), rows = Math.ceil(n / cols);
+  const W = (wa.w - g*(cols-1)) / cols, H = (wa.h - g*(rows-1)) / rows;
+  vis.forEach((w, i) => { EOS.rect(w, {x: wa.x + (i % cols)*(W + g), y: wa.y + Math.floor(i / cols)*(H + g), w: W, h: H, prev: null}); EOS.saveRect(w); });
+};
+/* keep every window inside the work area when the browser window changes size */
+let rzT; addEventListener('resize', () => { clearTimeout(rzT); rzT = setTimeout(() => { if (phone()) { Object.values(wins).forEach(place); return; } const wa = workArea();
+  for (const w of Object.values(wins)) { const s = S.get(w), nw = Math.min(s.w, wa.w), nh = Math.min(s.h, wa.h);
+    EOS.rect(w, {w: nw, h: nh, x: clamp(s.x, wa.x, wa.x + wa.w - nw), y: clamp(s.y, wa.y, wa.y + wa.h - nh)}); } }, 120); });
+EOS.dragLimit = () => { const wa = workArea(); return wa.y + wa.h - 44; };   /* the title bar never goes under the Dock */
+/* shortcuts: ⌘/Ctrl when the browser lets them through (⌘W, ⌘M and ⌘` are usually taken by the
+   browser or the OS), and ⌥ as a fallback that always works: ⌥W close · ⌥M minimize · ⌥` cycle */
+const editable = el => el && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName));
+document.addEventListener('keydown', e => {
+  if (EOS.locked || phone()) return;
+  const mod = e.metaKey || e.ctrlKey || (e.altKey && !editable(e.target));
+  if (!mod || e.shiftKey && e.code !== 'Backquote') return;
+  const t = topWin();
+  if (e.code === 'KeyW' && t) { e.preventDefault(); closeWin(t); }
+  else if (e.code === 'KeyM' && t) { e.preventDefault(); minimize(t); }
+  else if (e.code === 'Backquote') { const vis = $$('.win').filter(w => !w.hidden).sort((a,b) => a.style.zIndex - b.style.zIndex);
+    if (vis.length > 1) { e.preventDefault(); focusWin(e.shiftKey ? vis[vis.length-2] : vis[0]); } }
+});
+document.addEventListener('click', e => {
+  const c = e.target.closest('[data-win]'); if (!c) return;
+  const t = topWin(); closeMenus();
+  ({close: () => t && closeWin(t), min: () => t && minimize(t), zoom: () => t && zoom(t),
+    cycle: () => { const v = $$('.win').filter(w => !w.hidden).sort((a,b) => a.style.zIndex - b.style.zIndex); if (v.length > 1) focusWin(v[0]); }})[c.dataset.win]();
+});
+
 /* ── entering the desktop (called directly, or by the login screen) ── */
 EOS.defaultWindows = () => {
-  const ar = area();
-  if (ar.width >= 1280){
-    const mw = Math.min(620, ar.width*.40), mh = Math.min(420, ar.height*.52);
-    EOS.rect(openApp('markets'), {w:mw, h:mh, x:ar.width - mw - 28, y:56});
-    const aw = Math.min(860, ar.width - mw - 90), ah = Math.min(600, ar.height - 110);
-    EOS.rect(openApp('about'), {w:aw, h:ah, x:28, y:Math.max(18,(ar.height - ah - 80)/2)});
+  const wa = workArea(), saved = loadRects();
+  if (area().width >= 1280){   /* About on the left, in front; Markets top right */
+    const mw = Math.min(620, wa.w*.40), mh = Math.min(420, wa.h*.62);
+    const m = openApp('markets'); if (!fits(saved.markets, wa)) EOS.rect(m, {w:mw, h:mh, x:wa.x + wa.w - mw, y:wa.y});
+    const aw = Math.min(860, wa.w - mw - 24), ah = Math.min(600, wa.h);
+    const a = openApp('about'); if (!fits(saved.about, wa)) EOS.rect(a, {w:aw, h:ah, x:wa.x, y:wa.y + (wa.h - ah)/2});
   } else openApp('about');
 };
 EOS.enter = () => { if (!phone()) EOS.defaultWindows(); };

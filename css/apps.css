@@ -18,8 +18,16 @@
 .btn.pri:hover{background:var(--amber-hi)}
 
 /* about */
-.about{display:grid;grid-template-columns:minmax(0,300px) minmax(0,1fr);gap:28px;padding:26px 28px 28px;align-items:start}
-.pframe{position:relative;aspect-ratio:4/5;border-radius:8px;overflow:hidden;background:#0b0a08;box-shadow:0 0 0 1px var(--line)}
+/* §4.4: portrait column (~38%) stays put, only the text column scrolls */
+.about{flex:1;min-height:0;display:grid;grid-template-columns:38% minmax(0,1fr);gap:28px;padding:26px 0 0 28px}
+.about-l{min-height:0;overflow:hidden;padding-bottom:20px}
+.about-r{min-height:0;overflow:auto;padding:0 28px 28px 0}
+.pframe{position:relative;aspect-ratio:4/5;max-height:calc(100% - 46px);border-radius:8px;overflow:hidden;background:#0b0a08;box-shadow:0 0 0 1px var(--line)}
+@media (max-width:1099px){
+  .about{display:block;overflow:auto;padding:22px 24px 26px}
+  .about-l{max-width:320px;overflow:visible;padding-bottom:0} .pframe{max-height:none}
+  .about-r{overflow:visible;padding:20px 0 0}
+}
 .pframe canvas{position:absolute;inset:0;width:100%;height:100%}
 .pctl{display:flex;gap:6px;margin-top:10px}
 .about h2{margin:0;font:400 54px/.92 var(--display);letter-spacing:-.015em}
@@ -161,7 +169,7 @@
   .side{width:auto;display:flex;gap:4px;overflow-x:auto;padding:8px;border-right:0;border-bottom:1px solid rgba(0,0,0,.4)}
   .side h5{display:none} .side button{width:auto;white-space:nowrap;flex:none}
   .list,.nlist{width:auto;max-height:40%;border-right:0;border-bottom:1px solid rgba(0,0,0,.4)}
-  .about{grid-template-columns:1fr;padding:18px}
+  .about{padding:18px}
   .pframe{max-width:320px}
   .about h2{font-size:44px}
   .meta{grid-template-columns:1fr}
