@@ -39,9 +39,10 @@ const G = {
   safari: `<svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="12" fill="#fff"/><circle cx="16" cy="16" r="10.5" fill="none" stroke="#bfcbe0"/><path d="M16 16 22 9l-4 9z" fill="#d6463b"/><path d="M16 16 10 23l4-9z" fill="#9aa6b8"/></svg>`,
   mail: `<svg viewBox="0 0 32 32"><rect x="4" y="8" width="24" height="17" rx="2.5" fill="#fff"/><path d="M5 10l11 8 11-8" fill="none" stroke="#5a8fe0" stroke-width="1.6"/></svg>`,
   markets: `<svg viewBox="0 0 32 32"><path d="M5 22l6-6 4 3 7-9 5 4" fill="none" stroke="#f2a24a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 26h22" stroke="rgba(242,162,74,.4)" stroke-width="1.2"/></svg>`,
+  music: `<svg viewBox="0 0 32 32"><path d="M13 22.5V9.5l11-2.5v12.5" fill="none" stroke="#fff6e8" stroke-width="2" stroke-linejoin="round"/><ellipse cx="10.5" cy="22.5" rx="3" ry="2.4" fill="#fff6e8"/><ellipse cx="21.5" cy="19.5" rx="3" ry="2.4" fill="#fff6e8"/></svg>`,
   term: `<svg viewBox="0 0 32 32"><path d="M8 11l5 5-5 5" fill="none" stroke="#e8c288" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M15 22h9" stroke="#ece5d6" stroke-width="2.2" stroke-linecap="round"/></svg>`
 };
-/* nav: label used in the menubar page list */
+/* nav: label in the menubar page list (navless apps live in the Dock, Pages ▾ and Spotlight) */
 const APPS = [
   {id:'about',   name:'About Esteban', short:'About',    nav:'About',    cls:'i-about',  w:860, h:600},
   {id:'research',name:'Research',      short:'Research', nav:'Research', cls:'i-res',    w:1000,h:620},
@@ -50,6 +51,7 @@ const APPS = [
   {id:'notes',   name:'Notes',         short:'Notes',    nav:'Writing',  cls:'i-notes',  w:780, h:520},
   {id:'photos',  name:'Photos',        short:'Photos',   nav:'Photos',   cls:'i-photos', w:860, h:620},
   {id:'markets', name:'Markets',       short:'Markets',  nav:'Markets',  cls:'i-mkt',    w:620, h:420},
+  {id:'music',   name:'Music',         short:'Music',    nav:'Music',    cls:'i-music',  w:400, h:540, navless:true},
   {id:'activity',name:'Activity',      short:'Activity', nav:'Activity', cls:'i-act',    w:640, h:600},
   {id:'safari',  name:'Safari',        short:'Safari',   nav:'Links',    cls:'i-safari', w:820, h:540},
   {id:'mail',    name:'Mail',          short:'Mail',     nav:'Contact',  cls:'i-mail',   w:600, h:520},
@@ -59,13 +61,13 @@ const appById = Object.fromEntries(APPS.map(a => [a.id, a]));
 const icon = (a, size) => `<span class="ic ${a.cls}" aria-hidden="true" ${size?`style="width:${size}px;height:${size}px"`:''}>${G[a.id]}</span>`;
 Object.assign(EOS, {APPS, appById, icon, G});
 
-const MOBHIDE = ['notes','photos','activity','safari','term','path','markets'];
+const MOBHIDE = ['notes','photos','activity','safari','term','path','markets','music'];
 EOS.renderChrome = () => {
   $('#dock').innerHTML = APPS.map(a => (a.id==='mail'?'<span class="sep" aria-hidden="true"></span>':'') +
     `<button class="dk ${MOBHIDE.includes(a.id)?'mobhide':''}" data-open="${a.id}" aria-label="${a.name}">${icon(a)}<span class="tip" aria-hidden="true">${a.name}</span></button>`).join('');
   $('#happs').innerHTML = APPS.map(a => `<button class="ha" data-open="${a.id}">${icon(a)}${a.short}</button>`).join('');
   $('#gomenu').innerHTML = APPS.map(a => `<button data-open="${a.id}" role="menuitem">${a.nav}</button>`).join('');
-  $('#mnav').innerHTML = APPS.map(a => `<button class="mb" data-open="${a.id}" data-nav="${a.id}">${a.nav}</button>`).join('');
+  $('#mnav').innerHTML = APPS.filter(a => !a.navless).map(a => `<button class="mb" data-open="${a.id}" data-nav="${a.id}">${a.nav}</button>`).join('');
   const day = new Intl.DateTimeFormat('en-US',{timeZone:'America/Bogota',day:'numeric'}).format(new Date());
   $$('[data-dayn]').forEach(e => e.textContent = day);
 };

@@ -29,16 +29,18 @@
 <script defer src="js/apps/safari.js"></script>
 <script defer src="js/apps/mail.js"></script>
 <script defer src="js/apps/term.js"></script>
+<script defer src="js/apps/music.js"></script>
 <script defer src="js/portrait.js"></script>
 <script defer src="js/lock.js"></script>
+<script defer src="js/audio.js"></script>
 </head>
 <body>
 
 <div class="wall" aria-hidden="true">
   <canvas id="city"></canvas>
-  <img id="wallimg" alt="" decoding="async" fetchpriority="low"
-    srcset="assets/img/wallpaper-900.webp 900w, assets/img/wallpaper-1440.webp 1440w, assets/img/wallpaper-2560.webp 2560w"
-    sizes="100vw" src="assets/img/wallpaper.jpg">
+  <img id="wallimg" alt="" decoding="async" sizes="100vw"
+    data-srcset="assets/img/wallpaper-900.webp 900w, assets/img/wallpaper-1440.webp 1440w, assets/img/wallpaper-2560.webp 2560w"
+    data-src="assets/img/wallpaper.jpg">
   <div class="wdim"></div>
   <div class="grain" id="grain"></div>
 </div>
@@ -53,6 +55,8 @@
     <p class="lk-date" id="lkdate">—</p>
     <p class="lk-time" id="lktime">--:--</p>
   </div>
+  <script>/* fill the clock before first paint (it is the LCP element); lock.js keeps it ticking */
+  try{var n=new Date(),z='America/Bogota';document.getElementById('lktime').textContent=new Intl.DateTimeFormat('en-US',{timeZone:z,hour:'numeric',minute:'2-digit',hour12:false}).format(n).replace(/^24/,'00');document.getElementById('lkdate').textContent=new Intl.DateTimeFormat('en-US',{timeZone:z,weekday:'long',month:'long',day:'numeric'}).format(n)}catch(e){}</script>
   <form class="lk-login" id="lklogin" autocomplete="off">
     <div class="lk-ava" aria-hidden="true">EL</div>
     <p class="lk-name">Esteban Labastidas</p>
@@ -64,6 +68,7 @@
     <p class="lk-hint" id="lkhint">No password needed — press Enter</p>
   </form>
   <p class="lk-cap" aria-hidden="true">fig. 0 — Andes, in contour · move the cursor</p>
+  <button class="lk-snd" id="lksnd" type="button" aria-pressed="false" aria-label="Music when you log in"><b aria-hidden="true">♪</b> <span>sound off</span></button>
 </div>
 
 <header class="menubar">
@@ -92,6 +97,10 @@
     <span class="st mkt" id="mbmkt"></span>
     <button class="mb st" data-spot aria-label="Search"><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><circle cx="6" cy="6" r="4.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M9.5 9.5 13 13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button>
     <span class="st" aria-hidden="true"><svg width="16" height="12" viewBox="0 0 16 12"><path d="M8 11.5 5.6 9a3.4 3.4 0 0 1 4.8 0L8 11.5Zm-4.2-4.3L2.3 5.7a8 8 0 0 1 11.4 0l-1.5 1.5a5.9 5.9 0 0 0-8.4 0Z" fill="currentColor"/></svg></span>
+    <span class="sndw">
+      <button class="mb st snd" id="snd" aria-label="Play music" aria-pressed="false" title="Music — click to play/pause, right-click or hold for volume"><svg width="17" height="14" viewBox="0 0 17 14" aria-hidden="true"><path d="M1.5 5h3l4-3.5v11l-4-3.5h-3z" fill="currentColor"/><path class="w1" d="M11 4.5a3.5 3.5 0 0 1 0 5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path class="w2" d="M13 2.5a6.5 6.5 0 0 1 0 9" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></button>
+      <span class="menu sndpop" id="sndpop" hidden><label for="sndvol">Volume</label><input id="sndvol" type="range" min="0" max="100"></span>
+    </span>
     <span class="st" id="clock">—</span>
   </div>
 </header>

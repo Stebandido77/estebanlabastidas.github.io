@@ -65,12 +65,19 @@ let drawn = false;
 const city = () => { if (photoOk || drawn) return; drawn = true; renderCity(); };
 const showPhoto = () => { photoOk = true; img.classList.add('on'); setTimeout(() => { cv.hidden = true; cv.width = cv.height = 0; }, 450); };
 const whenVisible = fn => EOS.locked ? document.addEventListener('eos:unlock', fn, {once:true}) : fn();
-if (img.complete && img.naturalWidth) showPhoto();
-else {
-  img.addEventListener('load', showPhoto, {once:true});
-  img.addEventListener('error', () => { img.remove(); whenVisible(city); }, {once:true});
-  whenVisible(() => setTimeout(city, 400));
-}
+/* the photo is requested here, not by the parser: behind the login it starts 800 ms after the
+   page's load event (or when the user enters, if sooner) so it never competes with the first
+   paint; on an open desktop it starts now */
+img.addEventListener('load', showPhoto, {once:true});
+img.addEventListener('error', () => { img.remove(); whenVisible(city); }, {once:true});
+let requested = false;
+const request = () => { if (requested) return; requested = true; img.srcset = img.dataset.srcset; img.src = img.dataset.src; };
+if (EOS.locked) {
+  document.addEventListener('eos:unlock', request, {once:true});
+  const later = () => setTimeout(request, 800);
+  document.readyState === 'complete' ? later() : addEventListener('load', later, {once:true});
+} else request();
+whenVisible(() => setTimeout(city, 400));
 let rt; addEventListener('resize', () => { if (photoOk || !drawn) return; clearTimeout(rt); rt = setTimeout(renderCity, 150); });
 
 /* ── film grain: built in idle time once the desktop is visible ── */

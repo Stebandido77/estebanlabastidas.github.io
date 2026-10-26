@@ -405,6 +405,13 @@ window.DATA = {
     "x": "https://x.com/Stbandido_"
   },
 
+  /* Música de fondo. Por defecto es generativa (Web Audio), sin archivos ni licencias.
+     TODO(esteban): para usar pistas propias, sube los .mp3 (CC0 o con licencia que permita uso web)
+     a assets/audio/, crea assets/audio/playlist.json con
+       {"tracks": [{"title": "…", "src": "assets/audio/pista.mp3", "credit": "Autor · Licencia"}]}
+     y cambia "playlist" a "assets/audio/playlist.json". */
+  "music": {"playlist": null},
+
   /* Datos de mercado — FIJOS, no se consultan APIs.
      Para actualizarlos: cambia los valores y la fecha "asOf" (y la nota de cada uno).
        banrep: tasa de política del Banco de la República (banrep.gov.co).

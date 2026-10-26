@@ -97,6 +97,7 @@ function mount(){
 function unlock(){
   if (!locked) return; locked = false; EOS.locked = false;
   try { sessionStorage.setItem(KEY, '1'); } catch (e) {}
+  document.documentElement.classList.add('unlocked');   /* the desktop appears behind the fading login */
   const el = lock;
   el.classList.add('up');
   document.dispatchEvent(new CustomEvent('eos:unlock'));

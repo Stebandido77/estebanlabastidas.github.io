@@ -163,6 +163,18 @@
 .term .p{color:var(--amber)} .term .k{color:var(--amber-hi)} .term .m{color:var(--text-2)}
 .term .in{display:flex;gap:8px} .term input{all:unset;flex:1;caret-color:var(--amber);min-width:0}
 
+/* music */
+.mus{flex:1;min-height:0;overflow:auto;display:grid;align-content:start;gap:14px;padding:18px 18px 20px}
+.mus-cover{position:relative;aspect-ratio:1;max-height:320px;border-radius:10px;overflow:hidden;box-shadow:0 0 0 1px var(--line),0 18px 40px rgba(0,0,0,.45)}
+.mus-cover canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+.mus-meta{display:grid;gap:2px}
+.mus-meta b{font:400 24px/1.1 var(--display)}
+.mus-meta small{font:500 10.5px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--text-2)}
+.mus-ctl{display:flex;align-items:center;gap:8px}
+.mus-play{min-width:92px;justify-content:center}
+.mus-vol{flex:1;display:flex} .mus-vol input{width:100%;accent-color:var(--amber)}
+.mus-note{margin:0;font-size:11.5px;line-height:1.5;color:var(--text-2)}
+
 /* ── phone ── */
 @media (max-width:899px){
   .wb{flex-direction:column}

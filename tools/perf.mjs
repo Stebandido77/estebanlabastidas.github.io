@@ -6,6 +6,7 @@
 //
 // --mobile  390×844 @3x with touch, like an iPhone; --cpu=N throttles the CPU N×
 // --file    open index.html over file:// and only run the smoke test
+// --audio   music checks: no sound without a gesture, login ♪, Music app, pause/suspend
 // --gpu     use the GPU (closer to a real device; without it canvas raster is software)
 import { spawn } from 'node:child_process';
 import { mkdtempSync } from 'node:fs';
@@ -72,7 +73,28 @@ try {
   const EV = flag('eval'); if (EV) await evaluate(EV.slice(7));   /* --eval=... for experiments */
   console.log(`# ${URL_}  ${W}×${H}${MOBILE ? ' mobile' : ''}  cpu ${CPU}×`);
 
-  if (FILE) {
+  if (flag('audio')) {
+    const st = () => evaluate(`({playing: EOS.audio.playing, ctx: !!EOS.audio.analyser, state: EOS.audio.analyser && EOS.audio.analyser.context.state,
+      energy: (() => { const a = EOS.audio.analyser; if (!a) return 0; const b = new Uint8Array(a.frequencyBinCount); a.getByteFrequencyData(b); return b.reduce((x, y) => x + y, 0); })(),
+      invite: EOS.audio.invite, speaker: document.getElementById('snd').className})`);
+    console.log('before any gesture  ', JSON.stringify(await st()));
+    const [bx, by] = await evaluate(`(() => { const r = document.getElementById('lksnd').getBoundingClientRect(); return [r.left + r.width/2, r.top + r.height/2]; })()`);
+    await mouse('mousePressed', bx, by); await mouse('mouseReleased', bx, by, 0);
+    console.log('♪ armed on login    ', JSON.stringify(await evaluate(`({armed: EOS.audio.armed, label: document.querySelector('#lksnd span').textContent})`)));
+    await key('Enter', 'Enter', 13); await sleep(2500);
+    console.log('entered (2.5 s)     ', JSON.stringify(await st()));
+    await evaluate(`EOS.openApp('music')`); await sleep(600);
+    await measure('music + Music app (3 s)', () => sleep(3000));
+    console.log('Music app           ', JSON.stringify(await evaluate(`({title: document.querySelector('[data-app=music] [data-title]').textContent, button: document.querySelector('[data-app=music] [data-play]').textContent})`)));
+    await evaluate(`document.querySelector('[data-app=music] [data-next]').click()`); await sleep(300);
+    console.log('next →              ', await evaluate(`EOS.audio.title`));
+    await evaluate(`EOS.audio.pause()`); await sleep(1400);
+    console.log('paused (1.4 s)      ', JSON.stringify(await st()));
+    console.log('terminal `music`    ', await evaluate(`EOS.termCommands.music()`));
+    await sleep(400); console.log('                    ', JSON.stringify(await st()));
+    await send('Page.reload');   /* leave while it plays: next visit invites, never autoplays */ await sleep(1500);
+    console.log('next visit (no autoplay, invite)', JSON.stringify(await evaluate(`({playing: EOS.audio.playing, invite: EOS.audio.invite, speaker: document.getElementById('snd').className})`)));
+  } else if (FILE) {
     await key('Enter', 'Enter', 13); await sleep(6000);
     console.log(JSON.stringify(await evaluate(`({ errors: window.__errs || null, lock: !!document.getElementById('lock'), wins: Object.keys(EOS.wins),
       portraitDrawn: (() => { const c = document.querySelector('[data-portrait]'); if (!c) return null; try { const d = c.getContext('2d').getImageData(c.width/2|0, c.height/3|0, 1, 1).data; return d[0]+d[1]+d[2] > 60; } catch (e) { return 'photo drawn (canvas tainted under file://)'; } })(),
