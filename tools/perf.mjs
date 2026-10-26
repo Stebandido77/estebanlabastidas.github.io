@@ -8,7 +8,7 @@
 // --file    open index.html over file:// and only run the smoke test
 // --audio   music checks: no sound without a gesture, login ♪, Music app, pause/suspend
 // --axe     accessibility audit (axe-core) of the login, desktop and each app
-// --shot=name [--size=WxH]  screenshot after entering (side-by-side QA with the reference)
+// --shot=name [--size=WxH] [--open=a,b] [--wait=ms]  screenshot after entering (side-by-side QA with the reference)
 // --gpu     use the GPU (closer to a real device; without it canvas raster is software)
 import { spawn } from 'node:child_process';
 import { mkdtempSync } from 'node:fs';
@@ -112,7 +112,10 @@ try {
     await run('desktop');
     for (const a of await evaluate(`EOS.APPS.map(a => a.id)`)) { await evaluate(`Object.values(EOS.wins).forEach(w => w.hidden || EOS.closeWin(w)); EOS.openApp('${a}')`); await sleep(1200); await run(a); }
   } else if (flag('shot')) {   /* --shot=name: enter, let the animations finish, capture */
-    await key('Enter', 'Enter', 13); await sleep(7000);
+    await key('Enter', 'Enter', 13); await sleep(900);
+    for (const a of (flag('open') || '').split('=')[1]?.split(',').filter(Boolean) || []) { await evaluate(`EOS.openApp('${a}')`); await sleep(500); }   /* --open=about,research */
+    await sleep(Number((flag('wait') || '--wait=6000').split('=')[1]));
+    const REP2 = flag('report'); if (REP2) console.log('report:', JSON.stringify(await evaluate(REP2.slice(9))));
     const { data } = await send('Page.captureScreenshot', { format: 'png' });
     const out = join(tmpdir(), `eos-${flag('shot').split('=')[1] || 'shot'}-${W}x${H}.png`); (await import('node:fs')).writeFileSync(out, Buffer.from(data, 'base64')); console.log('screenshot:', out);
   } else if (flag('nojs')) {

@@ -94,9 +94,24 @@ EOS.portrait = cv => {
     for (const p of parts) push(p, p.tx, p.ty, p.a*p.am);
     blit(x, bucket); return c;
   }
+  /* the end state, painted directly: only the photo (or only the words in "Show words").
+     Called when the animation ends, when it is stopped, and by a timer, so it never depends
+     on a last rAF that the browser may skip (scrolling on iOS, background tab, low power). */
+  let safety = 0;
+  function finish(){
+    cancelAnimationFrame(raf); raf = 0; clearTimeout(safety);
+    if (!L || !W || !atlas) return;
+    ctx.globalAlpha = 1; ctx.fillStyle = '#0b0a08'; ctx.fillRect(0,0,W,H);
+    if (mode !== 'words' && PHOTO){
+      const iw = PHOTO.naturalWidth, ih = PHOTO.naturalHeight, cropH = iw*5/4, sy0 = (ih - cropH)*.15;
+      ctx.drawImage(PHOTO, 0, sy0, iw, cropH, 0, 0, W, H);
+    } else ctx.drawImage(settled || (settled = renderSettled()), 0, 0, W, H);
+  }
+  const arm = () => { clearTimeout(safety); safety = setTimeout(finish, (mode === 'words' ? 2400 : 4300) + 600); };
   function frame(now){
     if (!t0) t0 = now; let t = (now - t0)/1000;
     if (RM) t = 9;
+    if (t > (mode === 'words' ? 2.4 : 4.3)) { finish(); return; }
     const dev = mode==='words' ? 0 : Math.max(0, Math.min(1, (t - 2.6)/1.5));   /* develop: a scanline reveals the photo */
     const done = mode==='words' ? t > 2.4 : t > 4.3;
     const next = () => { raf = (!done && !RM) ? requestAnimationFrame(frame) : 0; };
@@ -136,12 +151,12 @@ EOS.portrait = cv => {
     if (dev > 0 && dev < 1){ ctx.fillStyle = 'rgba(232,194,136,.9)'; ctx.fillRect(0, scanY, W, 1.5); ctx.fillStyle='rgba(232,194,136,.12)'; ctx.fillRect(0, scanY-18, W, 18); }
     next();
   }
-  function play(m){ cancelAnimationFrame(raf); raf = 0; mode = m||'anim'; t0 = 0; idleDrawn = false; if (build()) raf = requestAnimationFrame(frame); }
-  function jumpTo(m){ cancelAnimationFrame(raf); mode = m; idleDrawn = false; build(); t0 = performance.now() - (m==='words'?2400:4300); raf = requestAnimationFrame(frame); }
+  function play(m){ cancelAnimationFrame(raf); raf = 0; mode = m||'anim'; t0 = 0; idleDrawn = false; if (build()) { raf = requestAnimationFrame(frame); arm(); } }
+  function jumpTo(m){ mode = m; idleDrawn = false; if (build()) finish(); }
   Promise.all([loadLum(), loadPhoto(), fontsReady()])
     .then(([l, ph]) => { L = l; PHOTO = ph; setTimeout(() => play(), 240); })
     .catch(() => {});
   let rt; new ResizeObserver(() => { clearTimeout(rt); rt = setTimeout(() => { if (!raf && L) jumpTo(mode); }, 150); }).observe(cv);
-  return {play, showPhoto: () => jumpTo('anim'), mode: () => mode, stop: () => { cancelAnimationFrame(raf); raf = 0; }};
+  return {play, showPhoto: () => jumpTo('anim'), mode: () => mode, stop: finish};
 };
 })();
