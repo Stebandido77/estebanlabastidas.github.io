@@ -111,7 +111,10 @@
 .pgrid button:focus-visible{outline:2px solid var(--amber);outline-offset:-2px}
 .pgrid img{width:100%;height:100%;object-fit:cover;transition:transform .5s}
 .pgrid button:hover img{transform:scale(1.04)}
-.pgrid button span{position:absolute;left:0;right:0;bottom:0;padding:24px 12px 10px;background:linear-gradient(transparent,rgba(0,0,0,.75));font:400 17px/1.15 var(--display)}
+.pgrid button span{position:absolute;left:0;right:0;bottom:0;padding:30px 12px 10px;background:linear-gradient(rgba(0,0,0,0),rgba(0,0,0,.82) 55%);font:400 17px/1.15 var(--display);text-shadow:0 1px 3px rgba(0,0,0,.6)}
+/* up to four plates: the grid fits the window, so every caption is visible without scrolling */
+.pgrid.fit{height:100%;min-height:340px;grid-template-rows:repeat(2,minmax(0,1fr))}
+.pgrid.fit button{aspect-ratio:auto;min-height:0}
 .pview{flex:1;display:flex;flex-direction:column;min-height:0;background:#000}
 .pview .im{flex:1;min-height:0;display:grid;place-items:center;padding:10px}
 .pview img{max-width:100%;max-height:100%;object-fit:contain}
@@ -189,7 +192,7 @@
   .page{padding:28px 20px 40px}
   .job{grid-template-columns:1fr;gap:4px}
   .pill4{grid-template-columns:1fr}
-  .pgrid{grid-template-columns:1fr}
+  .pgrid,.pgrid.fit{grid-template-columns:1fr;grid-template-rows:none;height:auto} .pgrid.fit button{aspect-ratio:4/3}
   .mail .f{grid-template-columns:56px minmax(0,1fr) auto}
   .kicker{letter-spacing:.18em;flex-wrap:wrap} .kicker::after{display:none}
   .mkside{width:auto;border-left:0;border-top:1px solid rgba(0,0,0,.5)}
