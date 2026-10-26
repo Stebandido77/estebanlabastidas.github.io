@@ -1,0 +1,3 @@
+/* estebanOS — per-app styles (window bodies). Shell styles live in os.css. */
+.wb{flex:1;min-height:0;display:flex}
+.scroll{overflow:auto;min-height:0;min-width:0}
