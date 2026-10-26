@@ -306,23 +306,28 @@ function hideHint(){ const h=$('#hint'); if(h) h.style.opacity='0'; }
    12 px under the menubar, 16 px above the Dock, 24 px from each side */
 function workArea(){
   const wr = area(), mb = $('.menubar').getBoundingClientRect(), dk = $('#dock').getBoundingClientRect();
-  const top = mb.bottom + 12 - wr.top, bottom = (dk.height ? dk.top : innerHeight) - 16 - wr.top;
+  const dockTop = dk.height ? dk.top : innerHeight - 74;   /* Dock not laid out yet: use its usual height */
+  const top = mb.bottom + 12 - wr.top, bottom = dockTop - 16 - wr.top;
   return {x: 24, y: Math.max(0, top), w: wr.width - 48, h: bottom - Math.max(0, top)};
 }
 EOS.workArea = workArea;
 const fits = (r, wa) => r && r.w >= 360 && r.h >= 260 && r.x >= wa.x - 1 && r.y >= wa.y - 1 && r.x + r.w <= wa.x + wa.w + 1 && r.y + r.h <= wa.y + wa.h + 1;
 const overlap = (r, o) => Math.max(0, Math.min(r.x+r.w, o.x+o.w) - Math.max(r.x, o.x)) * Math.max(0, Math.min(r.y+r.h, o.y+o.h) - Math.max(r.y, o.y));
-const KEY = 'eos.rects';
+/* remembered rects are reused only on a work area of the same size they were saved on
+   (v2: older entries had no size and could come back on a different screen) */
+const KEY = 'eos.rects.v2';
 const loadRects = () => { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) { return {}; } };
-EOS.saveRect = w => { try { const all = loadRects(), s = S.get(w); all[w.dataset.app] = {x:Math.round(s.x), y:Math.round(s.y), w:Math.round(s.w), h:Math.round(s.h)}; localStorage.setItem(KEY, JSON.stringify(all)); } catch (e) {} };
+const savedFor = (id, wa) => { const r = loadRects()[id]; return r && Math.abs(r.aw - wa.w) < 32 && Math.abs(r.ah - wa.h) < 32 && fits(r, wa) ? {x:r.x, y:r.y, w:r.w, h:r.h} : null; };
+EOS.saveRect = w => { try { const all = loadRects(), s = S.get(w), wa = workArea();
+  all[w.dataset.app] = {x:Math.round(s.x), y:Math.round(s.y), w:Math.round(s.w), h:Math.round(s.h), aw:Math.round(wa.w), ah:Math.round(wa.h)}; localStorage.setItem(KEY, JSON.stringify(all)); } catch (e) {} };
 const sizeFor = (a, wa) => ({w: Math.max(360, Math.min(a.w, wa.w)), h: Math.max(260, Math.min(a.h, wa.h))});
 const visibleRects = () => $$('.win').filter(w => !w.hidden).map(w => S.get(w));
 /* first window: centered. Next ones: the candidate position (on a grid over the work area) with
    the least overlap with visible windows, nearest the center on ties. When even the best spot
    would cover more than 35% of the new window (no real gap), cascade 28 px from the front one */
 EOS.placeWindow = a => {
-  const wa = workArea(), saved = loadRects()[a.id];
-  if (fits(saved, wa)) return {...saved};
+  const wa = workArea(), saved = savedFor(a.id, wa);
+  if (saved) return saved;
   const sz = sizeFor(a, wa), others = visibleRects();
   const center = {x: wa.x + (wa.w - sz.w)/2, y: wa.y + (wa.h - sz.h)/2, ...sz};
   if (!others.length) return center;
@@ -376,12 +381,12 @@ document.addEventListener('click', e => {
 
 /* ── entering the desktop (called directly, or by the login screen) ── */
 EOS.defaultWindows = () => {
-  const wa = workArea(), saved = loadRects();
-  if (area().width >= 1280){   /* About on the left, in front; Markets top right */
-    const mw = Math.min(620, wa.w*.40), mh = Math.min(420, wa.h*.62);
-    const m = openApp('markets'); if (!fits(saved.markets, wa)) EOS.rect(m, {w:mw, h:mh, x:wa.x + wa.w - mw, y:wa.y});
+  const wa = workArea();
+  if (area().width >= 1280){   /* About on the left, in front; Markets top right (tall enough for its WATCH panel) */
+    const mw = Math.min(620, wa.w*.40), mh = Math.min(420, wa.h*.66);
+    const m = openApp('markets'); if (!savedFor('markets', wa)) EOS.rect(m, {w:mw, h:mh, x:wa.x + wa.w - mw, y:wa.y});
     const aw = Math.min(860, wa.w - mw - 24), ah = Math.min(600, wa.h);
-    const a = openApp('about'); if (!fits(saved.about, wa)) EOS.rect(a, {w:aw, h:ah, x:wa.x, y:wa.y + (wa.h - ah)/2});
+    const a = openApp('about'); if (!savedFor('about', wa)) EOS.rect(a, {w:aw, h:ah, x:wa.x, y:wa.y + (wa.h - ah)/2});
   } else openApp('about');
 };
 EOS.enter = () => { if (!phone()) EOS.defaultWindows(); };
