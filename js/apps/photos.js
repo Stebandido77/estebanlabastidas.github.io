@@ -6,7 +6,7 @@ EOS.register('photos', {
   render: () => `<div class="wb"><div class="scroll" style="flex:1" data-pg></div></div>`,
   init(w){
     const host = $('[data-pg]', w), P = D.plates;
-    const grid = () => { host.innerHTML = `<div class="pgrid">${P.map((p,i) => `<button data-i="${i}"><img src="${small(p.img)}" alt="${esc(p.t)}" loading="lazy" decoding="async"><span>${esc(p.t)}</span></button>`).join('')}</div>`;
+    const grid = () => { host.innerHTML = `<div class="pgrid">${P.map((p,i) => `<button data-i="${i}"><img src="${small(p.img)}" alt="" loading="lazy" decoding="async"><span>${esc(p.t)}</span></button>`).join('')}</div>`;
       $$('[data-i]', host).forEach(b => b.onclick = () => view(+b.dataset.i)); setTitle(w, 'Photos — The Eye'); };
     const view = i => { const p = P[i];
       host.innerHTML = `<div class="pview" style="height:100%"><div class="sbar"><button class="btn" data-back>‹ All plates</button><span style="flex:1"></span><button class="btn" data-prev aria-label="Previous">‹</button><button class="btn" data-next aria-label="Next">›</button><a class="btn" href="${p.img}" target="_blank" rel="noopener">Open full size ↗</a></div>

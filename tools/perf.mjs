@@ -7,6 +7,7 @@
 // --mobile  390×844 @3x with touch, like an iPhone; --cpu=N throttles the CPU N×
 // --file    open index.html over file:// and only run the smoke test
 // --audio   music checks: no sound without a gesture, login ♪, Music app, pause/suspend
+// --axe     accessibility audit (axe-core) of the login, desktop and each app
 // --gpu     use the GPU (closer to a real device; without it canvas raster is software)
 import { spawn } from 'node:child_process';
 import { mkdtempSync } from 'node:fs';
@@ -62,13 +63,14 @@ try {
   if (MOBILE) { await send('Emulation.setDeviceMetricsOverride', { width: W, height: H, deviceScaleFactor: 3, mobile: true }); await send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 }); }
   else await send('Emulation.setDeviceMetricsOverride', { width: W, height: H, deviceScaleFactor: 1, mobile: false });
   if (CPU > 1) await send('Emulation.setCPUThrottlingRate', { rate: CPU });
+  if (flag('nojs')) await send('Emulation.setScriptExecutionDisabled', { value: true });   /* --nojs: check the <noscript> fallback */
   if (flag('loadprofile')) { await send('Profiler.enable'); await send('Profiler.setSamplingInterval', { interval: 100 }); await send('Profiler.start'); }
   await send('Page.navigate', { url: URL_ });
   await sleep(1500);
   if (flag('loadprofile')) { const { profile } = await send('Profiler.stop'); const self = new Map(), by = new Map(profile.nodes.map(n => [n.id, n]));
     profile.samples.forEach((id, i) => { const cf = by.get(id).callFrame, k = `${cf.functionName || '(anon)'} ${cf.url.split('/').pop()}:${cf.lineNumber + 1}`; self.set(k, (self.get(k) || 0) + (profile.timeDeltas[i] || 0) / 1000); });
     console.log('load profile, top self time (ms):', [...self].sort((a, b) => b[1] - a[1]).slice(0, 12).map(([k, v]) => `${k} ${v.toFixed(0)}`).join(' | ')); }
-  await evaluate(REC + IDLE);
+  if (!flag('nojs')) await evaluate(REC + IDLE);
   const CSS = flag('css'); if (CSS) await evaluate(`document.head.insertAdjacentHTML('beforeend', ${JSON.stringify('<style>' + CSS.slice(6) + '</style>')})`);   /* --css=... for experiments */
   const EV = flag('eval'); if (EV) await evaluate(EV.slice(7));   /* --eval=... for experiments */
   console.log(`# ${URL_}  ${W}×${H}${MOBILE ? ' mobile' : ''}  cpu ${CPU}×`);
@@ -94,6 +96,22 @@ try {
     await sleep(400); console.log('                    ', JSON.stringify(await st()));
     await send('Page.reload');   /* leave while it plays: next visit invites, never autoplays */ await sleep(1500);
     console.log('next visit (no autoplay, invite)', JSON.stringify(await evaluate(`({playing: EOS.audio.playing, invite: EOS.audio.invite, speaker: document.getElementById('snd').className})`)));
+  } else if (flag('axe')) {
+    /* axe-core (from Lighthouse's npx cache, or AXE=path) over the login, the desktop and every app */
+    const { readFileSync, readdirSync, existsSync } = await import('node:fs');
+    const cache = join(process.env.LOCALAPPDATA || '', 'npm-cache', '_npx');
+    const axePath = process.env.AXE || (existsSync(cache) ? readdirSync(cache).map(d => join(cache, d, 'node_modules', 'axe-core', 'axe.min.js')).find(existsSync) : null);
+    if (!axePath) throw new Error('axe-core not found: set AXE=path/to/axe.min.js');
+    await evaluate(readFileSync(axePath, 'utf8'));
+    const run = async label => { const r = await evaluate(`axe.run(document, {resultTypes: ['violations']}).then(r => r.violations.map(v => ({id: v.id, impact: v.impact, n: v.nodes.length, nodes: v.nodes.slice(0, 3).map(n => n.target.join(' ') + (n.any[0] ? ' — ' + n.any[0].message.slice(0, 110) : ''))})))`);
+      console.log(`${label.padEnd(12)} ${r.length ? '' : 'no violations'}`); r.forEach(v => console.log(`   ${v.impact} ${v.id} ×${v.n}`, ...v.nodes.map(n => '\n      ' + n))); };
+    await run('login');
+    await key('Enter', 'Enter', 13); await sleep(1500);
+    await run('desktop');
+    for (const a of await evaluate(`EOS.APPS.map(a => a.id)`)) { await evaluate(`Object.values(EOS.wins).forEach(w => w.hidden || EOS.closeWin(w)); EOS.openApp('${a}')`); await sleep(1200); await run(a); }
+  } else if (flag('nojs')) {
+    const { data } = await send('Page.captureScreenshot', { format: 'png' });
+    const out = join(tmpdir(), 'eos-nojs.png'); (await import('node:fs')).writeFileSync(out, Buffer.from(data, 'base64')); console.log('screenshot:', out);
   } else if (FILE) {
     await key('Enter', 'Enter', 13); await sleep(6000);
     console.log(JSON.stringify(await evaluate(`({ errors: window.__errs || null, lock: !!document.getElementById('lock'), wins: Object.keys(EOS.wins),

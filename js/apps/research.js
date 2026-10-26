@@ -7,7 +7,7 @@ EOS.register('research', {
     return `<div class="wb">
       <div class="side"><h5>Library</h5>${cats.map(([k,n,c],i) => `<button data-cat="${k}" class="${i?'':'on'}">${esc(n)}<span>${c}</span></button>`).join('')}</div>
       <div class="list scroll" data-list></div>
-      <div class="detail scroll" data-detail></div>
+      <div class="detail scroll" data-detail tabindex="0" role="region" aria-label="Paper details"></div>
     </div>`;
   },
   init(w, sel){

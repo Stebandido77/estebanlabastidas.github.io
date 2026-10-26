@@ -3,7 +3,7 @@
 const EOS = window.EOS, {D, esc} = EOS;
 EOS.register('path', {
   render: () => `<div class="sbar" style="justify-content:space-between"><span style="color:var(--text-2);font-size:12px">Résumé — Esteban Labastidas</span><a class="btn" href="${D.contact.cv}" target="_blank" rel="noopener">Download PDF ↗</a></div>
-  <div class="doc scroll"><div class="page">
+  <div class="doc scroll" tabindex="0" role="region" aria-label="Résumé"><div class="page">
     <div class="eb">The Path · MMXXVI</div>
     <h2>Engineering, economics,<br><em>markets</em>, research.</h2>
     <h3>Experience</h3>

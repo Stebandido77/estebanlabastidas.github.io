@@ -35,7 +35,8 @@ const G = {
   path: `<svg viewBox="0 0 32 32"><rect x="7" y="4" width="18" height="24" rx="2" fill="#fff" stroke="#c9bea9"/><path d="M11 10h10M11 14h10M11 18h7" stroke="#8b2332" stroke-width="1.6" stroke-linecap="round"/><path d="M11 23h6" stroke="#b9ad97" stroke-width="1.6" stroke-linecap="round"/></svg>`,
   notes: `<svg viewBox="0 0 32 32"><rect x="5" y="5" width="22" height="22" rx="3" fill="#fffaf0"/><rect x="5" y="5" width="22" height="6" rx="3" fill="#f2c94c"/><path d="M9 16h14M9 20h14M9 24h9" stroke="#c9bea9" stroke-width="1.4" stroke-linecap="round"/></svg>`,
   photos: `<svg viewBox="0 0 32 32">${[['#f2b134',0],['#e06a4f',45],['#c94a8a',90],['#7b5cc9',135],['#3f8fd6',180],['#3fb8a8',225],['#7cbf4a',270],['#c7c234',315]].map(([c,a])=>`<ellipse cx="16" cy="9.5" rx="4.2" ry="6.5" fill="${c}" opacity=".85" transform="rotate(${a} 16 16)"/>`).join('')}</svg>`,
-  activity: `<svg viewBox="0 0 32 32"><rect x="6" y="7" width="20" height="19" rx="3" fill="#fff"/><path d="M6 10a3 3 0 0 1 3-3h14a3 3 0 0 1 3 3v2H6z" fill="#e8c288"/><text x="16" y="23" text-anchor="middle" font-family="Montserrat,Arial" font-weight="700" font-size="10" fill="#7d2a34" data-dayn>25</text></svg>`,
+  /* an image, so the day number is not text inside the button's accessible name */
+  activity: `<img alt="" src="data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect x="6" y="7" width="20" height="19" rx="3" fill="#fff"/><path d="M6 10a3 3 0 0 1 3-3h14a3 3 0 0 1 3 3v2H6z" fill="#e8c288"/><text x="16" y="23" text-anchor="middle" font-family="Montserrat,Arial" font-weight="700" font-size="10" fill="#7d2a34">${new Intl.DateTimeFormat('en-US',{timeZone:'America/Bogota',day:'numeric'}).format(new Date())}</text></svg>`)}">`,
   safari: `<svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="12" fill="#fff"/><circle cx="16" cy="16" r="10.5" fill="none" stroke="#bfcbe0"/><path d="M16 16 22 9l-4 9z" fill="#d6463b"/><path d="M16 16 10 23l4-9z" fill="#9aa6b8"/></svg>`,
   mail: `<svg viewBox="0 0 32 32"><rect x="4" y="8" width="24" height="17" rx="2.5" fill="#fff"/><path d="M5 10l11 8 11-8" fill="none" stroke="#5a8fe0" stroke-width="1.6"/></svg>`,
   markets: `<svg viewBox="0 0 32 32"><path d="M5 22l6-6 4 3 7-9 5 4" fill="none" stroke="#f2a24a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 26h22" stroke="rgba(242,162,74,.4)" stroke-width="1.2"/></svg>`,
@@ -68,8 +69,6 @@ EOS.renderChrome = () => {
   $('#happs').innerHTML = APPS.map(a => `<button class="ha" data-open="${a.id}">${icon(a)}${a.short}</button>`).join('');
   $('#gomenu').innerHTML = APPS.map(a => `<button data-open="${a.id}" role="menuitem">${a.nav}</button>`).join('');
   $('#mnav').innerHTML = APPS.filter(a => !a.navless).map(a => `<button class="mb" data-open="${a.id}" data-nav="${a.id}">${a.nav}</button>`).join('');
-  const day = new Intl.DateTimeFormat('en-US',{timeZone:'America/Bogota',day:'numeric'}).format(new Date());
-  $$('[data-dayn]').forEach(e => e.textContent = day);
 };
 EOS.renderChrome();
 $$('[data-cv]').forEach(a => a.href = D.contact.cv);
@@ -121,8 +120,9 @@ function afterHide(w){
   w.classList.remove('front');
   syncDock();
   const vis = topWin();
-  if (vis) focusWin(vis);
-  else { $$('[data-nav]').forEach(b => b.classList.remove('cur')); document.body.classList.remove('app-open'); }
+  const hadFocus = w.contains(document.activeElement);
+  if (vis) { focusWin(vis); if (hadFocus) vis.focus({preventScroll: true}); }
+  else { $$('[data-nav]').forEach(b => b.classList.remove('cur')); document.body.classList.remove('app-open'); if (hadFocus) { const d = $(`.dk[data-open="${w.dataset.app}"]`); d && d.focus({preventScroll: true}); } }
   if (w._stop) w._stop();
 }
 
@@ -159,7 +159,8 @@ function openApp(id, sel){
   if (!w) {
     w = document.createElement('section'); w.className = 'win'; w.dataset.app = id;
     w.setAttribute('role', 'dialog'); w.setAttribute('aria-label', a.name);
-    w.innerHTML = `<div class="tb"><div class="lights"><b data-x title="Close" role="button" aria-label="Close">×</b><b data-min title="Minimize" role="button" aria-label="Minimize">–</b><b data-max title="Zoom" role="button" aria-label="Zoom">+</b></div><button class="back" data-x>‹ Home</button><div class="ttl">${a.name}</div></div>${mod.render ? mod.render() : ''}`
+    w.tabIndex = -1;
+    w.innerHTML = `<div class="tb"><div class="lights"><b data-x title="Close" role="button" tabindex="0" aria-label="Close ${a.name}">×</b><b data-min title="Minimize" role="button" tabindex="0" aria-label="Minimize ${a.name}">–</b><b data-max title="Zoom" role="button" tabindex="0" aria-label="Zoom ${a.name}">+</b></div><button class="back" data-x>‹ Home</button><div class="ttl">${a.name}</div></div>${mod.render ? mod.render() : ''}`
       + ['n','s','e','w','ne','nw','se','sw'].map(d => `<i class="rz rz-${d}" data-rz="${d}" aria-hidden="true"></i>`).join('');
     S.set(w, {...(EOS.placeWindow ? EOS.placeWindow(a) : initialRect(a)), prev: null, min: false});
     place(w);
@@ -177,6 +178,8 @@ function openApp(id, sel){
   }
   if (sel && w._select) w._select(sel);
   focusWin(w); syncDock(); hideHint(); document.body.classList.add('app-open');
+  /* keyboard users land inside the window they opened */
+  if (!EOS.locked && document.activeElement && !w.contains(document.activeElement) && !document.activeElement.closest('.term')) w.focus({preventScroll: true});
   return w;
 }
 function closeWin(w){
@@ -207,6 +210,7 @@ function bindWin(w){
   $$('[data-x]', w).forEach(b => b.onclick = e => { e.stopPropagation(); closeWin(w); });
   $('[data-min]', w).onclick = e => { e.stopPropagation(); minimize(w); };
   $('[data-max]', w).onclick = e => { e.stopPropagation(); zoom(w); };
+  $$('.lights b', w).forEach(b => b.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); b.click(); } }));
   const tb = $('.tb', w);
   tb.ondblclick = e => { if(!e.target.closest('.lights,button')) zoom(w); };
   /* drag by the title bar */
@@ -253,7 +257,13 @@ function closeMenus(){ $$('.mb.open').forEach(m=>m.classList.remove('open')); }
 EOS.closeMenus = closeMenus;
 $$('[data-menu]').forEach(m => {
   m.addEventListener('click', e => { if (e.target.closest('.menu')) return; const o = m.classList.contains('open'); closeMenus(); if(!o) m.classList.add('open'); });
-  m.addEventListener('keydown', e => { if ((e.key==='Enter'||e.key===' ') && e.target===m) { e.preventDefault(); m.click(); const f = $('.menu button, .menu a', m); f && f.focus(); } });
+  m.addEventListener('keydown', e => {
+    if ((e.key==='Enter'||e.key===' '||e.key==='ArrowDown') && e.target===m) { e.preventDefault(); if (!m.classList.contains('open')) m.click(); const f = $('.menu button, .menu a', m); f && f.focus(); return; }
+    if (!m.classList.contains('open')) return;
+    const items = $$('.menu button, .menu a', m), i = items.indexOf(document.activeElement);
+    if (e.key==='ArrowDown' || e.key==='ArrowUp') { e.preventDefault(); items[(i + (e.key==='ArrowDown' ? 1 : items.length - 1)) % items.length].focus(); }
+    if (e.key==='Escape') { e.stopPropagation(); closeMenus(); m.focus(); }
+  });
 });
 document.addEventListener('pointerdown', e => { if (!e.target.closest('[data-menu]')) closeMenus(); });
 

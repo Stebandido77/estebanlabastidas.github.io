@@ -148,7 +148,7 @@ html:not(.unlocked) :is(.menubar,.dock,.home,.hint,.wcap){display:none}
 /* app icons (squircles) */
 .ic{display:grid;place-items:center;border-radius:23%;position:relative;overflow:hidden;box-shadow:0 1px 0 rgba(255,255,255,.18) inset,0 6px 14px rgba(0,0,0,.35)}
 .ic::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(255,255,255,.18),transparent 45%)}
-.ic svg{position:relative;z-index:1;width:58%;height:58%}
+.ic svg,.ic img{position:relative;z-index:1;width:58%;height:58%}
 .ic .t{position:relative;z-index:1;font-family:var(--display);font-style:italic;line-height:1}
 .ic .t::before{content:attr(data-t)}   /* glyph via CSS so it does not leak into the button's accessible name */
 .i-about{background:linear-gradient(160deg,#e3c08a,#a77a40)}
@@ -166,6 +166,7 @@ html:not(.unlocked) :is(.menubar,.dock,.home,.hint,.wcap){display:none}
 
 /* ── windows ── */
 #wins{position:fixed;inset:28px 0 0 0;z-index:10;pointer-events:none}
+.win:focus-visible{outline-offset:-2px}
 .win{position:absolute;left:0;top:0;transform-origin:0 0;pointer-events:auto;display:flex;flex-direction:column;border-radius:12px;overflow:hidden;min-width:320px;min-height:220px;
   background:rgba(26,24,21,.96);border:1px solid rgba(255,255,255,.1);box-shadow:0 0 0 .5px rgba(0,0,0,.8),0 28px 80px rgba(0,0,0,.55)}
 /* only the front window pays for backdrop blur; the rest are opaque */
@@ -210,6 +211,10 @@ html:not(.unlocked) :is(.menubar,.dock,.home,.hint,.wcap){display:none}
 .mk small{font:500 10px var(--mono);color:var(--text-2);letter-spacing:.06em}
 .mk b{font:600 21px/1 var(--wide);letter-spacing:-.02em;font-variant-numeric:tabular-nums}
 .mk em{font:500 10px var(--mono);font-style:normal;color:var(--amber-hi)}
+
+/* no JavaScript: a plain card with the essentials (index.html <noscript>) */
+.nojs{position:fixed;z-index:20;inset:60px 16px auto;margin:0 auto;max-width:620px;padding:28px 30px;border-radius:14px;background:rgba(20,18,15,.94);border:1px solid var(--line);font-size:14px;line-height:1.6}
+.nojs h1{margin:0;font:400 48px/1 var(--display)} .nojs-k{margin:8px 0 16px;color:var(--amber-hi)} .nojs a{color:var(--amber-hi)}
 
 /* ── phone: iOS home screen ── */
 .home{display:none}
