@@ -1,1324 +1,167 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Esteban Labastidas — Economist, consultant, and builder. I work between markets and models: pricing risk for banks, forecasting inflation, and writing about Colombia. Based in Bogotá.">
-  <meta name="author" content="Esteban Labastidas">
-  <meta name="theme-color" content="#0b0a08">
-
-  <meta property="og:title" content="Esteban Labastidas — The Quant's Notebook">
-  <meta property="og:description" content="Economist, consultant, public writer, and builder. Working between markets and models.">
-  <meta property="og:type" content="website">
-  <meta property="og:locale" content="en_US">
-
-  <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:creator" content="@Stbandido_">
-  <meta name="twitter:title" content="Esteban Labastidas — The Quant's Notebook">
-  <meta name="twitter:description" content="Economist, consultant, public writer, and builder.">
-
-  <title>Esteban Labastidas — The Quant's Notebook</title>
-
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT@0,9..144,300..900,0..100;1,9..144,300..900,0..100&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500;600&family=Geist:wght@300;400;500;600&display=swap" rel="stylesheet">
-
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' fill='%230b0a08'/><text x='7' y='24' font-size='22' font-family='Georgia, serif' font-style='italic' fill='%23c79a5e'>E</text></svg>">
-
-  <link rel="stylesheet" href="style.css">
-  <noscript>
-    <style>
-      .hero, .hero * { opacity: 1 !important; transform: none !important; }
-      .hero .hero__curve { opacity: 0.5 !important; }
-      .hero .curve-observed { stroke-dashoffset: 0 !important; }
-      .chapter-head, .chapter-head * { opacity: 1 !important; transform: none !important; clip-path: none !important; }
-      .chapter::before { transform: none !important; }
-      .reveal { opacity: 1 !important; transform: none !important; }
-      .pillar__icon line, .pillar__icon path { stroke-dashoffset: 0 !important; }
-      .pillar__icon circle { transform: none !important; }
-      .trajectory::after { transform: scaleY(1) !important; }
-      .trajectory__entry::before { transform: translateX(-4px) scale(1) !important; }
-      .plate__link::after { display: none !important; }
-      .plate__link img { transform: none !important; }
-      .ticker-item { position: static !important; opacity: 1 !important; display: none; }
-      .ticker-item:first-child { display: flex; }
-    </style>
-  </noscript>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Esteban Labastidas</title>
+<meta name="description" content="Esteban Labastidas — economist, banker, builder. Strategy & Investor Relations at Grupo Aval, inflation forecasting research and projects, as a macOS-style desktop.">
+<meta name="theme-color" content="#0b0a08">
+<link rel="canonical" href="https://stebandido77.github.io/estebanlabastidas.github.io/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Esteban Labastidas">
+<meta property="og:title" content="Esteban Labastidas — Economist · Banker · Builder">
+<meta property="og:description" content="Strategy & Investor Relations at Grupo Aval. Inflation forecasting research, banking and markets projects, and writing about Colombia — as a macOS-style desktop.">
+<meta property="og:url" content="https://stebandido77.github.io/estebanlabastidas.github.io/">
+<meta property="og:image" content="https://stebandido77.github.io/estebanlabastidas.github.io/assets/img/og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Esteban Labastidas — Economist · Banker · Builder, over a black and white photo of Bogotá">
+<meta property="og:locale" content="en_US">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:creator" content="@Stbandido_">
+<meta name="twitter:title" content="Esteban Labastidas — Economist · Banker · Builder">
+<meta name="twitter:description" content="Strategy & Investor Relations at Grupo Aval. Inflation forecasting research, projects and writing about Colombia.">
+<meta name="twitter:image" content="https://stebandido77.github.io/estebanlabastidas.github.io/assets/img/og.jpg">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22%3E%3Crect width=%2264%22 height=%2264%22 rx=%2215%22 fill=%22%23c79a5e%22/%3E%3Ctext x=%2232%22 y=%2243%22 text-anchor=%22middle%22 font-family=%22Georgia,serif%22 font-style=%22italic%22 font-size=%2230%22 fill=%22%231b150d%22%3EEL%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Montserrat:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Archivo:wdth,wght@100..125,400..700&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><style>.lock,.dock,.mnav,.mb.more,.hint{display:none!important}.home{display:none!important}</style><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Montserrat:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Archivo:wdth,wght@100..125,400..700&display=swap"></noscript>
+<link rel="preload" as="image" href="assets/img/portrait.jpg" media="(min-width:900px)">
+<script>try{if(sessionStorage.getItem('eos.unlocked'))document.documentElement.classList.add('unlocked')}catch(e){}</script>
+<link rel="stylesheet" href="css/os.css">
+<link rel="stylesheet" href="css/apps.css">
+<script defer src="assets/data/content.js"></script>
+<script defer src="js/os.js"></script>
+<script defer src="js/wallpaper.js"></script>
+<script defer src="js/apps/about.js"></script>
+<script defer src="js/apps/research.js"></script>
+<script defer src="js/apps/projects.js"></script>
+<script defer src="js/apps/path.js"></script>
+<script defer src="js/apps/notes.js"></script>
+<script defer src="js/apps/photos.js"></script>
+<script defer src="js/apps/markets.js"></script>
+<script defer src="js/apps/activity.js"></script>
+<script defer src="js/apps/safari.js"></script>
+<script defer src="js/apps/mail.js"></script>
+<script defer src="js/apps/term.js"></script>
+<script defer src="js/apps/music.js"></script>
+<script defer src="js/portrait.js"></script>
+<script defer src="js/lock.js"></script>
+<script defer src="js/audio.js"></script>
 </head>
-<body data-chapter="i">
+<body>
 
-  <!-- ═══════════════════════════════════════════════════════════════
-       00 · MASTHEAD — running head, always visible
-  ═══════════════════════════════════════════════════════════════ -->
-  <header class="masthead" id="masthead" role="banner">
-    <div class="masthead__inner">
-      <div class="masthead__left">
-        <span class="masthead__vol">VOL. II · MMXXVI</span>
-        <span class="masthead__sep">·</span>
-        <span class="masthead__city">BOGOTÁ</span>
-        <span class="masthead__star">✶</span>
-        <span class="masthead__disc">ECONOMIST · CONSULTANT · BUILDER</span>
-      </div>
-      <div class="masthead__right" aria-live="polite" aria-label="Market indicators">
-        <div class="ticker" id="ticker">
-          <span class="ticker-item is-active" data-delta="up">
-            <span class="ticker-label">USD/COP</span>
-            <span class="ticker-val">4,012.3</span>
-            <span class="ticker-arrow ticker-arrow--up">▲</span>
-            <span class="ticker-pct">0.42%</span>
-          </span>
-          <span class="ticker-item" data-delta="flat">
-            <span class="ticker-label">BANREP</span>
-            <span class="ticker-val">9.75%</span>
-          </span>
-          <span class="ticker-item" data-delta="down">
-            <span class="ticker-label">CPI YoY</span>
-            <span class="ticker-val">5.20%</span>
-            <span class="ticker-arrow ticker-arrow--down">▼</span>
-          </span>
-          <span class="ticker-item" data-delta="flat">
-            <span class="ticker-label">COLCAP</span>
-            <span class="ticker-val">1,358.7</span>
-          </span>
-        </div>
+<div class="wall" aria-hidden="true">
+  <canvas id="city"></canvas>
+  <img id="wallimg" alt="" decoding="async" sizes="100vw"
+    data-srcset="assets/img/wallpaper-900.webp 900w, assets/img/wallpaper-1440.webp 1440w, assets/img/wallpaper-2560.webp 2560w"
+    data-src="assets/img/wallpaper.jpg">
+  <div class="wdim"></div>
+  <div class="grain" id="grain"></div>
+</div>
+
+<div class="lock" id="lock" role="dialog" aria-modal="true" aria-label="Login screen. Press Enter to open." tabindex="-1">
+  <canvas id="topo" aria-hidden="true"></canvas>
+  <div class="lk-vig"></div>
+  <div class="lk-mark" id="lkmark" aria-hidden="true"><i></i><span>BOGOTÁ · 4°36′N 74°05′W · 2,640 m</span></div>
+  <div class="lk-stat" aria-hidden="true"><span><b class="lk-kb">ABC</b><svg width="16" height="12" viewBox="0 0 16 12"><path d="M8 11.5 5.6 9a3.4 3.4 0 0 1 4.8 0L8 11.5Zm-4.2-4.3L2.3 5.7a8 8 0 0 1 11.4 0l-1.5 1.5a5.9 5.9 0 0 0-8.4 0Z" fill="#fff"/></svg><svg width="27" height="13" viewBox="0 0 27 13"><rect x=".5" y=".5" width="23" height="12" rx="3.5" fill="none" stroke="#fff" opacity=".45"/><rect x="2" y="2" width="17" height="9" rx="2" fill="#fff"/></svg></span></div>
+  <div class="lk-clock">
+    <p class="lk-date" id="lkdate">—</p>
+    <p class="lk-time" id="lktime">--:--</p>
+  </div>
+  <script>/* fill the clock before first paint (it is the LCP element); lock.js keeps it ticking */
+  try{var n=new Date(),z='America/Bogota';document.getElementById('lktime').textContent=new Intl.DateTimeFormat('en-US',{timeZone:z,hour:'numeric',minute:'2-digit',hour12:false}).format(n).replace(/^24/,'00');document.getElementById('lkdate').textContent=new Intl.DateTimeFormat('en-US',{timeZone:z,weekday:'long',month:'long',day:'numeric'}).format(n)}catch(e){}</script>
+  <form class="lk-login" id="lklogin" autocomplete="off">
+    <div class="lk-ava" aria-hidden="true">EL</div>
+    <p class="lk-name">Esteban Labastidas</p>
+    <div class="lk-pw">
+      <label for="lkpw" class="sr">Password</label>
+      <input id="lkpw" type="password" placeholder="Enter Password" aria-describedby="lkhint">
+      <button type="submit" aria-label="Log in"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M2 6h8M6.5 2.5 10 6l-3.5 3.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    </div>
+    <p class="lk-hint" id="lkhint">No password needed — press Enter</p>
+  </form>
+  <p class="lk-cap" aria-hidden="true">fig. 0 — Andes, in contour · move the cursor</p>
+  <button class="lk-snd" id="lksnd" type="button" aria-pressed="false" title="Play music when you log in"><b aria-hidden="true">♪</b> <span>sound off</span></button>
+</div>
+
+<header class="menubar">
+  <div class="l">
+    <div class="mb logo" data-menu tabindex="0" role="button" aria-haspopup="menu" aria-label="EL menu">EL
+      <div class="menu" role="menu">
+        <button data-open="about">About Esteban</button>
+        <a data-cv href="assets/docs/CV_Esteban_Labastidas.pdf" target="_blank" rel="noopener">Download CV <kbd>PDF</kbd></a>
+        <hr><button data-spot>Search… <kbd>⌘K</kbd></button>
+        <hr><button data-closeall>Close all windows</button>
+        <hr><small class="mh">Window</small>
+        <button data-win="min">Minimize <kbd>⌥M</kbd></button>
+        <button data-win="zoom">Zoom</button>
+        <button data-win="cycle">Cycle windows <kbd>⌥`</kbd></button>
+        <button data-tile>Arrange windows</button>
+        <button data-win="close">Close window <kbd>⌥W</kbd></button>
+        <hr><button data-lock>Lock Screen <kbd>⌃⌘Q</kbd></button>
       </div>
     </div>
-    <div class="progress" id="progress" aria-hidden="true"></div>
-  </header>
-
-  <!-- ═══════════════════════════════════════════════════════════════
-       SIDEBAR — scroll spy + chapter index
-  ═══════════════════════════════════════════════════════════════ -->
-  <aside class="sidebar" id="sidebar" aria-label="Chapter navigation">
-    <div class="sidebar__inner">
-      <a href="#opening" class="sidebar__mark" aria-label="Esteban Labastidas — home">
-        <span class="sidebar__mark-name">Esteban Labastidas</span>
-      </a>
-
-      <nav class="sidebar__nav" aria-label="Chapters">
-        <ol class="chapters">
-          <li><a href="#opening"     data-num="I">   <span class="chapters__num">I</span>   <span class="chapters__name">Opening</span>   </a></li>
-          <li><a href="#method"      data-num="II">  <span class="chapters__num">II</span>  <span class="chapters__name">The Method</span></a></li>
-          <li><a href="#work"        data-num="III"> <span class="chapters__num">III</span> <span class="chapters__name">The Work</span>  </a></li>
-          <li><a href="#voice"       data-num="IV">  <span class="chapters__num">IV</span>  <span class="chapters__name">The Voice</span> </a></li>
-          <li><a href="#craft"       data-num="V">   <span class="chapters__num">V</span>   <span class="chapters__name">The Craft</span> </a></li>
-          <li><a href="#path"        data-num="VI">  <span class="chapters__num">VI</span>  <span class="chapters__name">The Path</span>  </a></li>
-          <li><a href="#eye"         data-num="VII"> <span class="chapters__num">VII</span> <span class="chapters__name">The Eye</span>   </a></li>
-          <li><a href="#chronicle"   data-num="VIII"><span class="chapters__num">VIII</span><span class="chapters__name">The Chronicle</span></a></li>
-          <li><a href="#invitation"  data-num="IX">  <span class="chapters__num">IX</span>  <span class="chapters__name">The Invitation</span></a></li>
-        </ol>
-      </nav>
-
-      <div class="sidebar__foot">
-        <a href="https://x.com/Stbandido_" target="_blank" rel="noopener" class="sidebar__link">X ↗</a>
-        <a href="https://github.com/Stebandido77" target="_blank" rel="noopener" class="sidebar__link">GH ↗</a>
-        <a href="mailto:estebanlabastidasm@javeriana.edu.co" class="sidebar__link">✉</a>
-      </div>
+    <nav class="mnav" id="mnav" aria-label="Pages"></nav>
+    <div class="mb more" data-menu tabindex="0" role="button" aria-haspopup="menu">Pages ▾
+      <div class="menu" id="gomenu" role="menu"></div>
     </div>
-  </aside>
+  </div>
+  <div class="r">
+    <span class="st mkt" id="mbmkt"></span>
+    <button class="mb st" data-spot aria-label="Search"><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><circle cx="6" cy="6" r="4.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M9.5 9.5 13 13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button>
+    <span class="st" aria-hidden="true"><svg width="16" height="12" viewBox="0 0 16 12"><path d="M8 11.5 5.6 9a3.4 3.4 0 0 1 4.8 0L8 11.5Zm-4.2-4.3L2.3 5.7a8 8 0 0 1 11.4 0l-1.5 1.5a5.9 5.9 0 0 0-8.4 0Z" fill="currentColor"/></svg></span>
+    <span class="sndw">
+      <button class="mb st snd" id="snd" aria-label="Play music" aria-pressed="false" title="Music — click to play/pause, right-click or hold for volume"><svg width="17" height="14" viewBox="0 0 17 14" aria-hidden="true"><path d="M1.5 5h3l4-3.5v11l-4-3.5h-3z" fill="currentColor"/><path class="w1" d="M11 4.5a3.5 3.5 0 0 1 0 5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path class="w2" d="M13 2.5a6.5 6.5 0 0 1 0 9" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></button>
+      <span class="menu sndpop" id="sndpop" hidden><label for="sndvol">Volume</label><input id="sndvol" type="range" min="0" max="100"></span>
+    </span>
+    <span class="st" id="clock">—</span>
+  </div>
+</header>
+
+<main id="wins"></main>
+
+<noscript>
+  <article class="nojs">
+    <h1>Esteban Labastidas</h1>
+    <p class="nojs-k">Economist · Banker · Builder — Bogotá</p>
+    <p>Analyst in Strategy &amp; Investor Relations at Grupo Aval. M.Sc. Applied Economics at Universidad de los Andes; B.S. Industrial Engineering &amp; B.A. Economics at Pontificia Universidad Javeriana. Research on inflation forecasting in Colombia (Bayesian and density forecasts, TVP-BVAR-SV, a hybrid early-warning system on SSRN), banking and capital-markets projects, and public writing on Colombian economics.</p>
+    <p>This site is an interactive desktop and needs JavaScript. Everything is also here:</p>
+    <ul>
+      <li><a href="assets/docs/CV_Esteban_Labastidas.pdf">CV (PDF)</a></li>
+      <li><a href="https://www.linkedin.com/in/esteban-labastidas-cmsa%C2%AE-8272a019a/">LinkedIn</a></li>
+      <li><a href="https://github.com/Stebandido77">GitHub</a></li>
+      <li><a href="https://papers.ssrn.com/sol3/papers.cfm?abstract_id=6625578">Working paper on SSRN</a></li>
+      <li><a href="mailto:estebanlabastidasm@javeriana.edu.co">estebanlabastidasm@javeriana.edu.co</a></li>
+      <li><a href="classic/">The classic notebook</a> (the previous, scrolling version of this site)</li>
+    </ul>
+  </article>
+</noscript>
+
+<section class="home" aria-label="Home screen">
+  <div class="hstat"><span id="hclock">—</span><span style="display:flex;gap:6px;align-items:center" aria-hidden="true"><svg width="16" height="12" viewBox="0 0 16 12"><path d="M8 11.5 5.6 9a3.4 3.4 0 0 1 4.8 0L8 11.5Zm-4.2-4.3L2.3 5.7a8 8 0 0 1 11.4 0l-1.5 1.5a5.9 5.9 0 0 0-8.4 0Z" fill="currentColor"/></svg><svg width="25" height="12" viewBox="0 0 27 13"><rect x=".5" y=".5" width="23" height="12" rx="3.5" fill="none" stroke="currentColor" opacity=".5"/><rect x="2" y="2" width="17" height="9" rx="2" fill="currentColor"/></svg></span></div>
+  <div class="hwid">
+    <h2>Esteban<br><em>Labastidas</em></h2>
+    <p id="htag"></p>
+    <div class="mk" id="hmkt"></div>
+  </div>
+  <div class="apps" id="happs"></div>
+</section>
+
+<nav class="dock" id="dock" aria-label="Dock"></nav>
+
+<footer>
+<p class="wcap">Bogotá · black &amp; white<br>Photo <a href="https://commons.wikimedia.org/wiki/File:Bogot%C3%A1,_Monserrate,_2023-06_CN-02.jpg" target="_blank" rel="noopener">© Steffen Schmitz</a> · <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener">CC BY-SA 4.0</a></p>
+<div class="hint" id="hint">Every page is in the menu bar and the Dock · search with <kbd>⌘K</kbd></div>
+</footer>
+
+<div class="spot" id="spot" role="dialog" aria-modal="true" aria-label="Search">
+  <div class="box">
+    <div class="q"><svg width="20" height="20" viewBox="0 0 14 14" aria-hidden="true"><circle cx="6" cy="6" r="4.5" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M9.5 9.5 13 13" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg><input id="spotq" placeholder="Search papers, projects, roles…" autocomplete="off" aria-label="Search" aria-controls="spotr"></div>
+    <ul id="spotr" role="listbox" aria-label="Results"></ul>
+  </div>
+</div>
 
-  <!-- Mobile drawer trigger -->
-  <button class="drawer-toggle" id="drawerToggle" aria-label="Open chapter navigation" aria-expanded="false" aria-controls="sidebar">
-    <span></span><span></span><span></span>
-  </button>
-
-  <!-- ═══════════════════════════════════════════════════════════════
-       MAIN
-  ═══════════════════════════════════════════════════════════════ -->
-  <main class="main" id="main">
-
-    <!-- ───────────────────────────────────────────────────────────
-         CHAPTER I · OPENING — navy deep
-    ─────────────────────────────────────────────────────────── -->
-    <section id="opening" class="chapter chapter--navy-deep chapter--hero" data-chapter="i" data-mood="navy">
-      <div class="chapter__inner hero">
-
-        <!-- SVG curve — behind the name, shifted down so ticks clear the letters -->
-        <svg class="hero__curve" viewBox="0 0 780 320" preserveAspectRatio="xMinYMid meet" aria-hidden="true">
-          <defs>
-            <linearGradient id="bandGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%"   stop-color="#b8925a" stop-opacity="0.22"/>
-              <stop offset="100%" stop-color="#b8925a" stop-opacity="0.02"/>
-            </linearGradient>
-          </defs>
-
-          <g class="curve-grid">
-            <line x1="0"   y1="248" x2="780" y2="248"/> <!-- 3% -->
-            <line x1="0"   y1="161" x2="780" y2="161"/> <!-- 8% -->
-            <line x1="0"   y1="70"  x2="780" y2="70"/>  <!-- 13% -->
-          </g>
-
-          <g class="curve-axis">
-            <text x="4" y="72">13%</text>
-            <text x="4" y="163">8%</text>
-            <text x="4" y="250">3%</text>
-          </g>
-
-          <g class="curve-ticks">
-            <line x1="0"   y1="300" x2="0"   y2="306"/>
-            <line x1="111" y1="300" x2="111" y2="306"/>
-            <line x1="222" y1="300" x2="222" y2="306"/>
-            <line x1="333" y1="300" x2="333" y2="306"/>
-            <line x1="444" y1="300" x2="444" y2="306"/>
-            <line x1="555" y1="300" x2="555" y2="306"/>
-            <line x1="666" y1="300" x2="666" y2="306"/>
-            <line x1="779" y1="300" x2="779" y2="306"/>
-            <text x="0"   y="317" text-anchor="start">2020</text>
-            <text x="222" y="317" text-anchor="middle">2022</text>
-            <text x="444" y="317" text-anchor="middle">2024</text>
-            <text x="666" y="317" text-anchor="middle">2026</text>
-            <text x="779" y="317" text-anchor="end">2027f</text>
-          </g>
-
-          <path class="curve-band" d="M 666 210 Q 722 215 779 231 L 779 245 Q 722 230 666 225 Z" fill="url(#bandGrad)"/>
-
-          <path class="curve-observed"
-                d="M 0 248
-                   C 40 250, 80 258, 111 265
-                   C 160 260, 200 220, 240 140
-                   C 265 90, 285 70, 290 70
-                   C 320 80, 360 125, 400 160
-                   C 430 175, 460 192, 490 200
-                   C 520 205, 555 207, 600 208
-                   C 630 209, 650 210, 666 210"
-                fill="none"/>
-
-          <path class="curve-forecast" d="M 666 210 Q 722 222 779 237" fill="none"/>
-
-          <g class="curve-peak" transform="translate(290 70)">
-            <circle r="2" opacity="0.3"/>
-          </g>
-
-          <g class="curve-forecast-label" transform="translate(762 242)">
-            <text>2027f</text>
-          </g>
-        </svg>
-
-        <div class="hero__body">
-          <p class="dateline dateline--hero">
-            <span>№ 01 — OPENING</span>
-            <span class="dateline__sep">·</span>
-            <span>THE QUANT'S NOTEBOOK</span>
-            <span class="dateline__sep">·</span>
-            <span>MMXXVI</span>
-            <span class="dateline__rule"></span>
-          </p>
-
-          <h1 class="hero__name">
-            <span class="hero__name-first"><span class="mask__inner">Esteban</span></span>
-            <span class="hero__name-last"><span class="mask__inner"><em>Labastidas</em></span></span>
-          </h1>
-
-          <p class="hero__thesis">
-            <em><span class="qm">&ldquo;</span>I work between markets and models — pricing risk
-            for banks in the morning, forecasting inflation at night, and writing about
-            Colombia in between.<span class="qm">&rdquo;</span></em>
-          </p>
-
-        </div>
-
-        <dl class="hero__meta">
-          <div>
-            <dt>Position</dt>
-            <dd>Senior Analyst · Grupo Aval · Bogotá</dd>
-          </div>
-          <div>
-            <dt>Academic</dt>
-            <dd>M.Sc. Applied Economics · Universidad de los Andes</dd>
-          </div>
-          <div>
-            <dt>Current Focus</dt>
-            <dd>Inflation forecasting · Capital markets · M&amp;A · Corporate valuation</dd>
-          </div>
-          <div>
-            <dt>Affiliated with</dt>
-            <dd>Sekia Research Group · Pontificia Universidad Javeriana</dd>
-          </div>
-        </dl>
-
-        <p class="hero__bio">
-          Increasingly focused on <em>mergers, acquisitions, and corporate valuation</em>
-          — where financial modeling meets strategic judgment — as the natural bridge
-          between my consulting work and capital-markets research.
-        </p>
-
-        <figure class="hero__portrait">
-          <p class="hero__portrait-caption">✶ ESTEBAN LABASTIDAS · BOGOTÁ · 2026</p>
-          <div class="hero__portrait-frame">
-            <img src="assets/img/DSC06561.jpg" alt="Portrait of Esteban Labastidas" loading="eager">
-          </div>
-
-          <aside class="hero__interests" aria-label="Research interests">
-            <p class="hero__interests-label">RESEARCH INTERESTS</p>
-            <ul>
-              <li>Time Series Econometrics</li>
-              <li>Applied Microeconometrics</li>
-              <li>Financial Decision-Making</li>
-              <li>Game Theory</li>
-              <li>Education</li>
-              <li>Development Economics</li>
-              <li class="hero__interests-rule"></li>
-              <li>Mergers &amp; Acquisitions</li>
-              <li>Corporate Valuation</li>
-              <li>Private Capital Markets</li>
-            </ul>
-          </aside>
-        </figure>
-
-        <div class="hero__scroll" aria-hidden="true">
-          <span>SCROLL ↓ CONTINUE</span>
-          <span class="hero__scroll-line"></span>
-        </div>
-
-      </div>
-    </section>
-
-    <!-- ───────────────────────────────────────────────────────────
-         CHAPTER II · THE METHOD — paper
-    ─────────────────────────────────────────────────────────── -->
-    <section id="method" class="chapter chapter--paper" data-chapter="ii" data-mood="paper">
-      <div class="chapter__inner">
-
-        <header class="chapter-head">
-          <span class="chapter-head__numeral" aria-hidden="true">II.</span>
-          <div class="chapter-head__text">
-            <p class="dateline">CHAPTER TWO · THE METHOD</p>
-            <h2 class="chapter-head__title">How I <em>work</em></h2>
-          </div>
-        </header>
-
-        <div class="chapter__row">
-          <p class="chapter-intro chapter-intro--dropcap">
-            <span class="dropcap">M</span>y work lives at the intersection of four
-            disciplines. I don't choose between them — I move through all four daily. A
-            regulatory model in the morning, an econometric paper in the afternoon, a
-            public column at night. This is the method.
-          </p>
-
-          <aside class="marginalia">
-            <p class="marginalia__label">A NOTE</p>
-            <p class="marginalia__body">
-              The four pillars below are not separate careers. They are one practice
-              viewed from four angles.
-            </p>
-          </aside>
-        </div>
-
-        <div class="pillars">
-
-          <article class="pillar reveal" data-reveal-delay="0">
-            <div class="pillar__top">
-              <span class="pillar__letter">A.</span>
-              <svg class="pillar__icon" viewBox="0 0 50 50" aria-hidden="true">
-                <line x1="6"  y1="14" x2="44" y2="14"/>
-                <line x1="6"  y1="25" x2="44" y2="25"/>
-                <line x1="6"  y1="36" x2="44" y2="36"/>
-                <circle cx="14" cy="14" r="2"/>
-                <circle cx="28" cy="25" r="2"/>
-                <circle cx="38" cy="36" r="2"/>
-              </svg>
-            </div>
-            <h3 class="pillar__name">Research</h3>
-            <p class="pillar__body">
-              Bayesian econometrics, inflation forecasting, emerging-market time series.
-              Working papers under review at <em>Emerging Markets Review</em> and in
-              preparation for <em>MAPRA</em>.
-            </p>
-            <p class="pillar__tags">PAPERS · ECONOMETRICS · MONETARY POLICY</p>
-          </article>
-
-          <article class="pillar reveal" data-reveal-delay="80">
-            <div class="pillar__top">
-              <span class="pillar__letter">B.</span>
-              <svg class="pillar__icon" viewBox="0 0 50 50" aria-hidden="true">
-                <circle cx="12" cy="12" r="2"/><circle cx="25" cy="12" r="2"/><circle cx="38" cy="12" r="2"/>
-                <circle cx="12" cy="25" r="2"/><circle cx="25" cy="25" r="2"/><circle cx="38" cy="25" r="2"/>
-                <circle cx="12" cy="38" r="2"/><circle cx="25" cy="38" r="2"/><circle cx="38" cy="38" r="2"/>
-                <line x1="12" y1="12" x2="38" y2="38"/>
-                <line x1="12" y1="38" x2="38" y2="12"/>
-              </svg>
-            </div>
-            <h3 class="pillar__name">Consulting</h3>
-            <p class="pillar__body">
-              Capital markets and regulatory risk for tier-1 financial institutions. Built
-              a production-grade SA-CCR exposure engine for a state-owned Colombian bank.
-              Treasury-system implementation (Calypso/Nasdaq) across front, middle, and
-              back office.
-            </p>
-            <p class="pillar__tags">CALYPSO · SA-CCR · DERIVATIVES · RISK</p>
-          </article>
-
-          <article class="pillar reveal" data-reveal-delay="160">
-            <div class="pillar__top">
-              <span class="pillar__letter">C.</span>
-              <svg class="pillar__icon" viewBox="0 0 50 50" aria-hidden="true">
-                <line x1="8"  y1="14" x2="38" y2="14"/>
-                <line x1="8"  y1="22" x2="42" y2="22"/>
-                <line x1="8"  y1="30" x2="34" y2="30"/>
-                <line x1="8"  y1="38" x2="26" y2="38"/>
-              </svg>
-            </div>
-            <h3 class="pillar__name">Public Writing</h3>
-            <p class="pillar__body">
-              Commentary on Colombian economics — labor markets, inflation, income
-              structure. Published on X, with growing readership.
-            </p>
-            <p class="pillar__tags">COLUMNS · POLICY · COLOMBIA</p>
-          </article>
-
-          <article class="pillar reveal" data-reveal-delay="240">
-            <div class="pillar__top">
-              <span class="pillar__letter">D.</span>
-              <svg class="pillar__icon" viewBox="0 0 50 50" aria-hidden="true">
-                <path d="M 14 10 Q 8 10 8 16 L 8 22 Q 8 25 5 25 Q 8 25 8 28 L 8 34 Q 8 40 14 40" fill="none"/>
-                <path d="M 36 10 Q 42 10 42 16 L 42 22 Q 42 25 45 25 Q 42 25 42 28 L 42 34 Q 42 40 36 40" fill="none"/>
-                <path d="M 22 16 Q 18 16 18 20 L 18 22 Q 18 25 15 25 Q 18 25 18 28 L 18 30 Q 18 34 22 34" fill="none" opacity="0.5"/>
-                <path d="M 28 16 Q 32 16 32 20 L 32 22 Q 32 25 35 25 Q 32 25 32 28 L 32 30 Q 32 34 28 34" fill="none" opacity="0.5"/>
-              </svg>
-            </div>
-            <h3 class="pillar__name">Building</h3>
-            <p class="pillar__body">
-              Python, R, VBA, LaTeX. Pipelines, valuation engines, automations. I ship
-              what I research.
-            </p>
-            <p class="pillar__tags">PYTHON · R · SYSTEMS · AUTOMATION</p>
-          </article>
-
-        </div>
-
-      </div>
-    </section>
-
-    <!-- ───────────────────────────────────────────────────────────
-         CHAPTER III · THE WORK — navy
-    ─────────────────────────────────────────────────────────── -->
-    <section id="work" class="chapter chapter--navy" data-chapter="iii" data-mood="navy">
-      <div class="chapter__inner">
-
-        <header class="chapter-head">
-          <span class="chapter-head__numeral" aria-hidden="true">III.</span>
-          <div class="chapter-head__text">
-            <p class="dateline">CHAPTER THREE · RESEARCH</p>
-            <h2 class="chapter-head__title">Working <em>papers</em></h2>
-          </div>
-        </header>
-
-        <div class="chapter__row">
-          <p class="chapter-intro">
-            A selection of current and published work. Each paper below is either under
-            review, in active preparation, or available as a working document. Click
-            through for abstracts and methodology notes.
-          </p>
-
-          <aside class="marginalia marginalia--stats">
-            <p class="marginalia__label">CURRENT STATUS</p>
-            <dl class="marginalia__stats">
-              <div><dt>02</dt><dd>under review</dd></div>
-              <div><dt>01</dt><dd>going to SSRN</dd></div>
-              <div><dt>02</dt><dd>in progress</dd></div>
-              <div><dt>01</dt><dd>published</dd></div>
-              <div><dt>02</dt><dd>working papers</dd></div>
-            </dl>
-          </aside>
-        </div>
-
-        <ol class="papers" id="papers">
-
-          <li class="paper reveal" data-reveal-delay="0">
-            <button class="paper__row" data-paper="01" aria-expanded="false">
-              <header class="paper__head">
-                <span class="paper__num">No. 01 · 2026</span>
-                <span class="paper__status paper__status--review"><span class="pulse"></span>UNDER EDITORIAL REVIEW</span>
-              </header>
-              <h3 class="paper__title">Point Forecasts, Density Signals, and the Limits of Parsimony</h3>
-              <p class="paper__subtitle">Inflation Prediction Across Regimes in Colombia</p>
-              <p class="paper__venue">Submitted to <em>Emerging Markets Review</em> · with collaborators</p>
-              <p class="paper__peek">
-                &ldquo;This paper benchmarks a battery of inflation-forecasting models for
-                Colombia — from parsimonious univariate specifications to Bayesian
-                structural models with time-varying parameters — across distinct monetary
-                policy regimes…&rdquo;
-              </p>
-              <p class="paper__tags">BAYESIAN · DENSITY FORECAST · TVP-BVAR-SV · COLOMBIA</p>
-              <span class="paper__action">READ ABSTRACT →</span>
-            </button>
-          </li>
-
-          <li class="paper reveal" data-reveal-delay="60">
-            <button class="paper__row" data-paper="02" aria-expanded="false">
-              <header class="paper__head">
-                <span class="paper__num">No. 02 · 2026</span>
-                <span class="paper__status paper__status--review"><span class="pulse"></span>WORKING PAPER · UNDER REVIEW</span>
-              </header>
-              <h3 class="paper__title">A Hybrid Early-Warning System for Inflation in an Emerging Market</h3>
-              <p class="paper__subtitle">Combining Econometric Models, an Agent-Based Decomposition with Heterogeneous Expectations, a Large Language Model, and a Multi-Output Agent Architecture</p>
-              <p class="paper__venue">Working paper · SSRN · under review</p>
-              <p class="paper__peek">
-                &ldquo;We propose a hybrid early-warning framework that fuses classical
-                econometric forecasting with an agent-based decomposition of inflation
-                expectations under heterogeneity, augmented by a Large Language Model…&rdquo;
-              </p>
-              <p class="paper__tags">LLM · AGENT-BASED · MULTI-AGENT · INFLATION · EARLY WARNING</p>
-              <span class="paper__action">READ ABSTRACT →</span>
-            </button>
-          </li>
-
-          <li class="paper reveal" data-reveal-delay="120">
-            <button class="paper__row" data-paper="03" aria-expanded="false">
-              <header class="paper__head">
-                <span class="paper__num">No. 03 · 2026</span>
-                <span class="paper__status paper__status--progress">IN PROGRESS</span>
-              </header>
-              <h3 class="paper__title">Structural Dynamics and Risk Transmission in the Colombian Banking System</h3>
-              <p class="paper__subtitle">Working title</p>
-              <p class="paper__venue">Working paper</p>
-              <p class="paper__peek">
-                &ldquo;An ongoing investigation into capital adequacy, regulatory
-                compliance, and counterparty credit risk frameworks in Colombian banking
-                under SFC standards, with emphasis on SA-CCR exposure dynamics…&rdquo;
-              </p>
-              <p class="paper__tags">BANKING · SA-CCR · REGULATORY · SYSTEMIC RISK</p>
-              <span class="paper__action">READ ABSTRACT →</span>
-            </button>
-          </li>
-
-          <li class="paper reveal" data-reveal-delay="180">
-            <button class="paper__row" data-paper="04" aria-expanded="false">
-              <header class="paper__head">
-                <span class="paper__num">No. 04 · 2026</span>
-                <span class="paper__status paper__status--progress">IN PROGRESS</span>
-              </header>
-              <h3 class="paper__title">Large Language Models in Macroeconomic Forecasting</h3>
-              <p class="paper__subtitle">Architectures and Empirical Evidence</p>
-              <p class="paper__venue">Working paper</p>
-              <p class="paper__peek">
-                &ldquo;Exploring the frontier between classical econometric forecasting
-                and modern AI architectures for macroeconomic prediction. Evaluates
-                multi-agent systems, fine-tuned LLMs, and hybrid econometric-AI
-                pipelines…&rdquo;
-              </p>
-              <p class="paper__tags">LLM · MACHINE LEARNING · FORECASTING · AI</p>
-              <span class="paper__action">READ ABSTRACT →</span>
-            </button>
-          </li>
-
-          <li class="paper reveal" data-reveal-delay="240">
-            <button class="paper__row" data-paper="05" aria-expanded="false">
-              <header class="paper__head">
-                <span class="paper__num">No. 05 · 2023</span>
-                <span class="paper__status paper__status--published">PUBLISHED</span>
-              </header>
-              <h3 class="paper__title">Effects of Coca Crops on Academic Performance in Colombia (2018–2021)</h3>
-              <p class="paper__venue">Sekia Research Group · Pontificia Universidad Javeriana · November 2023</p>
-              <p class="paper__peek">
-                &ldquo;Municipal-level analysis using SABER 11 standardized test scores
-                to quantify the causal effect of coca cultivation on educational
-                outcomes. A one standard deviation increase in cultivated hectares
-                reduces average scores by ~0.03 sd…&rdquo;
-              </p>
-              <p class="paper__tags">EDUCATION · DEVELOPMENT · CAUSAL INFERENCE · COLOMBIA</p>
-              <span class="paper__action">READ ABSTRACT →</span>
-            </button>
-          </li>
-
-          <li class="paper reveal" data-reveal-delay="300">
-            <button class="paper__row" data-paper="06" aria-expanded="false">
-              <header class="paper__head">
-                <span class="paper__num">No. 06 · 2023</span>
-                <span class="paper__status paper__status--working">WORKING PAPER</span>
-              </header>
-              <h3 class="paper__title">Media Bias in Coverage of Social Protests in Colombia</h3>
-              <p class="paper__venue">CINEP · Sekia Research Group · October 2023</p>
-              <p class="paper__peek">
-                &ldquo;Collaboration with CINEP to assess potential biases in Colombian
-                news coverage of social protests. Constructed the research database and
-                conducted exploratory analysis of reporting trends…&rdquo;
-              </p>
-              <p class="paper__tags">MEDIA · NLP · POLITICAL ECONOMY</p>
-              <span class="paper__action">READ ABSTRACT →</span>
-            </button>
-          </li>
-
-          <li class="paper reveal" data-reveal-delay="360">
-            <button class="paper__row" data-paper="07" aria-expanded="false">
-              <header class="paper__head">
-                <span class="paper__num">No. 07 · 2023</span>
-                <span class="paper__status paper__status--working">WORKING PAPER</span>
-              </header>
-              <h3 class="paper__title">Born This Way</h3>
-              <p class="paper__venue">Sekia Research Group · Interdisciplinary · March 2023</p>
-              <p class="paper__peek">
-                &ldquo;Interdisciplinary working paper developed with medical students.
-                Contributed to statistical design, data analysis, and interpretation of
-                results in a study relevant to health demographics and social policy…&rdquo;
-              </p>
-              <p class="paper__tags">HEALTH · DEMOGRAPHICS · INTERDISCIPLINARY</p>
-              <span class="paper__action">READ ABSTRACT →</span>
-            </button>
-          </li>
-
-          <li class="paper reveal" data-reveal-delay="420">
-            <button class="paper__row" data-paper="08" aria-expanded="false">
-              <header class="paper__head">
-                <span class="paper__num">No. 08 · 2026</span>
-                <span class="paper__status paper__status--prep">WORKING PAPER · GOING TO SSRN</span>
-              </header>
-              <h3 class="paper__title">Spatial Inequality in Educational Performance Across Bogotá</h3>
-              <p class="paper__subtitle">A Spatial Durbin Approach Using ICFES Saber 11 Microdata</p>
-              <p class="paper__venue">Working paper · forthcoming on SSRN · journal submission planned</p>
-              <p class="paper__peek">
-                &ldquo;We document the spatial structure of educational outcomes in Bogotá
-                using ICFES Saber 11 microdata aggregated across four spatial scales
-                (sede, ZAT, UPZ, UPL). A pooled Spatial Durbin Model identifies eight
-                institutional and household covariates whose indirect spillover effects
-                are statistically significant beyond their direct contribution…&rdquo;
-              </p>
-              <p class="paper__tags">SPATIAL ECONOMETRICS · SDM · EDUCATION · COLOMBIA · INEQUALITY</p>
-              <span class="paper__action">READ ABSTRACT →</span>
-            </button>
-          </li>
-
-        </ol>
-
-      </div>
-    </section>
-
-    <!-- asterism divider -->
-    <div class="asterism asterism--navy-paper" aria-hidden="true">✶ ✶ ✶</div>
-
-    <!-- ───────────────────────────────────────────────────────────
-         CHAPTER IV · THE VOICE — paper
-    ─────────────────────────────────────────────────────────── -->
-    <section id="voice" class="chapter chapter--paper" data-chapter="iv" data-mood="paper">
-      <div class="chapter__inner">
-
-        <header class="chapter-head">
-          <span class="chapter-head__numeral" aria-hidden="true">IV.</span>
-          <div class="chapter-head__text">
-            <p class="dateline">CHAPTER FOUR · PUBLIC WRITING</p>
-            <h2 class="chapter-head__title">The <em>Voice</em></h2>
-          </div>
-        </header>
-
-        <div class="chapter__row">
-          <p class="chapter-intro chapter-intro--dropcap">
-            <span class="dropcap">I</span> write about Colombian economics on X — labor
-            markets, inflation, income distribution, monetary policy. Not academic papers:
-            shorter, sharper, public. What follows is a selection.
-          </p>
-        </div>
-
-        <div class="essays">
-          <!-- ADD NEW POSTS: duplicate an article.essay-card block below -->
-
-          <article class="essay-card reveal" data-reveal-delay="0">
-            <p class="essay-card__meta">MAR 2026 · X · TWITTER</p>
-            <h3 class="essay-card__title">Escribir cuando <em>callar</em> es cómodo</h3>
-            <p class="essay-card__excerpt">
-              A reflection on writing as an act of transcendence — how, since the earliest
-              civilizations, writing has been humanity's way of refusing to disappear
-              entirely.
-            </p>
-            <p class="essay-card__stats">2.1K views · 47 reposts</p>
-            <p class="essay-card__tags">ESSAY · PHILOSOPHY</p>
-            <a class="essay-card__link" href="https://x.com/Stbandido_/status/2021030767325839814" target="_blank" rel="noopener">READ ON X ↗</a>
-          </article>
-
-          <article class="essay-card reveal" data-reveal-delay="100">
-            <p class="essay-card__meta">FEB 2026 · X · TWITTER</p>
-            <h3 class="essay-card__title">Salario mínimo, informalidad y <em>estructura del ingreso</em> en Colombia</h3>
-            <p class="essay-card__excerpt">
-              An analysis of where the minimum wage actually sits within Colombia's real
-              income distribution — beyond the usual inflation vs. business pressure
-              debate.
-            </p>
-            <p class="essay-card__stats">Read on X for full thread</p>
-            <p class="essay-card__tags">LABOR · POLICY · DATA</p>
-            <a class="essay-card__link" href="https://x.com/Stbandido_/status/2033785801872384477" target="_blank" rel="noopener">READ ON X ↗</a>
-          </article>
-
-        </div>
-
-        <p class="voice__cta">
-          <a href="https://x.com/Stbandido_" target="_blank" rel="noopener">
-            FOLLOW ON X · @STBANDIDO_ ↗
-          </a>
-        </p>
-
-      </div>
-    </section>
-
-    <!-- asterism divider -->
-    <div class="asterism" aria-hidden="true">✶ ✶ ✶</div>
-
-    <!-- ───────────────────────────────────────────────────────────
-         CHAPTER V · THE CRAFT — navy
-    ─────────────────────────────────────────────────────────── -->
-    <section id="craft" class="chapter chapter--navy" data-chapter="v" data-mood="navy">
-      <div class="chapter__inner">
-
-        <header class="chapter-head">
-          <span class="chapter-head__numeral" aria-hidden="true">V.</span>
-          <div class="chapter-head__text">
-            <p class="dateline">CHAPTER FIVE · APPLIED WORK</p>
-            <h2 class="chapter-head__title">The <em>Craft</em></h2>
-          </div>
-        </header>
-
-        <div class="chapter__row">
-          <p class="chapter-intro">
-            Selected engagements and systems I've built. Most are internal tools for
-            financial institutions, some are research infrastructure, one or two are
-            experiments.
-          </p>
-        </div>
-
-        <div class="projects">
-
-          <article class="project reveal" data-reveal-delay="0">
-            <p class="project__no">№ 01</p>
-            <h3 class="project__title">SA-CCR Exposure &amp; Valuation Engine</h3>
-            <p class="project__tags">PYTHON · DERIVATIVES · REGULATORY RISK · SFC · STRESS TESTING</p>
-            <p class="project__body">
-              A fully functional SA-CCR counterparty credit risk exposure calculator for
-              FX and Rates derivatives portfolios. Aligned with SFC regulation. Used for
-              regulatory capital measurement, stress testing, and risk reporting at a
-              tier-1 Colombian financial institution.
-            </p>
-          </article>
-
-          <article class="project reveal" data-reveal-delay="80">
-            <p class="project__no">№ 02</p>
-            <h3 class="project__title">Calypso Treasury System Implementation</h3>
-            <p class="project__tags">CALYPSO · NASDAQ · CAPITAL MARKETS · FRONT-TO-BACK</p>
-            <p class="project__body">
-              End-to-end implementation of the Calypso treasury system across front,
-              middle, and back office functions. Configured pricing tools, trade
-              workflows, market data integrations, and accounting rules for a major
-              state-owned Colombian bank.
-            </p>
-          </article>
-
-          <article class="project reveal" data-reveal-delay="160">
-            <p class="project__no">№ 03</p>
-            <h3 class="project__title">Inflation Forecasting System — Colombia</h3>
-            <p class="project__tags">R · PYTHON · BVAR · TVP-BVAR-SV · RESEARCH INFRASTRUCTURE</p>
-            <p class="project__body">
-              Production-grade pipeline for benchmarking time-series inflation
-              forecasting models. Combines ARIMA, Bayesian VARs, and time-varying
-              parameter models with rolling-window backtests and Diebold–Mariano tests.
-              Infrastructure backing working papers 01–02.
-            </p>
-          </article>
-
-          <article class="project reveal" data-reveal-delay="240">
-            <p class="project__no">№ 04</p>
-            <h3 class="project__title">Multi-Agent Early-Warning System</h3>
-            <p class="project__tags">LLM · MULTI-AGENT · HETEROGENEOUS EXPECTATIONS · EXPERIMENTAL</p>
-            <p class="project__body">
-              Experimental architecture combining agent-based inflation decomposition,
-              LLM-driven narrative extraction, and multi-output orchestration. Research
-              prototype for paper 02.
-            </p>
-          </article>
-
-          <article class="project reveal" data-reveal-delay="320">
-            <p class="project__no">№ 05</p>
-            <h3 class="project__title">Investment Performance Dashboards &amp; Automation</h3>
-            <p class="project__tags">PYTHON · POWER BI · JP MORGAN · WORKFLOW AUTOMATION</p>
-            <p class="project__body">
-              Internal dashboards and automated workflows for monitoring investment
-              performance metrics and reducing manual reporting effort at JP Morgan
-              Chase, spanning finance and workforce analytics.
-            </p>
-          </article>
-
-          <article class="project reveal" data-reveal-delay="400">
-            <p class="project__no">№ 06</p>
-            <h3 class="project__title">Media Bias Dataset &amp; Analysis</h3>
-            <p class="project__tags">R · PYTHON · NLP · CINEP COLLABORATION</p>
-            <p class="project__body">
-              Structured and analyzed datasets to assess bias patterns in Colombian news
-              coverage of social protests. Exploratory NLP analysis across major outlets
-              in collaboration with CINEP.
-            </p>
-          </article>
-
-          <article class="project reveal" data-reveal-delay="480">
-            <p class="project__no">№ 07</p>
-            <h3 class="project__title">pulso — GEIH Microdata Loader</h3>
-            <p class="project__tags">PYTHON · OPEN SOURCE · DANE · LABOR ECONOMICS · DATA INFRASTRUCTURE</p>
-            <p class="project__body">
-              Open-source Python library for single-line access to Colombia&rsquo;s
-              <em>Gran Encuesta Integrada de Hogares</em> (GEIH) — DANE&rsquo;s monthly
-              household survey covering 2006 to the present. Handles download, parsing,
-              and cross-epoch harmonization across the 2022 methodological redesign,
-              including the GEIH Empalme series. Built under a multi-agent
-              architect/builder/curator workflow. Release candidate
-              <code>v1.0.0-rc1</code> available on
-              <a class="project__link" href="https://test.pypi.org/project/pulso/" target="_blank" rel="noopener">TestPyPI ↗</a>
-              &middot;
-              <a class="project__link" href="https://github.com/Stebandido77/pulso" target="_blank" rel="noopener">github.com/Stebandido77/pulso ↗</a>
-            </p>
-          </article>
-
-          <article class="project reveal" data-reveal-delay="560">
-            <p class="project__no">№ 08</p>
-            <h3 class="project__title">Patrion — Personal Wealth Management App</h3>
-            <p class="project__tags">PRODUCT · PERSONAL FINANCE · WEALTH · IN DEVELOPMENT</p>
-            <p class="project__body">
-              Personal wealth management app currently in development. Aims to give
-              retail investors and high-net-worth households a structured view of
-              their assets, liabilities, cash flows, and risk exposures &mdash;
-              bridging the gap between consumer expense trackers and institutional
-              portfolio analytics. Built as a side project applying valuation,
-              risk, and product design principles from the day job. Codename:
-              <em>Patrion</em>.
-            </p>
-          </article>
-
-        </div>
-
-      </div>
-    </section>
-
-    <!-- ───────────────────────────────────────────────────────────
-         CHAPTER VI · THE PATH — paper
-    ─────────────────────────────────────────────────────────── -->
-    <section id="path" class="chapter chapter--paper" data-chapter="vi" data-mood="paper">
-      <div class="chapter__inner">
-
-        <header class="chapter-head">
-          <span class="chapter-head__numeral" aria-hidden="true">VI.</span>
-          <div class="chapter-head__text">
-            <p class="dateline">CHAPTER SIX · TRAJECTORY</p>
-            <h2 class="chapter-head__title">The <em>Path</em></h2>
-          </div>
-        </header>
-
-        <!-- VI.A · Experience -->
-        <div class="path-block">
-          <div class="chapter__row">
-            <div class="path-block__inner">
-              <p class="path-block__label">VI.A · Experience</p>
-              <ol class="trajectory">
-
-                <li class="trajectory__entry reveal">
-                  <p class="trajectory__date">2026 — PRESENT</p>
-                  <h3 class="trajectory__role">Senior Analyst · Strategic Planning &amp; Investor Relations</h3>
-                  <p class="trajectory__org"><em>Grupo Aval · Bogotá, Colombia</em></p>
-                  <p class="trajectory__body">
-                    Drive strategic planning, corporate development, and competitive
-                    intelligence for Grupo Aval&rsquo;s banking holding &mdash; financial
-                    performance review across subsidiaries, M&amp;A and corporate-project
-                    evaluation, and scenario design for medium- and long-term projections.
-                    Lead market and competitive-positioning analysis across business lines,
-                    products, and segments in the Colombian financial sector, and prepare
-                    strategic materials for the Board, institutional investors, and
-                    shareholders. Build the Aval Banking Intelligence (ABI) pipeline
-                    &mdash; a Python lakehouse integrating regulatory, market, and
-                    competitive data &mdash; as the analytical backbone of the function.
-                  </p>
-                </li>
-
-                <li class="trajectory__entry reveal">
-                  <p class="trajectory__date">SEP 2025 — 2026</p>
-                  <h3 class="trajectory__role">Consultant II</h3>
-                  <p class="trajectory__org"><em>Management Solutions · Bogotá, Colombia</em></p>
-                  <p class="trajectory__body">
-                    Lead client-facing workstreams with C-level executives at tier-1 financial
-                    institutions across capital markets strategy, asset management advisory,
-                    and regulatory alignment. Built a fully functional SA-CCR exposure engine
-                    for FX and Rates derivatives aligned with SFC standards, and participated
-                    end-to-end in the Calypso (Nasdaq) implementation across front, middle,
-                    and back office.
-                  </p>
-                </li>
-
-                <li class="trajectory__entry reveal">
-                  <p class="trajectory__date">JAN 2025 — SEP 2025</p>
-                  <h3 class="trajectory__role">Consultant</h3>
-                  <p class="trajectory__org"><em>Management Solutions · Bogotá, Colombia</em></p>
-                  <p class="trajectory__body">
-                    Delivered strategic engagements for top-tier Colombian banks focused on
-                    investment product design, capital markets analysis, and financial
-                    optimization. Performed valuation of fixed income, equity, and
-                    derivatives instruments and led front-to-back efficiency assessments for
-                    capital markets desks.
-                  </p>
-                </li>
-
-                <li class="trajectory__entry reveal">
-                  <p class="trajectory__date">JUN 2024 — JAN 2025</p>
-                  <h3 class="trajectory__role">ED&amp;SE Intern</h3>
-                  <p class="trajectory__org"><em>JP Morgan Chase</em></p>
-                  <p class="trajectory__body">
-                    Built data pipelines and dashboards to support internal investment
-                    processes and performance monitoring. Developed automated tools to track
-                    investment metrics and applied data analytics to surface insights across
-                    finance and workforce domains.
-                  </p>
-                </li>
-
-                <li class="trajectory__entry reveal">
-                  <p class="trajectory__date">AUG 2023 — DEC 2025</p>
-                  <h3 class="trajectory__role">Research Group Leader</h3>
-                  <p class="trajectory__org"><em>Sekia Research Group · Pontificia Universidad Javeriana</em></p>
-                  <p class="trajectory__body">
-                    Coordinated applied research across econometrics, data analysis,
-                    academic writing, and presentation tracks. Led project management for
-                    academic publications and external research collaborations with
-                    institutions such as CINEP.
-                  </p>
-                </li>
-
-              </ol>
-            </div>
-
-            <aside class="marginalia marginalia--path">
-              <p class="marginalia__label">A NOTE ON THE PATH</p>
-              <p class="marginalia__body">
-                I chose the slower route — engineering, economics, markets, research.
-                Each layer informs the next.
-              </p>
-            </aside>
-          </div>
-        </div>
-
-        <!-- VI.B · Formation -->
-        <div class="path-block">
-          <p class="path-block__label">VI.B · Formation</p>
-          <ul class="formation">
-            <li class="formation__item reveal">
-              <p class="formation__degree">M.Sc. Applied Economics</p>
-              <p class="formation__org">Universidad de los Andes · Bogotá</p>
-              <p class="formation__meta">2026 – 2027 · <em>In progress</em></p>
-            </li>
-            <li class="formation__item reveal">
-              <p class="formation__degree">M.Sc. Finance &amp; Financial Management</p>
-              <p class="formation__org">Escuela Europea de Negocios · Spain</p>
-              <p class="formation__meta">2024 – 2025</p>
-            </li>
-            <li class="formation__item reveal">
-              <p class="formation__degree">B.S. Industrial Engineering</p>
-              <p class="formation__org">Pontificia Universidad Javeriana · Bogotá</p>
-              <p class="formation__meta">2020 – 2025</p>
-            </li>
-          </ul>
-        </div>
-
-        <!-- VI.C · Credentials -->
-        <div class="path-block">
-          <p class="path-block__label">VI.C · Credentials</p>
-          <ul class="credentials">
-            <li class="credential-item reveal">
-              <p class="credential-item__label">CMSA®</p>
-              <p class="credential-item__name">Capital Markets &amp;<br>Securities Analyst</p>
-              <p class="credential-item__org">Corporate Finance Institute · CFI</p>
-              <p class="credential-item__status credential-item__status--done">CERTIFIED</p>
-            </li>
-
-            <li class="credential-item reveal">
-              <p class="credential-item__label">FMVA®</p>
-              <p class="credential-item__name">Financial Modeling &amp;<br>Valuation Analyst</p>
-              <p class="credential-item__org">Corporate Finance Institute · CFI</p>
-              <p class="credential-item__status credential-item__status--active">IN PROGRESS</p>
-            </li>
-          </ul>
-        </div>
-
-      </div>
-    </section>
-
-    <!-- ───────────────────────────────────────────────────────────
-         CHAPTER VII · THE EYE — navy
-    ─────────────────────────────────────────────────────────── -->
-    <section id="eye" class="chapter chapter--navy" data-chapter="vii" data-mood="navy">
-      <div class="chapter__inner">
-
-        <header class="chapter-head">
-          <span class="chapter-head__numeral" aria-hidden="true">VII.</span>
-          <div class="chapter-head__text">
-            <p class="dateline">CHAPTER SEVEN · DATA VISUALIZATIONS</p>
-            <h2 class="chapter-head__title">The <em>Eye</em></h2>
-          </div>
-        </header>
-
-        <div class="chapter__row">
-          <p class="chapter-intro">
-            Maps and charts from research and consulting. Each plate applies a specific
-            method — spatial autocorrelation, geospatial overlay, econometric
-            visualization — to a concrete problem in Colombian policy or urban economics.
-          </p>
-        </div>
-
-        <div class="plates">
-
-          <figure class="plate reveal" data-reveal-delay="0">
-            <a href="assets/visualizations/bogota_crime_lamps.jpg" target="_blank" rel="noopener" class="plate__link">
-              <img src="assets/visualizations/bogota_crime_lamps.jpg" alt="Crime Victims and Public Lighting in Bogotá" loading="lazy">
-              <span class="plate__overlay">VIEW FULL SIZE ↗</span>
-            </a>
-            <figcaption class="plate__cap">
-              <p class="plate__no">PLATE I</p>
-              <h3 class="plate__title">Crime Victims and Public Lighting in Bogotá</h3>
-              <p class="plate__method">SPATIAL ANALYTICS · BIVARIATE CHOROPLETH</p>
-              <p class="plate__desc">
-                Distribution of crime victims across Bogotá's localities against public
-                lighting coverage. Explores the relationship between infrastructure gaps
-                and victimization rates using disaggregated municipal data.
-              </p>
-            </figcaption>
-          </figure>
-
-          <figure class="plate reveal" data-reveal-delay="100">
-            <a href="assets/visualizations/metro_poverty_map.jpg" target="_blank" rel="noopener" class="plate__link">
-              <img src="assets/visualizations/metro_poverty_map.jpg" alt="Multidimensional Poverty and Metro Corridor" loading="lazy">
-              <span class="plate__overlay">VIEW FULL SIZE ↗</span>
-            </a>
-            <figcaption class="plate__cap">
-              <p class="plate__no">PLATE II</p>
-              <h3 class="plate__title">Multidimensional Poverty and Metro Corridor</h3>
-              <p class="plate__method">URBAN POLICY · GEOSPATIAL OVERLAY</p>
-              <p class="plate__desc">
-                Overlay of Bogotá's multidimensional poverty index with the planned metro
-                line corridor. Assesses the degree to which the first metro line serves
-                the city's most deprived neighborhoods.
-              </p>
-            </figcaption>
-          </figure>
-
-          <figure class="plate reveal" data-reveal-delay="200">
-            <a href="assets/visualizations/canopy_height.jpg" target="_blank" rel="noopener" class="plate__link">
-              <img src="assets/visualizations/canopy_height.jpg" alt="Urban Canopy Height Mapping" loading="lazy">
-              <span class="plate__overlay">VIEW FULL SIZE ↗</span>
-            </a>
-            <figcaption class="plate__cap">
-              <p class="plate__no">PLATE III</p>
-              <h3 class="plate__title">Urban Canopy Height Mapping</h3>
-              <p class="plate__method">GEOSPATIAL DATA · REMOTE SENSING</p>
-              <p class="plate__desc">
-                High-resolution mapping of urban tree canopy height. Part of broader
-                analysis on urban green infrastructure, heat island effects, and
-                environmental equity across Bogotá's urban fabric.
-              </p>
-            </figcaption>
-          </figure>
-
-          <figure class="plate reveal" data-reveal-delay="300">
-            <a href="assets/visualizations/gdp_distribution.jpg" target="_blank" rel="noopener" class="plate__link">
-              <img src="assets/visualizations/gdp_distribution.jpg" alt="GDP Distribution Across Colombian Departments" loading="lazy">
-              <span class="plate__overlay">VIEW FULL SIZE ↗</span>
-            </a>
-            <figcaption class="plate__cap">
-              <p class="plate__no">PLATE IV</p>
-              <h3 class="plate__title">GDP Distribution Across Colombian Departments</h3>
-              <p class="plate__method">ECONOMIC VISUALIZATION · REGIONAL DATA</p>
-              <p class="plate__desc">
-                GDP concentration across Colombia's 32 departments — the dominant share
-                of Bogotá D.C. and Antioquia in national output and context for spatial
-                development policy analysis.
-              </p>
-            </figcaption>
-          </figure>
-
-        </div>
-
-      </div>
-    </section>
-
-    <!-- ───────────────────────────────────────────────────────────
-         CHAPTER VIII · THE CHRONICLE — paper
-    ─────────────────────────────────────────────────────────── -->
-    <section id="chronicle" class="chapter chapter--paper" data-chapter="viii" data-mood="paper">
-      <div class="chapter__inner">
-
-        <header class="chapter-head">
-          <span class="chapter-head__numeral" aria-hidden="true">VIII.</span>
-          <div class="chapter-head__text">
-            <p class="dateline">CHAPTER EIGHT · NOW</p>
-            <h2 class="chapter-head__title">The <em>Chronicle</em></h2>
-          </div>
-        </header>
-
-        <ol class="chronicle">
-
-          <li class="chronicle__item reveal">
-            <p class="chronicle__date">JUN 2026</p>
-            <p class="chronicle__body">
-              Working paper &ldquo;A Hybrid Early-Warning System for Inflation in an
-              Emerging Market&rdquo; posted on
-              <a href="https://papers.ssrn.com/sol3/papers.cfm?abstract_id=6625578" target="_blank" rel="noopener">SSRN</a>
-              &mdash; under review for journal submission to <em>Economic Modelling</em>.
-            </p>
-          </li>
-
-          <li class="chronicle__item reveal">
-            <p class="chronicle__date">MAY 2026</p>
-            <p class="chronicle__body">
-              Released
-              <a href="https://github.com/Stebandido77/pulso" target="_blank" rel="noopener"><em>pulso</em></a>
-              <code>v1.0.0-rc1</code> on
-              <a href="https://test.pypi.org/project/pulso/" target="_blank" rel="noopener">TestPyPI</a>
-              &mdash; an open-source Python library for loading and harmonizing GEIH
-              microdata from Colombia&rsquo;s DANE across the 2022 methodological
-              redesign. Stable PyPI release in progress.
-            </p>
-          </li>
-
-          <li class="chronicle__item reveal">
-            <p class="chronicle__date">APR 2026</p>
-            <p class="chronicle__body">
-              Paper &ldquo;Point Forecasts, Density Signals, and the Limits of
-              Parsimony&rdquo; submitted for editorial review at <em>Emerging Markets
-              Review</em>.
-            </p>
-          </li>
-
-          <li class="chronicle__item reveal">
-            <p class="chronicle__date">MAR 2026</p>
-            <p class="chronicle__body">
-              New working paper in development: multi-agent architecture with LLM
-              integration for real-time monitoring of inflation expectations in emerging
-              markets.
-            </p>
-          </li>
-
-          <li class="chronicle__item reveal">
-            <p class="chronicle__date">MAR 2026</p>
-            <p class="chronicle__body">
-              Published on X:
-              <a href="https://x.com/Stbandido_/status/2021030767325839814" target="_blank" rel="noopener"><em>Escribir cuando callar es cómodo</em></a>
-              — a reflection on writing as transcendence.
-            </p>
-          </li>
-
-          <li class="chronicle__item reveal">
-            <p class="chronicle__date">FEB 2026</p>
-            <p class="chronicle__body">
-              Expanding work at the intersection of derivatives valuation and regulatory
-              risk — including SA-CCR exposure engines aligned with SFC standards.
-            </p>
-          </li>
-
-          <li class="chronicle__item reveal">
-            <p class="chronicle__date">FEB 2026</p>
-            <p class="chronicle__body">
-              Published on X:
-              <a href="https://x.com/Stbandido_/status/2033785801872384477" target="_blank" rel="noopener"><em>Salario mínimo, informalidad y estructura del ingreso en Colombia</em></a>
-              — where the minimum wage actually sits within the real income distribution.
-            </p>
-          </li>
-
-          <li class="chronicle__item reveal">
-            <p class="chronicle__date">JAN 2026</p>
-            <p class="chronicle__body">
-              Started M.Sc. in Applied Economics at Universidad de los Andes. Research
-              focus: macroeconomics, inflation dynamics, monetary policy in Colombia.
-            </p>
-          </li>
-
-        </ol>
-
-      </div>
-    </section>
-
-    <!-- ───────────────────────────────────────────────────────────
-         CHAPTER IX · THE INVITATION — navy deep
-    ─────────────────────────────────────────────────────────── -->
-    <section id="invitation" class="chapter chapter--navy-deep chapter--final" data-chapter="ix" data-mood="navy">
-      <div class="chapter__inner">
-
-        <header class="chapter-head">
-          <span class="chapter-head__numeral" aria-hidden="true">IX.</span>
-          <div class="chapter-head__text">
-            <p class="dateline">FINAL CHAPTER · CONTACT</p>
-            <h2 class="chapter-head__title">The <em>Invitation</em></h2>
-          </div>
-        </header>
-
-        <div class="chapter__row">
-          <blockquote class="invitation-quote reveal">
-            <em>&ldquo;Open to research collaborations, consulting engagements, policy
-            work, and conversations about inflation, markets, and the limits of what
-            models can tell us.&rdquo;</em>
-          </blockquote>
-
-          <aside class="marginalia marginalia--contact reveal" data-reveal-delay="120">
-            <dl class="marginalia__kv">
-              <div><dt>TIMEZONE</dt><dd>GMT-5</dd></div>
-              <div><dt>LANGUAGES</dt><dd>ES · EN</dd></div>
-              <div><dt>RESPONDS</dt><dd>within 48h</dd></div>
-            </dl>
-          </aside>
-        </div>
-
-        <div class="contacts">
-
-          <a class="contact-card reveal" data-reveal-delay="0" href="mailto:estebanlabastidasm@javeriana.edu.co">
-            <span class="contact-card__label">EMAIL</span>
-            <span class="contact-card__value">estebanlabastidasm<br>@javeriana.edu.co</span>
-            <span class="contact-card__arrow">↗</span>
-          </a>
-
-          <a class="contact-card reveal" data-reveal-delay="80" href="https://www.linkedin.com/in/esteban-labastidas-cmsa%C2%AE-8272a019a/" target="_blank" rel="noopener">
-            <span class="contact-card__label">LINKEDIN</span>
-            <span class="contact-card__value">LinkedIn Profile</span>
-            <span class="contact-card__arrow">↗</span>
-          </a>
-
-          <a class="contact-card reveal" data-reveal-delay="160" href="https://github.com/Stebandido77" target="_blank" rel="noopener">
-            <span class="contact-card__label">GITHUB</span>
-            <span class="contact-card__value">github.com/Stebandido77</span>
-            <span class="contact-card__arrow">↗</span>
-          </a>
-
-          <a class="contact-card reveal" data-reveal-delay="240" href="https://x.com/Stbandido_" target="_blank" rel="noopener">
-            <span class="contact-card__label">X · TWITTER</span>
-            <span class="contact-card__value">@Stbandido_</span>
-            <span class="contact-card__arrow">↗</span>
-          </a>
-
-        </div>
-
-        <p class="invitation-cta reveal" data-reveal-delay="320">
-          <a href="mailto:estebanlabastidasm@javeriana.edu.co">
-            SEND CORRESPONDENCE <span class="invitation-cta__arrow">↗</span>
-          </a>
-        </p>
-
-      </div>
-    </section>
-
-    <!-- ───────────────────────────────────────────────────────────
-         COLOPHON
-    ─────────────────────────────────────────────────────────── -->
-    <footer class="colophon" role="contentinfo">
-      <div class="colophon__inner">
-        <p class="colophon__note">
-          Set in <em>Fraunces</em>, <em>Instrument Serif</em>, <em>Geist</em> &amp;
-          <em>JetBrains Mono</em> · Hand-coded in Bogotá · © MMXXVI Esteban Labastidas
-        </p>
-        <nav class="colophon__nav" aria-label="Colophon">
-          <a href="#opening">Top ↑</a>
-          <a href="assets/docs/CV_Esteban_Labastidas.pdf" target="_blank" rel="noopener">CV ↗</a>
-          <a href="https://github.com/Stebandido77/estebanlabastidas.github.io" target="_blank" rel="noopener">Source ↗</a>
-        </nav>
-      </div>
-    </footer>
-
-  </main>
-
-  <!-- ═══════════════════════════════════════════════════════════════
-       PAPER SIDE-PANEL (abstracts)
-  ═══════════════════════════════════════════════════════════════ -->
-  <div class="panel-overlay" id="panelOverlay" aria-hidden="true"></div>
-  <aside class="panel" id="panel" aria-hidden="true" aria-labelledby="panelTitle" role="dialog">
-    <header class="panel__head">
-      <p class="panel__num" id="panelNum">No. — · —</p>
-      <button class="panel__close" id="panelClose" aria-label="Close">CLOSE ✕</button>
-    </header>
-    <div class="panel__body">
-      <p class="panel__status" id="panelStatus">—</p>
-      <h3 class="panel__title" id="panelTitle">—</h3>
-      <p class="panel__subtitle" id="panelSubtitle"></p>
-      <p class="panel__venue" id="panelVenue">—</p>
-      <div class="panel__rule"></div>
-      <p class="panel__abstract-label">ABSTRACT</p>
-      <p class="panel__abstract" id="panelAbstract">—</p>
-      <p class="panel__tags" id="panelTags">—</p>
-      <a class="panel__link" id="panelLink" href="#" target="_blank" rel="noopener" hidden>READ ↗</a>
-    </div>
-  </aside>
-
-  <!-- Paper data (populates panel on click) -->
-  <script type="application/json" id="papersData">
-  {
-    "01": {
-      "num": "No. 01 · 2026",
-      "status": "UNDER EDITORIAL REVIEW",
-      "statusClass": "review",
-      "title": "Point Forecasts, Density Signals, and the Limits of Parsimony",
-      "subtitle": "Inflation Prediction Across Regimes in Colombia",
-      "venue": "Submitted to Emerging Markets Review · with collaborators",
-      "abstract": "This paper benchmarks a battery of inflation-forecasting models for Colombia — from parsimonious univariate specifications (Random Walk, AR, ARX) to Bayesian structural models (BVAR with Minnesota prior, TVP-BVAR-SV following Primiceri 2005) — across distinct monetary policy regimes. We document that density forecast calibration, rather than point accuracy, reveals where parsimony breaks down and where time-varying parameter structures earn their complexity. Evidence suggests that regime-aware model selection dominates fixed ex-ante specifications for emerging-market inflation, with implications for central bank nowcasting.",
-      "tags": "BAYESIAN · DENSITY FORECAST · TVP-BVAR-SV · COLOMBIA"
-    },
-    "02": {
-      "num": "No. 02 · 2026",
-      "status": "WORKING PAPER · UNDER REVIEW",
-      "statusClass": "review",
-      "title": "A Hybrid Early-Warning System for Inflation in an Emerging Market",
-      "subtitle": "Combining Econometric Models, an Agent-Based Decomposition with Heterogeneous Expectations, a Large Language Model, and a Multi-Output Agent Architecture",
-      "venue": "Working paper · SSRN · under review",
-      "abstract": "We propose a hybrid early-warning framework that fuses classical econometric forecasting with an agent-based decomposition of inflation expectations under heterogeneity, augmented by a Large Language Model for real-time narrative signal extraction and orchestrated through a multi-output agent architecture. Applied to Colombian CPI, the system outperforms benchmark econometric models in regime-change detection and short-horizon density calibration, while surfacing interpretable policy signals for monetary authorities.",
-      "tags": "LLM · AGENT-BASED · MULTI-AGENT · INFLATION · EARLY WARNING",
-      "link": "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=6625578",
-      "linkLabel": "READ ON SSRN ↗"
-    },
-    "03": {
-      "num": "No. 03 · 2026",
-      "status": "IN PROGRESS",
-      "statusClass": "progress",
-      "title": "Structural Dynamics and Risk Transmission in the Colombian Banking System",
-      "subtitle": "Working title",
-      "venue": "Working paper",
-      "abstract": "An ongoing investigation into capital adequacy, regulatory compliance, and counterparty credit risk frameworks in Colombian banking under SFC standards, with emphasis on SA-CCR exposure dynamics and systemic transmission channels. Full abstract forthcoming.",
-      "tags": "BANKING · SA-CCR · REGULATORY · SYSTEMIC RISK"
-    },
-    "04": {
-      "num": "No. 04 · 2026",
-      "status": "IN PROGRESS",
-      "statusClass": "progress",
-      "title": "Large Language Models in Macroeconomic Forecasting: Architectures and Empirical Evidence",
-      "subtitle": "Working title",
-      "venue": "Working paper",
-      "abstract": "Exploring the frontier between classical econometric forecasting and modern AI architectures for macroeconomic prediction. Evaluates multi-agent systems, fine-tuned LLMs, and hybrid econometric-AI pipelines against traditional benchmarks. Full abstract forthcoming.",
-      "tags": "LLM · MACHINE LEARNING · FORECASTING · AI"
-    },
-    "05": {
-      "num": "No. 05 · 2023",
-      "status": "PUBLISHED",
-      "statusClass": "published",
-      "title": "Effects of Coca Crops on Academic Performance in Colombia (2018–2021)",
-      "subtitle": "",
-      "venue": "Sekia Research Group · Pontificia Universidad Javeriana · November 2023",
-      "abstract": "Municipal-level analysis using SABER 11 standardized test scores to quantify the causal effect of coca cultivation on educational outcomes. A one standard deviation increase in cultivated hectares reduces average scores by approximately 0.03 standard deviations. Winner of the FENADECO Research Seedbeds Call and Javeriana's Economics Research Competition.",
-      "tags": "EDUCATION · DEVELOPMENT · CAUSAL INFERENCE · COLOMBIA"
-    },
-    "06": {
-      "num": "No. 06 · 2023",
-      "status": "WORKING PAPER",
-      "statusClass": "working",
-      "title": "Media Bias in Coverage of Social Protests in Colombia",
-      "subtitle": "",
-      "venue": "CINEP · Sekia Research Group · October 2023",
-      "abstract": "Collaboration with CINEP to assess potential biases in Colombian news coverage of social protests. Constructed the research database and conducted exploratory analysis of reporting trends across major Colombian media outlets.",
-      "tags": "MEDIA · NLP · POLITICAL ECONOMY"
-    },
-    "07": {
-      "num": "No. 07 · 2023",
-      "status": "WORKING PAPER",
-      "statusClass": "working",
-      "title": "Born This Way",
-      "subtitle": "",
-      "venue": "Sekia Research Group · Interdisciplinary · March 2023",
-      "abstract": "Interdisciplinary working paper developed with medical students. Contributed to statistical design, data analysis, and interpretation of results in a study relevant to health demographics and social policy in Colombia.",
-      "tags": "HEALTH · DEMOGRAPHICS · INTERDISCIPLINARY"
-    },
-    "08": {
-      "num": "No. 08 · 2026",
-      "status": "WORKING PAPER · GOING TO SSRN",
-      "statusClass": "prep",
-      "title": "Spatial Inequality in Educational Performance Across Bogotá",
-      "subtitle": "A Spatial Durbin Approach Using ICFES Saber 11 Microdata",
-      "venue": "Working paper · forthcoming on SSRN · journal submission planned",
-      "abstract": "We document the spatial structure of educational outcomes in Bogotá using ICFES Saber 11 microdata aggregated across four spatial scales (sede, ZAT, UPZ, UPL) and multiple contiguity-based weight matrices. Global and local Moran's I statistics confirm strong, scale-dependent spatial dependence in standardized test scores, with persistent hot spots in the north (Usaquén, Chapinero, Suba, Teusaquillo) and cold spots in the south (Ciudad Bolívar, Bosa, Usme, San Cristóbal). A pooled Spatial Durbin Model identifies eight institutional and household covariates whose indirect (spillover) effects are statistically significant beyond their direct contribution, suggesting that policy interventions cannot be evaluated in isolation from neighborhood spatial structure.",
-      "tags": "SPATIAL ECONOMETRICS · SDM · EDUCATION · COLOMBIA · INEQUALITY"
-    }
-  }
-  </script>
-
-  <script src="script.js" defer></script>
 </body>
 </html>
