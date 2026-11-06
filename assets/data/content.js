@@ -391,6 +391,7 @@ window.DATA = {
     ["LinkedIn", "https://www.linkedin.com/in/esteban-labastidas-cmsa%C2%AE-8272a019a/", "in", "#0a66c2"],
     ["X · @Stbandido_", "https://x.com/Stbandido_", "X", "#000"],
     ["Kaggle", "https://www.kaggle.com/elabastidas", "k", "#20beff"],
+    ["Substack", "https://substack.com/@estebanlabastidas", "S", "#ff6719"],
     ["CV (PDF)", "assets/docs/CV_Esteban_Labastidas.pdf", "CV", "#8b2332"],
     ["The classic notebook", "classic/", "N", "#9a7440"]
   ],
@@ -402,7 +403,8 @@ window.DATA = {
     "linkedin": "https://www.linkedin.com/in/esteban-labastidas-cmsa%C2%AE-8272a019a/",
     "github": "https://github.com/Stebandido77",
     "kaggle": "https://www.kaggle.com/elabastidas",
-    "x": "https://x.com/Stbandido_"
+    "x": "https://x.com/Stbandido_",
+    "substack": "https://substack.com/@estebanlabastidas"
   },
 
   /* Textos cortos de la interfaz. */
