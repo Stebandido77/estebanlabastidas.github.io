@@ -84,15 +84,18 @@
 
   /* ── Keys, guardia de fuera de alcance y reglas sociales (la misma especificación que tools/elia/common.py) ──
      Una frase coincide si sus palabras aparecen seguidas en la pregunta normalizada; cada palabra debe ser
-     igual o, si las dos tienen ≥ 5 letras, estar a distancia de Levenshtein ≤ 1.
+     igual, empezar por la del key si esta tiene ≥ 6 letras, o, si las dos tienen ≥ 5 letras, estar a
+     distancia de Levenshtein ≤ 1.
      forcedIntent: regla social → greeting | goodbye | thanks; si no, una frase de oosCues.hard → out_of_scope
        (EL·IA nunca responde). En los dos casos no se usa la red para decidir.
      keyIntent: con una frase de oosCues (soft o hard) → nada; si no, keys fuertes de una sola intención → [id, 'strong'];
        si no hay fuertes, débiles de una sola → [id, 'weak']; dos o más intenciones → nada (decide la red).
      socialIntent: ≤ 4 palabras cubiertas solo por frases de UNA lista social (la más larga primero,
        coincidencia exacta) y palabras de relleno → greeting | goodbye | thanks. */
+  /* a = palabra del key, b = palabra de la pregunta */
   function near(a, b) {
     if (a === b) return true;
+    if (a.length >= 6 && b.startsWith(a)) return true;   /* contactar → contactarte, contratar → contratarlo */
     if (a.length < 5 || b.length < 5 || Math.abs(a.length - b.length) > 1) return false;
     if (a.length === b.length) { let d = 0; for (let i = 0; i < a.length; i++) if (a[i] !== b[i] && ++d > 1) return false; return d === 1; }
     const s = a.length < b.length ? a : b, l = a.length < b.length ? b : a;

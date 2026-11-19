@@ -74,7 +74,8 @@ def featurize(text: str) -> np.ndarray:
 
 """Capa de palabras clave y reglas (la misma especificación en js/elia-net.js)
   Coincidencia de una frase: sus palabras normalizadas aparecen seguidas en la pregunta. Cada palabra
-  debe ser igual o, si las dos tienen ≥ 5 letras, estar a distancia de Levenshtein ≤ 1.
+  debe ser igual, empezar por la del key si esta tiene ≥ 6 letras (contactar → contactarte), o, si
+  las dos tienen ≥ 5 letras, estar a distancia de Levenshtein ≤ 1.
 
   forced_intent(text, K, social) → intención o None (se responde/rechaza sin red):
     1. regla social (abajo) → greeting | goodbye | thanks;
@@ -93,14 +94,19 @@ def featurize(text: str) -> np.ndarray:
     relleno ("filler"), usando frases de exactamente una de las tres listas.
 """
 KEY_FUZZY_MIN = 5
+KEY_PREFIX_MIN = 6
 SOCIAL_MAX_TOKENS = 4
 SOCIAL_INTENTS = ("greeting", "goodbye", "thanks")
 OOS_ID = "out_of_scope"
 
 
 def near(a: str, b: str) -> bool:
-    """¿Distancia de Levenshtein ≤ 1? Solo se tolera si las dos palabras tienen ≥ 5 letras."""
+    """a = palabra del key, b = palabra de la pregunta. Coinciden si son iguales; si b empieza por a y a
+    tiene ≥ 6 letras (conjugaciones y pronombres pegados: contactar → contactarte, contratar →
+    contratarlo); o si las dos tienen ≥ 5 letras y están a distancia de Levenshtein ≤ 1."""
     if a == b:
+        return True
+    if len(a) >= KEY_PREFIX_MIN and b.startswith(a):
         return True
     if len(a) < KEY_FUZZY_MIN or len(b) < KEY_FUZZY_MIN or abs(len(a) - len(b)) > 1:
         return False

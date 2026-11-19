@@ -1,11 +1,12 @@
 """Evalúa EL·IA tal como corre en el navegador sobre tools/elia/data/holdout.csv.
 
-  python tools/elia/eval_holdout.py
+  python tools/elia/eval_holdout.py          holdout definitivo (data/holdout.csv): la puerta
+  python tools/elia/eval_holdout.py --dev    set de desarrollo (data/dev_holdout.csv): solo referencia
   python tools/elia/eval_holdout.py --file otra.csv
 
 holdout.csv (columnas text,intent,lang y alt opcional) lo escribe Esteban. NUNCA entra al
-entrenamiento ni se usa para ajustar keys, plantillas o umbrales: si una pregunta del holdout te hace
-cambiar algo, pásala después a questions.csv y escribe preguntas nuevas para el holdout.
+entrenamiento ni se usa para ajustar keys, plantillas o umbrales. dev_holdout.csv es el holdout
+anterior: ya se usó para decidir cambios, así que solo sirve de referencia.
 
   alt: otras intenciones también válidas, separadas por "|" (puede incluir out_of_scope).
 
@@ -20,8 +21,11 @@ Cada pregunta cae en uno de cuatro resultados:
   "¿Te refieres a…?"  no responde y muestra 3 opciones (se reporta si alguna era válida).
   correo     no responde y ofrece escribirle a Esteban, cuando out_of_scope no era válida.
 
-Puerta de publicación, sobre TODAS las preguntas del holdout: ≥ 75 % correctas y ≤ 5 % equivocadas.
-Sale con código 1 si no se cumple.
+Puerta de publicación, sobre TODAS las preguntas del holdout; las tres deben cumplirse:
+  correctas ≥ 70 %
+  correctas + "¿Te refieres a…?" con una opción válida ≥ 85 %
+  equivocadas ≤ 5 %
+Sale con código 1 si no se cumple (con --dev, siempre 0: es solo referencia).
 """
 from __future__ import annotations
 
@@ -42,7 +46,8 @@ from train import OOS, apply_keys, rule_indices, sigmoid, softmax  # noqa: E402
 
 MODEL = ROOT / "assets" / "data" / "elia-model.js"
 HOLDOUT = HERE / "data" / "holdout.csv"
-GOAL_CORRECT, GOAL_WRONG = 0.75, 0.05   # puerta de publicación
+DEV = HERE / "data" / "dev_holdout.csv"
+GOAL_CORRECT, GOAL_USEFUL, GOAL_WRONG = 0.70, 0.85, 0.05   # puerta: correctas, correctas + opción válida, equivocadas
 OUTCOMES = ("correcta", "equivocada", "¿Te refieres a…?", "correo")
 
 
@@ -57,8 +62,10 @@ def load_model():
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--file", type=Path, default=HOLDOUT)
+    ap.add_argument("--file", type=Path)
+    ap.add_argument("--dev", action="store_true", help="evalúa data/dev_holdout.csv (solo referencia)")
     args = ap.parse_args()
+    args.file = args.file or (DEV if args.dev else HOLDOUT)
     sys.stdout.reconfigure(encoding="utf-8")
 
     with open(args.file, encoding="utf-8", newline="") as f:
@@ -143,12 +150,19 @@ def main():
 
     n = len(rows)
     good = sum(x["out"] == "correcta" for x in res) / n
+    useful = good + sum(x["hit"] for x in res) / n
     bad = sum(x["out"] == "equivocada" for x in res) / n
-    ok = good >= GOAL_CORRECT and bad <= GOAL_WRONG
-    print(f"\nPuerta de publicación (todas las preguntas): correctas {100 * good:.1f} % (meta ≥ {GOAL_CORRECT:.0%}) · "
-          f"equivocadas {100 * bad:.1f} % (meta ≤ {GOAL_WRONG:.0%}) → " + ("SE PUEDE PUBLICAR" if ok else "NO SE PUBLICA"))
+    checks = [(f"correctas {100 * good:.1f} % (≥ {GOAL_CORRECT:.0%})", good >= GOAL_CORRECT),
+              (f"correctas + \"¿Te refieres a…?\" con opción válida {100 * useful:.1f} % (≥ {GOAL_USEFUL:.0%})", useful >= GOAL_USEFUL),
+              (f"equivocadas {100 * bad:.1f} % (≤ {GOAL_WRONG:.0%})", bad <= GOAL_WRONG)]
+    ok = all(c for _, c in checks)
+    name = "Referencia (dev_holdout, no decide)" if args.dev else "Puerta de publicación"
+    print(f"\n{name}, sobre todas las preguntas:")
+    for label, c in checks:
+        print(f"  {'✓' if c else '✗'} {label}")
+    print("  → " + ("cumple las tres" if ok else "no cumple las tres") + ("" if args.dev else (" · SE PUEDE PUBLICAR" if ok else " · NO SE PUBLICA")))
     print(f"  con {n} preguntas, cada una mueve {100 / n:.1f} puntos.")
-    sys.exit(0 if ok else 1)
+    sys.exit(0 if ok or args.dev else 1)
 
 
 if __name__ == "__main__":

@@ -17,7 +17,9 @@ de `assets/data/elia-model.js`, y todo el contenido vive en `assets/data/content
 | Cambiar umbrales a mano (`threshold`, `margin`, `clarify`, `keyWeight`, `weakBonus`) | `content.js` → `elia` | No, pero `train.py` los vuelve a escribir al reentrenar |
 
 Los keys se comparan con el texto normalizado (minúsculas, sin tildes, solo letras y números), así
-que escríbelos así: `"sa ccr"`, `"bre b"`, `"codigo fuente"`.
+que escríbelos así: `"sa ccr"`, `"bre b"`, `"codigo fuente"`. Cada palabra coincide si es igual, si
+está a una letra de distancia (palabras de 5+ letras) o como prefijo cuando la palabra del key tiene
+6+ letras ("contactar" reconoce "contactarte").
 
 - **Fuertes** (`keys`): alias que solo pueden ser de esa intención (`uncoli`, `pulso`, `calypso`).
   Si aparecen los de una sola intención, deciden casi solos.
@@ -43,8 +45,15 @@ python tools/elia/eval_holdout.py     # métricas sobre tus preguntas de prueba
 `train.py` escribe `assets/data/elia-model.js`, `tools/elia/parity.json`, `tools/elia/REPORT.md` y los
 umbrales (`threshold`, `margin`, `clarify`, `keyWeight`, `weakBonus`) en `content.js`.
 
-**La puerta de publicación es el holdout, no el reporte:** `eval_holdout.py` debe dar ≥ 75 % de
-respuestas correctas y ≤ 5 % de respuestas equivocadas (sale con código 1 si no). El reporte de la
+**La puerta de publicación es el holdout, no el reporte.** `eval_holdout.py` debe cumplir las tres
+metas, sobre todas las preguntas (sale con código 1 si no):
+
+- correctas ≥ 70 %;
+- correctas + "¿Te refieres a…?" con una opción válida ≥ 85 %;
+- equivocadas ≤ 5 %.
+
+Una respuesta es correcta si coincide con `intent` o con alguna intención de `alt` (separadas por
+`|`); si `out_of_scope` es válida, mandar al correo también cuenta. El reporte de la
 validación cruzada es una referencia (≥ 80 % correctas, ≤ 5 % equivocadas también en español, ≥ 85 %
 de rechazo fuera de alcance, en la columna "anidada"): con pocas preguntas por intención, se mueve
 varios puntos según cómo caigan los pliegues.
@@ -54,7 +63,8 @@ Archivos:
 | Archivo | Qué hace |
 |---|---|
 | `data/questions.csv` | Preguntas escritas a mano (`text,intent,lang,how`). `how=1` si preguntan cómo se hizo algo |
-| `data/holdout.csv` | Tus preguntas de prueba (`text,intent,lang`). Nunca entran al entrenamiento ni sirven para ajustar keys |
+| `data/holdout.csv` | Tus preguntas de prueba (`text,intent,lang,alt`). Nunca entran al entrenamiento ni sirven para ajustar keys. Es la puerta |
+| `data/dev_holdout.csv` | El holdout anterior, ya usado para decidir cambios: solo referencia (`eval_holdout.py --dev`) |
 | `data/draft_batch*.csv` | Borradores de preguntas nuevas para revisar antes de pasarlas a `questions.csv` |
 | `common.py` | Normalización, features (hashing FNV-1a), keys y reglas sociales. Debe coincidir con `js/elia-net.js` |
 | `augment.py` | Variantes con typos, sin tildes y sinónimos (solo entrenamiento) |

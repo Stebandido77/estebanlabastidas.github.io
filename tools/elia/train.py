@@ -388,7 +388,7 @@ def main():
     ap.add_argument("--dropout", type=float, default=0.3)
     ap.add_argument("--how-weight", type=float, default=0.5)
     ap.add_argument("--aug", type=int, default=8, help="variantes por pregunta original")
-    ap.add_argument("--tpl", type=int, default=30, help="filas de plantillas por intención (0 = sin plantillas)")
+    ap.add_argument("--tpl", type=int, default=40, help="filas de plantillas por intención (0 = sin plantillas)")
     ap.add_argument("--tpl-aug", type=int, default=1, help="variantes por fila de plantilla")
     ap.add_argument("--class-weight", choices=["inverse", "sqrt", "none"], default="inverse")
     ap.add_argument("--lr", type=float, default=3e-3)
@@ -558,8 +558,11 @@ def write_report(cfg, rows, ids, sk, wk, so, y, Lg, stages, how_cm, how_acc, fin
     L.append("## Puerta de publicación\n")
     L.append("**Lo que decide si EL·IA se publica es el holdout, no esta validación cruzada:** "
              "`python tools/elia/eval_holdout.py` sobre `tools/elia/data/holdout.csv` (preguntas que escribe Esteban y "
-             "que nunca entran al entrenamiento ni sirven para ajustar keys). Metas del holdout: **≥ 75 % de respuestas "
-             "correctas y ≤ 5 % de respuestas equivocadas.** El 80 % de respuestas correctas de la validación cruzada "
+             "que nunca entran al entrenamiento ni sirven para ajustar keys). Las tres metas del holdout, sobre todas sus "
+             "preguntas, deben cumplirse: **correctas ≥ 70 %; correctas + \"¿Te refieres a…?\" con una opción válida "
+             "≥ 85 %; equivocadas ≤ 5 %.** Una respuesta es correcta si coincide con `intent` o con alguna de `alt`; si "
+             "`out_of_scope` es válida, mandar al correo también cuenta. `dev_holdout.csv` (el holdout anterior) ya se "
+             "usó para decidir cambios y solo es referencia. El 80 % de respuestas correctas de la validación cruzada "
              "es una referencia, no un requisito: con pocas preguntas por intención, la cifra se mueve varios puntos "
              "según el reparto de los pliegues (73–80 % con el mismo diseño en dos semillas).\n")
     L.append("## Configuración\n")
@@ -567,7 +570,7 @@ def write_report(cfg, rows, ids, sk, wk, so, y, Lg, stages, how_cm, how_acc, fin
              f"Pérdida: CE con pesos de clase `{cfg.class_weight}` + {cfg.how_weight} × BCE(asks_how) + L2 {cfg.l2}. "
              f"Adam lr {cfg.lr}, lote {cfg.batch}, {cfg.aug} variantes por pregunta.")
     L.append("- Keys (content.js, regla en `common.py` y `js/elia-net.js`): coincidencia exacta, o a distancia de "
-             "Levenshtein ≤ 1 si las dos palabras tienen ≥ 5 letras. **Fuertes** (`keys`) de una sola intención: "
+             "Levenshtein ≤ 1 si las dos palabras tienen ≥ 5 letras, o prefijo si la del key tiene ≥ 6 (contactar → contactarte). **Fuertes** (`keys`) de una sola intención: "
              "p = w·p_red + (1 − w)·[intención], basta para responder. **Débiles** (`weak`), solo si no hay fuertes: "
              "p ∝ p_red·e^β en esa intención, nunca basta sin la red. Keys de dos intenciones, o una frase de "
              "`oosCues.soft`: decide la red. asks_how siempre sale de la red.")
