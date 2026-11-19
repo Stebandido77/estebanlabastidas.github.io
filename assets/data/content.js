@@ -166,7 +166,7 @@ window.DATA = {
       "no": "№ 07",
       "t": "pulso — GEIH Microdata Loader",
       "tags": "PYTHON · OPEN SOURCE · DANE · LABOR ECONOMICS · DATA INFRASTRUCTURE",
-      "b": "Open-source Python library for single-line access to Colombia’s <em>Gran Encuesta Integrada de Hogares</em> (GEIH) — DANE’s monthly household survey covering 2006 to the present. Handles download, parsing, and cross-epoch harmonization across the 2022 methodological redesign, including the GEIH Empalme series. Built under a multi-agent architect/builder/curator workflow. Release candidate <code>v1.0.0-rc1</code> available on <a class=\"project__link\" href=\"https://test.pypi.org/project/pulso/\" rel=\"noopener\" target=\"_blank\">TestPyPI ↗</a> · <a class=\"project__link\" href=\"https://github.com/Stebandido77/pulso\" rel=\"noopener\" target=\"_blank\">github.com/Stebandido77/pulso ↗</a>"
+      "b": "Open-source Python library for single-line access to Colombia’s <em>Gran Encuesta Integrada de Hogares</em> (GEIH) — DANE’s monthly household survey covering 2006 to the present. Handles download, parsing, and cross-epoch harmonization across the 2022 methodological redesign, including the GEIH Empalme series. Built under a multi-agent architect/builder/curator workflow. Stable on PyPI: <code>pip install pulso-co</code> · <a class=\"project__link\" href=\"https://pypi.org/project/pulso-co/\" rel=\"noopener\" target=\"_blank\">PyPI ↗</a> · <a class=\"project__link\" href=\"https://github.com/Stebandido77/pulso\" rel=\"noopener\" target=\"_blank\">github.com/Stebandido77/pulso ↗</a>"
     },
     {
       "no": "№ 08",
@@ -190,7 +190,7 @@ window.DATA = {
       "no": "№ 11",
       "t": "Ceteris Paribus <span class=\"project__live\">Live</span>",
       "tags": "EDUCATION · MICROECONOMICS · INTERACTIVE · OPEN SOURCE",
-      "b": "An interactive platform to learn microeconomics, econometrics and macro, built on Varian and Wooldridge. Its market game simulates many agents setting prices that converge to equilibrium, with supply and demand shocks, taxes and price controls. <a class=\"project__link\" href=\"https://ceteris-paribus-pearl.vercel.app/\" rel=\"noopener\" target=\"_blank\">Open the platform ↗</a> · <a class=\"project__link\" href=\"https://github.com/Stebandido77/ceteris-paribus\" rel=\"noopener\" target=\"_blank\">github.com/Stebandido77/ceteris-paribus ↗</a>"
+      "b": "An interactive platform to learn microeconomics, econometrics and macro, built on Varian and Wooldridge. Its market game simulates many agents setting prices that converge to equilibrium, with supply and demand shocks, taxes and price controls. <a class=\"project__link\" href=\"https://ceteris-paribus-pearl.vercel.app/\" rel=\"noopener\" target=\"_blank\">Open the platform ↗</a>"
     },
     {
       "no": "№ 12",
@@ -208,7 +208,7 @@ window.DATA = {
       "no": "№ 14",
       "t": "WHOOP Lab",
       "tags": "OPEN SOURCE · DASHBOARD · PERSONAL DATA",
-      "b": "A local dashboard to analyze the official WHOOP data export, including localized (Spanish) headers. Built to be published as an open-source repository."
+      "b": "An open-source local dashboard to analyze the official WHOOP data export, including localized (Spanish) headers. Runs in the browser; nothing is uploaded. <a class=\"project__link\" href=\"https://github.com/Stebandido77/whoop-lab\" rel=\"noopener\" target=\"_blank\">github.com/Stebandido77/whoop-lab ↗</a>"
     }
   ],
   "traj": [
@@ -305,7 +305,7 @@ window.DATA = {
     },
     {
       "d": "MAY 2026",
-      "b": "Released <a href=\"https://github.com/Stebandido77/pulso\" rel=\"noopener\" target=\"_blank\"><em>pulso</em></a> <code>v1.0.0-rc1</code> on <a href=\"https://test.pypi.org/project/pulso/\" rel=\"noopener\" target=\"_blank\">TestPyPI</a> — an open-source Python library for loading and harmonizing GEIH microdata from Colombia’s DANE across the 2022 methodological redesign. Stable PyPI release in progress."
+      "b": "Released <a href=\"https://github.com/Stebandido77/pulso\" rel=\"noopener\" target=\"_blank\"><em>pulso</em></a> <code>v1.0.0-rc1</code> on <a href=\"https://test.pypi.org/project/pulso/\" rel=\"noopener\" target=\"_blank\">TestPyPI</a> — an open-source Python library for loading and harmonizing GEIH microdata from Colombia’s DANE across the 2022 methodological redesign. Now stable on <a href=\"https://pypi.org/project/pulso-co/\" rel=\"noopener\" target=\"_blank\">PyPI</a> as <code>pulso-co</code>."
     },
     {
       "d": "APR 2026",
@@ -386,7 +386,7 @@ window.DATA = {
     ["SSRN · Early-warning paper", "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=6625578", "S", "#1e4e8c"],
     ["Ceteris Paribus", "https://ceteris-paribus-pearl.vercel.app/", "c.p.", "#3e5a48"],
     ["pulso on GitHub", "https://github.com/Stebandido77/pulso", "py", "#2b2b2b"],
-    ["pulso on TestPyPI", "https://test.pypi.org/project/pulso/", "Pi", "#3775a9"],
+    ["pulso on PyPI", "https://pypi.org/project/pulso-co/", "Pi", "#3775a9"],
     ["GitHub", "https://github.com/Stebandido77", "GH", "#222"],
     ["LinkedIn", "https://www.linkedin.com/in/esteban-labastidas-cmsa%C2%AE-8272a019a/", "in", "#0a66c2"],
     ["X · @Stbandido_", "https://x.com/Stbandido_", "X", "#000"],
