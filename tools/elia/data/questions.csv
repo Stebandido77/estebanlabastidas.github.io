@@ -1,0 +1,340 @@
+text,intent,lang,how
+qué es el motor SA-CCR,proj_saccr,es,0
+saccr?,proj_saccr,es,0
+me puede explicar la calculadora de exposicion de riesgo de contraparte,proj_saccr,es,0
+what is the SA-CCR engine you built,proj_saccr,en,0
+tell me about the counterparty credit risk calculator,proj_saccr,en,0
+cómo construiste el motor de SA-CCR,proj_saccr,es,1
+how did you build the SACCR exposure calculator,proj_saccr,en,1
+qué hiciste con Calypso,proj_calypso,es,0
+la implementación de calypso en un banco,proj_calypso,es,0
+calypso treasury system?,proj_calypso,en,0
+what was the Calypso project about,proj_calypso,en,0
+tell me about the front to back calypso implementation,proj_calypso,en,0
+cómo fue la implementacion de Calypso front to back,proj_calypso,es,1
+how did you implement Calypso at the bank,proj_calypso,en,1
+sistema de pronóstico de inflación,proj_inflation,es,0
+tienes algun pipeline para pronosticar la inflacion en colombia,proj_inflation,es,0
+inflation forecasting system,proj_inflation,en,0
+what is your inflation forecasting pipeline,proj_inflation,en,0
+qué modelos usa el sistema de pronóstico de inflación,proj_inflation,es,1
+how did you build the inflation forecasting infrastructure,proj_inflation,en,1
+which stack did you use for the bvar backtests,proj_inflation,en,1
+qué es el sistema multiagente de alerta temprana,proj_ews,es,0
+el prototipo con LLM y agentes,proj_ews,es,0
+multi-agent early warning system?,proj_ews,en,0
+tell me about the multi agent prototype,proj_ews,en,0
+cómo armaste la arquitectura multi-agente,proj_ews,es,1
+how does the multi-agent early-warning architecture work,proj_ews,en,1
+qué dashboards hiciste en JP Morgan,proj_jpm,es,0
+los tableros de power bi de jpmorgan,proj_jpm,es,0
+investment performance dashboards,proj_jpm,en,0
+what automation did you build at JPMorgan,proj_jpm,en,0
+cómo hiciste la automatización de reportes en jp morgan,proj_jpm,es,1
+how did you build the power bi dashboards,proj_jpm,en,1
+el dataset de sesgo mediático,proj_mediabias,es,0
+la base de datos de protestas y medios con el CINEP,proj_mediabias,es,0
+media bias dataset project,proj_mediabias,en,0
+what did you do with the protest news data,proj_mediabias,en,0
+cómo armaron el dataset de sesgo en medios,proj_mediabias,es,1
+how did you build the media bias dataset,proj_mediabias,en,1
+qué es pulso,proj_pulso,es,0
+pulso?,proj_pulso,es,0
+q es pulso,proj_pulso,es,0
+la libreria de la GEIH,proj_pulso,es,0
+que hace pulso con los microdatos del dane,proj_pulso,es,0
+what is pulso,proj_pulso,en,0
+tell me about your python library for GEIH microdata,proj_pulso,en,0
+como hiciste pulso,proj_pulso,es,1
+qué stack usaste en pulso,proj_pulso,es,1
+how did you build pulso,proj_pulso,en,1
+qué es patrion,proj_patrion,es,0
+la app de patrimonio personal,proj_patrion,es,0
+patrion?,proj_patrion,en,0
+what is your wealth management app,proj_patrion,en,0
+cómo estás construyendo patrion,proj_patrion,es,1
+how are you building the personal finance app,proj_patrion,en,1
+qué es ABI,proj_abi,es,0
+el sistema de inteligencia bancaria de grupo aval,proj_abi,es,0
+aval banking intelligence,proj_abi,en,0
+what is the Aval Banking Intelligence lakehouse,proj_abi,en,0
+abi project?,proj_abi,en,0
+cómo construiste el lakehouse de ABI,proj_abi,es,1
+how did you build ABI,proj_abi,en,1
+qué es andina,proj_andina,es,0
+la herramienta de curva de rendimientos de los TES,proj_andina,es,0
+andina?,proj_andina,en,0
+tell me about the yield curve toolkit,proj_andina,en,0
+qué stack usaste en andina,proj_andina,es,1
+how did you fit the Nelson Siegel Svensson curve,proj_andina,en,1
+qué es Ceteris Paribus,proj_ceteris,es,0
+la plataforma para aprender microeconomía,proj_ceteris,es,0
+ceteris paribus?,proj_ceteris,en,0
+what is your interactive microeconomics platform,proj_ceteris,en,0
+cómo funciona el juego de mercado de ceteris paribus,proj_ceteris,es,1
+how did you build ceteris paribus,proj_ceteris,en,1
+qué es active equity desk,proj_equitydesk,es,0
+tu portafolio en la bolsa millonaria,proj_equitydesk,es,0
+el concurso de la bvc y trii,proj_equitydesk,es,0
+what is active-equity-desk,proj_equitydesk,en,0
+tell me about your Bolsa Millonaria portfolio,proj_equitydesk,en,0
+cómo funciona el sistema de agentes para invertir en acciones,proj_equitydesk,es,1
+how does your equity research workflow work,proj_equitydesk,en,1
+qué es el proyecto del PGN,proj_pgn,es,0
+el presupuesto general de la nación línea por línea,proj_pgn,es,0
+pgn project?,proj_pgn,en,0
+tell me about the Colombian budget charts,proj_pgn,en,0
+cómo hiciste las gráficas del presupuesto,proj_pgn,es,1
+how did you build the PGN visualizations,proj_pgn,en,1
+qué es whoop lab,proj_whoop,es,0
+el dashboard de datos de whoop,proj_whoop,es,0
+whoop lab?,proj_whoop,en,0
+what is your WHOOP dashboard,proj_whoop,en,0
+cómo analiza whoop lab los hábitos,proj_whoop,es,1
+how did you build WHOOP Lab,proj_whoop,en,1
+el paper de los límites de la parsimonia,paper_parsimony,es,0
+el paper sometido a emerging markets review,paper_parsimony,es,0
+el paper que compara BVAR y TVP-BVAR-SV para inflacion,paper_parsimony,es,0
+point forecasts density signals paper,paper_parsimony,en,0
+what is your paper under review at Emerging Markets Review,paper_parsimony,en,0
+qué metodología usaste en el paper de parsimonia,paper_parsimony,es,1
+how did you evaluate the forecasts in the parsimony paper,paper_parsimony,en,1
+el paper de alerta temprana de inflación en SSRN,paper_ews,es,0
+paper del sistema híbrido de alerta temprana,paper_ews,es,0
+hybrid early warning system paper,paper_ews,en,0
+what is your SSRN working paper about,paper_ews,en,0
+cómo combinaste el LLM con los modelos econométricos en el paper,paper_ews,es,1
+what methodology does the early-warning paper use,paper_ews,en,1
+el paper de riesgo en el sistema bancario colombiano,paper_banking,es,0
+dinámica estructural y transmisión de riesgo,paper_banking,es,0
+structural dynamics banking paper,paper_banking,en,0
+what are you researching on Colombian banking risk,paper_banking,en,0
+qué método usas en el paper de transmisión de riesgo bancario,paper_banking,es,1
+how are you approaching the banking risk paper,paper_banking,en,1
+el paper de LLMs en pronóstico macroeconómico,paper_llm,es,0
+investigas modelos de lenguaje para pronosticar,paper_llm,es,0
+LLMs in macroeconomic forecasting paper,paper_llm,en,0
+do you have research on large language models and forecasting,paper_llm,en,0
+cómo evalúas los LLM contra los benchmarks,paper_llm,es,1
+how do you compare LLMs with econometric benchmarks,paper_llm,en,1
+el paper de cultivos de coca y rendimiento académico,paper_coca,es,0
+coca y saber 11,paper_coca,es,0
+coca crops paper,paper_coca,en,0
+what did you find about coca and test scores,paper_coca,en,0
+which paper won the FENADECO award,paper_coca,en,0
+cómo estimaron el efecto de la coca en los puntajes,paper_coca,es,1
+how did you measure the effect of coca on education,paper_coca,en,1
+el paper de sesgo de medios en protestas sociales,paper_media,es,0
+investigación sobre sesgo en la cobertura de protestas en colombia,paper_media,es,0
+media bias paper,paper_media,en,0
+the working paper on news coverage of social protests,paper_media,en,0
+qué metodología usaron en el paper de sesgo mediático,paper_media,es,1
+what method did the media bias paper use,paper_media,en,1
+qué es el paper born this way,paper_bornthisway,es,0
+el trabajo con estudiantes de medicina,paper_bornthisway,es,0
+born this way,paper_bornthisway,en,0
+what is born this way about,paper_bornthisway,en,0
+the paper with medical students,paper_bornthisway,en,0
+cómo fue el diseño estadístico de born this way,paper_bornthisway,es,1
+how did you do the stats for born this way,paper_bornthisway,en,1
+desigualdad espacial educativa en bogotá,paper_spatial,es,0
+el paper de spatial durbin,paper_spatial,es,0
+hot spots y cold spots de saber 11 en bogota,paper_spatial,es,0
+spatial inequality paper Bogota,paper_spatial,en,0
+what does your spatial econometrics paper find,paper_spatial,en,0
+cómo hiciste el modelo espacial de durbin,paper_spatial,es,1
+how did you build the spatial weight matrices,paper_spatial,en,1
+la investigación de DMG,desk_dmg,es,0
+el estudio sobre la pirámide DMG,desk_dmg,es,0
+after the ponzi,desk_dmg,en,0
+what is your research on the DMG collapse,desk_dmg,en,0
+cómo vas a estimar los efectos de cohorte de DMG,desk_dmg,es,1
+how will you identify the DMG cohort effects,desk_dmg,en,1
+qué investigas sobre Bre-B,desk_breb,es,0
+bre b y la competencia por depósitos,desk_breb,es,0
+Bre-B research,desk_breb,en,0
+how does instant payment affect deposit competition,desk_breb,en,0
+what is the Bre-B project,desk_breb,en,0
+qué método usas para estudiar bre-b,desk_breb,es,1
+what's your identification strategy for Bre-B,desk_breb,en,1
+la restricción de celulares en los colegios UNCOLI,desk_uncoli,es,0
+investigacion sobre celulares en el salon,desk_uncoli,es,0
+phones out,desk_uncoli,en,0
+research on phone bans in schools,desk_uncoli,en,0
+cómo vas a evaluar la prohibición de celulares,desk_uncoli,es,1
+how will you evaluate the UNCOLI phone ban,desk_uncoli,en,1
+investigación de salario mínimo y mercado laboral,desk_minwage,es,0
+el estudio del salario minimo,desk_minwage,es,0
+minimum wage research,desk_minwage,en,0
+what are you studying about the minimum wage,desk_minwage,en,0
+cuál es la estrategia empírica del salario mínimo,desk_minwage,es,1
+how will you estimate the minimum wage impact,desk_minwage,en,1
+quién es Esteban,who,es,0
+kien es esteban labastidas,who,es,0
+háblame de ti,who,es,0
+cuénteme sobre usted,who,es,0
+who is Esteban,who,en,0
+tell me about yourself,who,en,0
+who's the guy behind this site,who,en,0
+dónde trabajas,job_current,es,0
+en qué trabaja actualmente,job_current,es,0
+qué haces en Grupo Aval,job_current,es,0
+where do you work,job_current,en,0
+what's your current job,job_current,en,0
+what do you do at grupo aval,job_current,en,0
+qué hacías en Management Solutions,exp_ms,es,0
+tu experiencia en consultoría,exp_ms,es,0
+cuanto tiempo estuviste en management solutions,exp_ms,es,0
+what did you do at Management Solutions,exp_ms,en,0
+tell me about your consulting experience,exp_ms,en,0
+trabajaste en JP Morgan,exp_jpm,es,0
+qué hiciste en jpmorgan,exp_jpm,es,0
+your JPMorgan internship,exp_jpm,en,0
+what did you do at JP Morgan Chase,exp_jpm,en,0
+were you an intern at jpm,exp_jpm,en,0
+qué es Sekia,exp_sekia,es,0
+el semillero de investigación de la javeriana,exp_sekia,es,0
+lideraste un grupo de investigacion,exp_sekia,es,0
+what is Sekia Research Group,exp_sekia,en,0
+did you lead a research group,exp_sekia,en,0
+qué estudiaste,education,es,0
+dónde estudió usted,education,es,0
+estás haciendo una maestría,education,es,0
+what did you study,education,en,0
+where did you go to university,education,en,0
+are you doing a masters at los andes,education,en,0
+qué certificaciones tienes,certs,es,0
+eres CMSA,certs,es,0
+tiene el FMVA,certs,es,0
+what certifications do you have,certs,en,0
+are you CFI certified,certs,en,0
+qué lenguajes de programación usas,stack,es,0
+cuál es tu stack técnico,stack,es,0
+sabs python,stack,es,0
+what's your tech stack,stack,en,0
+which programming languages do you know,stack,en,0
+do you code in R,stack,en,0
+qué temas investigas,interests,es,0
+cuáles son sus intereses de investigación,interests,es,0
+qué te interesa investigar,interests,es,0
+what are your research interests,interests,en,0
+what topics do you research,interests,en,0
+dónde escribes,writing,es,0
+tienes Substack,writing,es,0
+lo que publicas en X,writing,es,0
+el hilo de salario minimo e informalidad,writing,es,0
+where can I read your writing,writing,en,0
+do you write on twitter,writing,en,0
+your substack?,writing,en,0
+cómo te contacto,contact,es,0
+cuál es su correo,contact,es,0
+email de esteban,contact,es,0
+how can I contact you,contact,en,0
+what's your email,contact,en,0
+linkedin?,contact,en,0
+tienes hoja de vida,cv,es,0
+pásame tu CV,cv,es,0
+descargar el curriculum,cv,es,0
+can I see your resume,cv,en,0
+cv?,cv,en,0
+download your CV,cv,en,0
+quiero contratarte,hire,es,0
+podemos colaborar en un proyecto,hire,es,0
+hace consultorías de valoración,hire,es,0
+are you open to collaborations,hire,en,0
+can I hire you,hire,en,0
+are you looking for new opportunities,hire,en,0
+dónde vives,location,es,0
+de dónde eres,location,es,0
+estás en bogotá,location,es,0
+where are you based,location,en,0
+where are you from,location,en,0
+qué idiomas hablas,languages,es,0
+hablas inglés,languages,es,0
+what languages do you speak,languages,en,0
+do you speak english,languages,en,0
+do you speak spanish,languages,en,0
+qué es este sitio,site,es,0
+qué es estebanOS,site,es,0
+cómo hiciste esta página,site,es,1
+what is this website,site,en,0
+why does your site look like a mac,site,en,0
+how did you build this site,site,en,1
+qué eres,elia,es,0
+eres una inteligencia artificial,elia,es,0
+quién es EL·IA,elia,es,0
+estebania?,elia,es,0
+what are you,elia,en,0
+are you chatgpt,elia,en,0
+cómo funcionas,elia,es,1
+how do you work,elia,en,1
+hola,greeting,es,0
+buenas,greeting,es,0
+buenos días,greeting,es,0
+hi,greeting,en,0
+hello there,greeting,en,0
+hey,greeting,en,0
+chao,goodbye,es,0
+adiós,goodbye,es,0
+nos vemos,goodbye,es,0
+bye,goodbye,en,0
+see you later,goodbye,en,0
+goodbye,goodbye,en,0
+gracias,thanks,es,0
+muchas gracias,thanks,es,0
+mil gracias por la info,thanks,es,0
+thanks,thanks,en,0
+thank you so much,thanks,en,0
+thx,thanks,en,0
+qué papers has escrito,list_papers,es,0
+cuáles son sus publicaciones,list_papers,es,0
+muéstrame tu investigación,list_papers,es,0
+what papers have you written,list_papers,en,0
+list your publications,list_papers,en,0
+show me your research,list_papers,en,0
+qué proyectos tienes,list_projects,es,0
+en qué proyectos has trabajado,list_projects,es,0
+muéstrame tus proyectos,list_projects,es,0
+what projects have you built,list_projects,en,0
+show me your projects,list_projects,en,0
+what side projects do you have,list_projects,en,0
+qué clima hace hoy en bogotá,out_of_scope,es,0
+cuéntame un chiste,out_of_scope,es,0
+quién va a ganar las elecciones,out_of_scope,es,0
+qué opinas de petro,out_of_scope,es,0
+escríbeme un código en python para ordenar una lista,out_of_scope,es,0
+cuál es la capital de francia,out_of_scope,es,0
+recomiéndame una película,out_of_scope,es,0
+cómo hago arepas,out_of_scope,es,0
+cuánto es 2 más 2,out_of_scope,es,0
+traduce esto al francés,out_of_scope,es,0
+qué hora es,out_of_scope,es,0
+quién ganó el partido de anoche,out_of_scope,es,0
+dame consejos para bajar de peso,out_of_scope,es,0
+cuál es el mejor celular,out_of_scope,es,0
+dónde compro bitcoin,out_of_scope,es,0
+explícame la teoría de la relatividad,out_of_scope,es,0
+hazme la tarea de cálculo,out_of_scope,es,0
+cuál es el sentido de la vida,out_of_scope,es,0
+cómo invierto mis ahorros,out_of_scope,es,0
+a cuánto está el dólar hoy,out_of_scope,es,0
+what's the weather like,out_of_scope,en,0
+tell me a joke,out_of_scope,en,0
+who will win the election,out_of_scope,en,0
+write me a python script to scrape a website,out_of_scope,en,0
+what is the capital of france,out_of_scope,en,0
+recommend me a movie,out_of_scope,en,0
+how do I cook pasta,out_of_scope,en,0
+what is 2 plus 2,out_of_scope,en,0
+translate this to german,out_of_scope,en,0
+what time is it,out_of_scope,en,0
+who won the game last night,out_of_scope,en,0
+give me diet tips,out_of_scope,en,0
+what's the best laptop,out_of_scope,en,0
+should I buy bitcoin,out_of_scope,en,0
+explain quantum physics,out_of_scope,en,0
+do my homework,out_of_scope,en,0
+what is the meaning of life,out_of_scope,en,0
+what stocks should I buy,out_of_scope,en,0
+can you write my essay,out_of_scope,en,0
+who is the president of the united states,out_of_scope,en,0
