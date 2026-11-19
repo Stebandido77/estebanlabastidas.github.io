@@ -20,24 +20,24 @@ what is your inflation forecasting pipeline,proj_inflation,en,0
 qué modelos usa el sistema de pronóstico de inflación,proj_inflation,es,1
 how did you build the inflation forecasting infrastructure,proj_inflation,en,1
 which stack did you use for the bvar backtests,proj_inflation,en,1
-qué es el sistema multiagente de alerta temprana,proj_ews,es,0
-el prototipo con LLM y agentes,proj_ews,es,0
-multi-agent early warning system?,proj_ews,en,0
-tell me about the multi agent prototype,proj_ews,en,0
-cómo armaste la arquitectura multi-agente,proj_ews,es,1
-how does the multi-agent early-warning architecture work,proj_ews,en,1
-qué dashboards hiciste en JP Morgan,proj_jpm,es,0
-los tableros de power bi de jpmorgan,proj_jpm,es,0
-investment performance dashboards,proj_jpm,en,0
-what automation did you build at JPMorgan,proj_jpm,en,0
-cómo hiciste la automatización de reportes en jp morgan,proj_jpm,es,1
-how did you build the power bi dashboards,proj_jpm,en,1
-el dataset de sesgo mediático,proj_mediabias,es,0
-la base de datos de protestas y medios con el CINEP,proj_mediabias,es,0
-media bias dataset project,proj_mediabias,en,0
-what did you do with the protest news data,proj_mediabias,en,0
-cómo armaron el dataset de sesgo en medios,proj_mediabias,es,1
-how did you build the media bias dataset,proj_mediabias,en,1
+qué es el sistema multiagente de alerta temprana,ews,es,0
+el prototipo con LLM y agentes,ews,es,0
+multi-agent early warning system?,ews,en,0
+tell me about the multi agent prototype,ews,en,0
+cómo armaste la arquitectura multi-agente,ews,es,1
+how does the multi-agent early-warning architecture work,ews,en,1
+qué dashboards hiciste en JP Morgan,jpm,es,0
+los tableros de power bi de jpmorgan,jpm,es,0
+investment performance dashboards,jpm,en,0
+what automation did you build at JPMorgan,jpm,en,0
+cómo hiciste la automatización de reportes en jp morgan,jpm,es,1
+how did you build the power bi dashboards,jpm,en,1
+el dataset de sesgo mediático,mediabias,es,0
+la base de datos de protestas y medios con el CINEP,mediabias,es,0
+media bias dataset project,mediabias,en,0
+what did you do with the protest news data,mediabias,en,0
+cómo armaron el dataset de sesgo en medios,mediabias,es,1
+how did you build the media bias dataset,mediabias,en,1
 qué es pulso,proj_pulso,es,0
 pulso?,proj_pulso,es,0
 q es pulso,proj_pulso,es,0
@@ -99,12 +99,12 @@ point forecasts density signals paper,paper_parsimony,en,0
 what is your paper under review at Emerging Markets Review,paper_parsimony,en,0
 qué metodología usaste en el paper de parsimonia,paper_parsimony,es,1
 how did you evaluate the forecasts in the parsimony paper,paper_parsimony,en,1
-el paper de alerta temprana de inflación en SSRN,paper_ews,es,0
-paper del sistema híbrido de alerta temprana,paper_ews,es,0
-hybrid early warning system paper,paper_ews,en,0
-what is your SSRN working paper about,paper_ews,en,0
-cómo combinaste el LLM con los modelos econométricos en el paper,paper_ews,es,1
-what methodology does the early-warning paper use,paper_ews,en,1
+el paper de alerta temprana de inflación en SSRN,ews,es,0
+paper del sistema híbrido de alerta temprana,ews,es,0
+hybrid early warning system paper,ews,en,0
+what is your SSRN working paper about,ews,en,0
+cómo combinaste el LLM con los modelos econométricos en el paper,ews,es,1
+what methodology does the early-warning paper use,ews,en,1
 el paper de riesgo en el sistema bancario colombiano,paper_banking,es,0
 dinámica estructural y transmisión de riesgo,paper_banking,es,0
 structural dynamics banking paper,paper_banking,en,0
@@ -124,12 +124,12 @@ what did you find about coca and test scores,paper_coca,en,0
 which paper won the FENADECO award,paper_coca,en,0
 cómo estimaron el efecto de la coca en los puntajes,paper_coca,es,1
 how did you measure the effect of coca on education,paper_coca,en,1
-el paper de sesgo de medios en protestas sociales,paper_media,es,0
-investigación sobre sesgo en la cobertura de protestas en colombia,paper_media,es,0
-media bias paper,paper_media,en,0
-the working paper on news coverage of social protests,paper_media,en,0
-qué metodología usaron en el paper de sesgo mediático,paper_media,es,1
-what method did the media bias paper use,paper_media,en,1
+el paper de sesgo de medios en protestas sociales,mediabias,es,0
+investigación sobre sesgo en la cobertura de protestas en colombia,mediabias,es,0
+media bias paper,mediabias,en,0
+the working paper on news coverage of social protests,mediabias,en,0
+qué metodología usaron en el paper de sesgo mediático,mediabias,es,1
+what method did the media bias paper use,mediabias,en,1
 qué es el paper born this way,paper_bornthisway,es,0
 el trabajo con estudiantes de medicina,paper_bornthisway,es,0
 born this way,paper_bornthisway,en,0
@@ -187,11 +187,11 @@ tu experiencia en consultoría,exp_ms,es,0
 cuanto tiempo estuviste en management solutions,exp_ms,es,0
 what did you do at Management Solutions,exp_ms,en,0
 tell me about your consulting experience,exp_ms,en,0
-trabajaste en JP Morgan,exp_jpm,es,0
-qué hiciste en jpmorgan,exp_jpm,es,0
-your JPMorgan internship,exp_jpm,en,0
-what did you do at JP Morgan Chase,exp_jpm,en,0
-were you an intern at jpm,exp_jpm,en,0
+trabajaste en JP Morgan,jpm,es,0
+qué hiciste en jpmorgan,jpm,es,0
+your JPMorgan internship,jpm,en,0
+what did you do at JP Morgan Chase,jpm,en,0
+were you an intern at jpm,jpm,en,0
 qué es Sekia,exp_sekia,es,0
 el semillero de investigación de la javeriana,exp_sekia,es,0
 lideraste un grupo de investigacion,exp_sekia,es,0
@@ -338,3 +338,35 @@ what is the meaning of life,out_of_scope,en,0
 what stocks should I buy,out_of_scope,en,0
 can you write my essay,out_of_scope,en,0
 who is the president of the united states,out_of_scope,en,0
+qué láminas tienes,plates,es,0
+las visualizaciones de mapas de bogotá,plates,es,0
+el mapa de pobreza y el metro,plates,es,0
+show me your data visualizations,plates,en,0
+what are the plates in photos,plates,en,0
+the map of crime and street lighting,plates,en,0
+qué hay de nuevo,latest,es,0
+qué ha hecho últimamente,latest,es,0
+novedades recientes de esteban,latest,es,0
+what's new,latest,en,0
+what have you been up to lately,latest,en,0
+any recent news,latest,en,0
+tienes kaggle,kaggle,es,0
+tu perfil de kaggle,kaggle,es,0
+participas en competencias de kaggle,kaggle,es,0
+are you on kaggle,kaggle,en,0
+kaggle profile?,kaggle,en,0
+do you do kaggle competitions,kaggle,en,0
+dónde está el código de ceteris paribus,ceteris_code,es,0
+el repo de ceteris paribus es público,ceteris_code,es,0
+puedo ver el github de ceteris,ceteris_code,es,0
+where is the ceteris paribus source code,ceteris_code,en,0
+is ceteris paribus open source,ceteris_code,en,0
+ceteris paribus github repo?,ceteris_code,en,0
+el efecto de la coca en los colegios,paper_coca,es,0
+the effect of coca cultivation on Saber 11 scores,paper_coca,en,0
+moran y las localidades de bogotá en saber 11,paper_spatial,es,0
+spatial spillovers in Bogota schools,paper_spatial,en,0
+celulares UNCOLI y saber 11,desk_uncoli,es,0
+does banning phones improve Saber 11 results,desk_uncoli,en,0
+tus investigaciones con Saber 11,list_papers,es,0
+your research using Saber 11 data,list_papers,en,0
