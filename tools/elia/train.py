@@ -351,7 +351,7 @@ def write_config(prm):
         if pat.search(body):
             body = pat.sub(lambda m: m.group(1) + str(v) + m.group(3), body, count=1)
         else:   # campo nuevo: va después de clarify
-            i = body.index('\n', body.index('\n    "clarify": '))
+            i = body.index('\n', body.index('\n    "clarify": ') + 1)
             body = body[:i + 1] + f'    "{k}": {v},\r\n' + body[i + 1:]
     CONTENT.write_bytes((head + body).encode("utf-8"))
 
