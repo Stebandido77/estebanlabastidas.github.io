@@ -189,7 +189,7 @@ window.DATA = {
     {
       "no": "№ 11",
       "t": "Ceteris Paribus <span class=\"project__live\">Live</span>",
-      "tags": "EDUCATION · MICROECONOMICS · INTERACTIVE · OPEN SOURCE",
+      "tags": "EDUCATION · MICROECONOMICS · INTERACTIVE · LIVE PLATFORM",
       "b": "An interactive platform to learn microeconomics, econometrics and macro, built on Varian and Wooldridge. Its market game simulates many agents setting prices that converge to equilibrium, with supply and demand shocks, taxes and price controls. <a class=\"project__link\" href=\"https://ceteris-paribus-pearl.vercel.app/\" rel=\"noopener\" target=\"_blank\">Open the platform ↗</a>"
     },
     {
@@ -379,7 +379,7 @@ window.DATA = {
 
   /* Categoría de cada proyecto (por número): markets | research | oss.
      Define la carpeta y el filtro en Projects. */
-  "projectCategories": {"01": "markets", "02": "markets", "03": "research", "04": "research", "05": "markets", "06": "research", "07": "oss", "08": "oss", "09": "markets", "10": "markets", "11": "oss", "12": "markets", "13": "research", "14": "oss"},
+  "projectCategories": {"01": "markets", "02": "markets", "03": "research", "04": "research", "05": "markets", "06": "research", "07": "oss", "08": "oss", "09": "markets", "10": "markets", "11": "research", "12": "markets", "13": "research", "14": "oss"},
 
   /* Favoritos de Safari (Links): [nombre, url, glifo, color]. */
   "favorites": [
