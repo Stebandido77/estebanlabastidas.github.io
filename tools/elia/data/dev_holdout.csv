@@ -1,41 +1,41 @@
 text,intent,lang,alt
-"¿Quién eres y a qué te dedicas actualmente?",who,es,job_current
-"Cuéntame un poco sobre ti.",who,es,
-"¿Qué estudiaste y dónde?",education,es,
-"¿En qué empresa trabajas ahora?",job_current,es,
-"What kind of roles are you interested in?",hire,en,out_of_scope
-"¿Por qué decidiste estudiar economía e ingeniería industrial?",out_of_scope,es,education
-"¿Qué experiencia tienes en el sector financiero?",who,es,job_current|exp_ms|jpm
-"¿Qué hacías en JP Morgan?",jpm,es,
-"¿En qué proyectos has trabajado últimamente?",latest,es,list_projects
-"¿Qué es lo que más te gusta de tu trabajo?",out_of_scope,es,job_current
-"Can you walk me through your professional background?",who,en,job_current|exp_ms
-"¿Qué herramientas de programación manejas?",stack,es,
-"¿Sabes Python y SQL?",stack,es,
-"¿Has trabajado con inteligencia artificial?",list_projects,es,ews|paper_llm|elia
-"¿Qué proyectos personales estás desarrollando?",list_projects,es,latest
-"¿Qué es Patrion?",proj_patrion,es,
-"¿Tienes experiencia construyendo modelos financieros?",job_current,es,who|exp_ms
-"¿Qué sabes de valoración de empresas?",job_current,es,who|interests
-"¿Has trabajado en banca de inversión?",job_current,es,who|exp_ms
-"What would you say is your biggest professional achievement?",out_of_scope,en,who|paper_coca
-"¿Por qué te interesa la investigación económica?",interests,es,out_of_scope
-"¿Has publicado algún artículo académico?",list_papers,es,
-"¿Sobre qué temas investigas?",interests,es,list_papers
-"¿Qué estás estudiando actualmente?",education,es,
-"¿Cuál es tu experiencia en econometría?",interests,es,list_papers|education
-"¿Qué tipo de problemas te gusta resolver?",interests,es,out_of_scope
-"¿Dónde puedo ver tu hoja de vida?",cv,es,
-"Do you have a GitHub profile?",contact,en,list_projects|stack
-"¿Dónde puedo leer tus artículos?",writing,es,list_papers
-"¿De qué escribes en Substack?",writing,es,
-"¿Qué libro me recomendarías?",out_of_scope,es,
-"¿Qué haces cuando no estás trabajando?",out_of_scope,es,
-"¿Qué te gustaría estar haciendo en cinco años?",out_of_scope,es,hire
-"Why should we hire you?",hire,en,who
-"¿Estarías interesado en una oportunidad laboral fuera de Colombia?",hire,es,location
-"¿Cómo puedo contactarte?",contact,es,
-"¿Podemos agendar una reunión contigo?",contact,es,hire
-"¿Tienes algún proyecto en el que podamos colaborar?",hire,es,contact
+¿Quién eres y a qué te dedicas actualmente?,who,es,job_current
+Cuéntame un poco sobre ti.,who,es,
+¿Qué estudiaste y dónde?,education,es,
+¿En qué empresa trabajas ahora?,job_current,es,
+What kind of roles are you interested in?,hire,en,out_of_scope
+¿Por qué decidiste estudiar economía e ingeniería industrial?,out_of_scope,es,education
+¿Qué experiencia tienes en el sector financiero?,who,es,job_current|exp_ms|jpm|skills_finance
+¿Qué hacías en JP Morgan?,jpm,es,
+¿En qué proyectos has trabajado últimamente?,latest,es,list_projects
+¿Qué es lo que más te gusta de tu trabajo?,out_of_scope,es,job_current
+Can you walk me through your professional background?,who,en,job_current|exp_ms
+¿Qué herramientas de programación manejas?,stack,es,
+¿Sabes Python y SQL?,stack,es,
+¿Has trabajado con inteligencia artificial?,list_projects,es,ews|paper_llm|elia
+¿Qué proyectos personales estás desarrollando?,list_projects,es,latest
+¿Qué es Patrion?,proj_patrion,es,
+¿Tienes experiencia construyendo modelos financieros?,job_current,es,who|exp_ms|skills_finance
+¿Qué sabes de valoración de empresas?,job_current,es,who|interests|skills_finance
+¿Has trabajado en banca de inversión?,job_current,es,who|exp_ms|skills_finance
+What would you say is your biggest professional achievement?,out_of_scope,en,who|paper_coca
+¿Por qué te interesa la investigación económica?,interests,es,out_of_scope
+¿Has publicado algún artículo académico?,list_papers,es,
+¿Sobre qué temas investigas?,interests,es,list_papers
+¿Qué estás estudiando actualmente?,education,es,
+¿Cuál es tu experiencia en econometría?,interests,es,list_papers|education
+¿Qué tipo de problemas te gusta resolver?,interests,es,out_of_scope
+¿Dónde puedo ver tu hoja de vida?,cv,es,
+Do you have a GitHub profile?,contact,en,list_projects|stack
+¿Dónde puedo leer tus artículos?,writing,es,list_papers
+¿De qué escribes en Substack?,writing,es,
+¿Qué libro me recomendarías?,out_of_scope,es,
+¿Qué haces cuando no estás trabajando?,out_of_scope,es,
+¿Qué te gustaría estar haciendo en cinco años?,out_of_scope,es,hire
+Why should we hire you?,hire,en,who
+¿Estarías interesado en una oportunidad laboral fuera de Colombia?,hire,es,location
+¿Cómo puedo contactarte?,contact,es,
+¿Podemos agendar una reunión contigo?,contact,es,hire
+¿Tienes algún proyecto en el que podamos colaborar?,hire,es,contact
 "Oye, ¿cuál es la mejor forma de cocinar una pasta carbonara?",out_of_scope,es,
 "Si un pingüino pudiera volar, ¿seguiría siendo un pingüino?",out_of_scope,es,

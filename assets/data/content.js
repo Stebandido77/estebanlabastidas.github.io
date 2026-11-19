@@ -460,12 +460,12 @@ window.DATA = {
        python tools/elia/train.py
      Lo marcado con TODO(esteban) es un borrador inferido: revísalo antes de publicar. */
   "elia": {
-    "threshold": 0.8,
+    "threshold": 0.75,
     "margin": 0.0,
     "howThreshold": 0.5,
-    "keyWeight": 0.9,
+    "keyWeight": 0.5,
     "weakBonus": 1.0,
-    "clarify": 0.1,           // debajo de esto no hay "¿Te refieres a…?": se ofrece escribirle a Esteban
+    "clarify": 0.2,           // debajo de esto no hay "¿Te refieres a…?": se ofrece escribirle a Esteban
     "formEndpoint": null,      // URL de Formspree o Web3Forms para enviar desde EL·IA; null = solo Mail
     "formAccessKey": null,     // solo Web3Forms: la access key pública del formulario (ver tools/elia/README.md)
     /* chips: preguntas sugeridas bajo la conversación. ui: textos de la interfaz por idioma. */
@@ -580,7 +580,7 @@ window.DATA = {
        "open": [["research", "02"], ["projects", "04"]],
        "links": [["SSRN", "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=6625578"]]},
       {"id": "jpm", "t": {"es": "JP Morgan Chase", "en": "JP Morgan Chase"},
-       "keys": ["jp morgan", "jpmorgan", "jpm", "chase", "=morgan"], "weak": ["internship", "intern", "pasantia"],
+       "keys": ["jp morgan", "jpmorgan", "jpm", "jp", "chase"], "weak": ["=morgan", "internship", "intern", "pasantia"],
        "a": {"es": "De junio de 2024 a enero de 2025 fue ED&SE Intern en JP Morgan Chase. Construyó dashboards internos y flujos automatizados para monitorear el desempeño de inversiones y reducir los reportes manuales, en analítica de finanzas y de fuerza laboral.",
              "en": "From June 2024 to January 2025, Esteban was an ED&SE Intern at JP Morgan Chase, building internal dashboards and automated workflows to monitor investment performance and cut manual reporting, across finance and workforce analytics."},
        "how": {"es": "Pipelines de datos en Python alimentan dashboards en Power BI, y herramientas automatizadas siguen las métricas de inversión.",
@@ -761,7 +761,7 @@ window.DATA = {
              "en": "From August 2023 to December 2025, Esteban led the Sekia Research Group at Pontificia Universidad Javeriana, coordinating applied research in econometrics, data analysis, academic writing and presentations, and managing publications and outside collaborations such as the one with CINEP."},
        "open": [["path"]]},
       {"id": "skills_finance", "t": {"es": "Finanzas corporativas y valoración", "en": "Corporate finance and valuation"},
-       "keys": ["modelos financieros", "modelo financiero", "modelacion financiera", "financial modeling", "financial modelling", "financial models", "financial model", "valoracion de empresas", "valoracion corporativa", "corporate valuation", "company valuation", "banca de inversion", "investment banking", "dcf", "wacc", "costo de capital", "cost of capital", "comps", "fusiones y adquisiciones", "mergers and acquisitions"], "weak": ["comparables", "estructuracion", "structuring", "m a", "valoracion", "valuation", "finanzas corporativas", "corporate finance", "sector financiero", "financial sector", "finanzas", "finance", "deals"],
+       "keys": ["modelos financieros", "modelo financiero", "modelacion financiera", "financial modeling", "financial modelling", "financial models", "financial model", "valoracion de empresas", "valoracion corporativa", "corporate valuation", "company valuation", "banca de inversion", "investment banking", "dcf", "wacc", "costo de capital", "cost of capital", "comps", "fusiones y adquisiciones", "mergers and acquisitions", "mna"], "weak": ["comparables", "estructuracion", "structuring", "valoracion", "valuation", "finanzas corporativas", "corporate finance", "sector financiero", "financial sector", "finanzas", "finance", "deals"],
        "a": {"es": "Su experiencia es en M&A y valoración corporativa, no en un banco de inversión. En Grupo Aval evalúa operaciones de M&A y proyectos corporativos, hace valoraciones (DCF, comparables, costo de capital) y prepara materiales para la Junta Directiva e inversionistas. Antes, como consultor en Management Solutions, trabajó en mercados de capitales para bancos de primer nivel: valoró renta fija, renta variable y derivados, y construyó un motor de exposición SA-CCR. En JP Morgan Chase fue practicante de datos (dashboards de inversiones), no de banca de inversión. Tiene la certificación CMSA® y está cursando la FMVA® (modelación financiera y valoración).",
              "en": "His experience is in M&A and corporate valuation, not at an investment bank. At Grupo Aval he evaluates M&A and corporate projects, runs valuations (DCF, comparables, cost of capital) and prepares Board and investor materials. Before that, as a consultant at Management Solutions, he worked on capital markets for tier-1 banks: valuing fixed income, equity and derivatives, and building an SA-CCR exposure engine. At JP Morgan Chase he was a data intern (investment dashboards), not in investment banking. He holds the CMSA® and is working toward the FMVA® (financial modeling and valuation)."},
        "open": [["path"], ["projects"]]},

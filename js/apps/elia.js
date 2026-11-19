@@ -47,7 +47,7 @@ function logMiss(q, top) {
 /* ── respuesta a una pregunta (también la usa la Terminal) ── */
 async function think(q) {
   const M = await loadModel();
-  K = K || NET().compileKeys(E);
+  K = K || NET().compileKeys(E, M.promoted);
   const r = NET().ask(M, q, K, E);
   return {r, d: NET().decide(r, E)};
 }

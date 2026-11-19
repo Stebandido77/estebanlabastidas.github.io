@@ -4,7 +4,7 @@ La extracción de features DEBE ser idéntica a la de js/apps/elia.js. Si cambia
 cambia también el JS y corre tools/elia/test_parity.mjs.
 
 Especificación (la misma en Python y en JS):
-  1. normalize(text): minúsculas → NFD → quitar marcas diacríticas (U+0300–U+036F) →
+  1. normalize(text): minúsculas → "m&a" / "m & a" pasan a "mna" → NFD → quitar marcas diacríticas (U+0300–U+036F) →
      todo lo que no sea [a-z0-9] pasa a espacio → colapsar espacios y recortar.
      Así "¿Qué es EL·IA?" → "que es el ia" y "ñ" → "n".
   2. tokens(norm):
@@ -20,6 +20,7 @@ Especificación (la misma en Python y en JS):
 from __future__ import annotations
 
 import csv
+import re
 import json
 import subprocess
 import unicodedata
@@ -37,8 +38,12 @@ CHAR_N = (3, 4, 5)
 FNV_OFFSET, FNV_PRIME = 0x811C9DC5, 0x01000193
 
 
+MNA = re.compile(r"(?<![a-z0-9])m[ \t]*&[ \t]*a(?![a-z0-9])")   # "m&a", "M & A" → token mna
+
+
 def normalize(text: str) -> str:
-    t = unicodedata.normalize("NFD", text.lower())
+    t = MNA.sub(" mna ", text.lower())   # antes de quitar la puntuación, para que "&" no lo parta
+    t = unicodedata.normalize("NFD", t)
     t = "".join(c for c in t if not ("̀" <= c <= "ͯ"))
     out = [c if ("a" <= c <= "z" or "0" <= c <= "9") else " " for c in t]
     return " ".join("".join(out).split())
@@ -141,15 +146,41 @@ def contains(q: list[str], kt: list[str], exact: bool = False) -> bool:
     return any(all(eq(kt[j], q[s + j]) for j in range(n)) for s in range(len(q) - n + 1))
 
 
-def compile_keys(elia: dict) -> dict:
-    """elia = DATA.elia → {"strong": [(id, [(palabras, exacto)])], "weak": […], "hard": frases, "soft": frases}"""
+PROMOTE_PRECISION, PROMOTE_MIN = 0.95, 3
+
+
+def compile_keys(elia: dict, promoted: dict | None = None) -> dict:
+    """elia = DATA.elia → {"strong": [(id, [(palabras, exacto)])], "weak": […], "hard": frases, "soft": frases}.
+    promoted = {intención: [keys de "weak" que actúan como fuertes]} (ver promote_keys)."""
     cues = elia.get("oosCues", {})
     out = {"strong": [], "weak": [], "hard": phrases(cues.get("hard", [])), "soft": phrases(cues.get("soft", []))}
+    promoted = promoted or {}
     for it in elia["intents"]:
-        for kind, field in (("strong", "keys"), ("weak", "weak")):
-            ks = key_phrases(it.get(field, []))
+        up = set(promoted.get(it["id"], []))
+        strong = list(it.get("keys", [])) + [k for k in it.get("weak", []) if k in up]
+        weak = [k for k in it.get("weak", []) if k not in up]
+        for kind, lst in (("strong", strong), ("weak", weak)):
+            ks = key_phrases(lst)
             if ks:
                 out[kind].append((it["id"], ks))
+    return out
+
+
+def promote_keys(elia: dict, texts: list[str], labels: list[str]) -> dict:
+    """Keys débiles que los datos de entrenamiento muestran exclusivos de su intención: se activan en
+    ≥ PROMOTE_MIN preguntas y, de esas, una fracción ≥ PROMOTE_PRECISION es de la propia intención.
+    Solo con las preguntas escritas a mano que se le pasen (en la validación cruzada, las del pliegue
+    de entrenamiento), nunca con variantes ni plantillas. → {intención: [keys]}"""
+    qs = [normalize(t).split() for t in texts]
+    out = {}
+    for it in elia["intents"]:
+        for k in it.get("weak", []):
+            (w, ex), = key_phrases([k]) or [(None, None)]
+            if not w:
+                continue
+            hits = [lab for q, lab in zip(qs, labels) if contains(q, w, ex)]
+            if len(hits) >= PROMOTE_MIN and hits.count(it["id"]) / len(hits) >= PROMOTE_PRECISION:
+                out.setdefault(it["id"], []).append(k)
     return out
 
 

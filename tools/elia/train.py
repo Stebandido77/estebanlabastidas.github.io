@@ -45,7 +45,7 @@ sys.path.insert(0, str(HERE))
 import templates  # noqa: E402
 from augment import variants  # noqa: E402
 from common import (CHAR_N, CONTENT, DIM, QUESTIONS, ROOT, compile_keys, featurize, forced_intent,  # noqa: E402
-                    key_intent, load_elia, load_questions)
+                    key_intent, load_elia, load_questions, normalize, promote_keys)
 
 OUT_JS = ROOT / "assets" / "data" / "elia-model.js"
 REPORT = HERE / "REPORT.md"
@@ -109,8 +109,24 @@ def step_grads(P, X, y, h, sw, cfg, rng):
     return G
 
 
-def train(X, y, h, sw, Xv, yv, hv, K, cfg, seed, epochs=None):
-    """Entrena con early stopping sobre (Xv, yv) o, si epochs está dado, un número fijo de épocas."""
+def pool_grads(P, X, Qt, lam, cfg, rng):
+    """Destilación: gradiente de lam · KL(profesor ‖ alumno) sobre un lote del pool sin etiquetas."""
+    z1, a, mask, logits, _ = forward(P, X, cfg.dropout, rng)
+    g_logits = lam * (softmax(logits) - Qt) / len(X)
+    G = {"W2": a.T @ g_logits, "b2": g_logits.sum(0), "Wh": np.zeros_like(P["Wh"]), "bh": np.zeros(1, np.float32)}
+    g_a = g_logits @ P["W2"].T
+    if mask is not None:
+        g_a *= mask
+    g_z1 = g_a * (z1 > 0)
+    G["W1"] = X.T @ g_z1
+    G["b1"] = g_z1.sum(0)
+    return G
+
+
+def train(X, y, h, sw, Xv, yv, hv, K, cfg, seed, epochs=None, pool=None):
+    """Entrena con early stopping sobre (Xv, yv) o, si epochs está dado, un número fijo de épocas.
+    pool = (Xp, Qp): textos sin etiqueta con las probabilidades del profesor; cada paso suma un lote del
+    pool con pérdida cfg.distill · KL (el early stopping sigue mirando solo preguntas escritas a mano)."""
     rng = np.random.default_rng(seed)
     P = init(rng, X.shape[1], cfg.hidden, K)
     m = {k: np.zeros_like(v) for k, v in P.items()}
@@ -123,6 +139,10 @@ def train(X, y, h, sw, Xv, yv, hv, K, cfg, seed, epochs=None):
         for s in range(0, len(y), cfg.batch):
             idx = order[s:s + cfg.batch]
             G = step_grads(P, X[idx], y[idx], h[idx], sw[idx], cfg, rng)
+            if pool is not None:
+                pi = rng.integers(0, len(pool[1]), cfg.batch)
+                for k, g in pool_grads(P, pool[0][pi], pool[1][pi], cfg.distill, cfg, rng).items():
+                    G[k] = G[k] + g
             t += 1
             lr_t = cfg.lr * np.sqrt(1 - b2 ** t) / (1 - b1 ** t)   # corrección de sesgo en la tasa
             for k in P:   # Adam in situ: evita copias de la matriz 4096×64 en cada paso
@@ -222,6 +242,46 @@ def build_train(rows, idx, y, h, feats, cfg, rng_aug, K, extra=None):
     return X, ys, hs, cw[ys]
 
 
+
+
+# ───────────────────────── destilación (solo entrenamiento) ─────────────────────────
+def make_pool(intents, rng, n):
+    """Pool sin etiquetas: plantillas × (keys, débiles y títulos de TODAS las intenciones), mezcladas al
+    azar y sin conservar de qué intención salió cada X. Solo depende de content.js."""
+    xs = set()
+    for it in intents:
+        if it["id"] == OOS:
+            continue
+        xs.update(k.lstrip("=") for k in list(it.get("keys", [])) + list(it.get("weak", [])))
+        xs.update([it["t"]["es"], it["t"]["en"]])
+    combos = [(t, x) for _, _, t in templates.TEMPLATES for x in sorted(xs)]
+    rng.shuffle(combos)
+    return list(dict.fromkeys(t.replace("{X}", x) for t, x in combos))[:n]
+
+
+def embed_texts(texts, cmd):
+    """Embeddings del profesor con tools/elia/embed.py (otro intérprete: necesita torch)."""
+    import subprocess
+    import tempfile
+    with tempfile.TemporaryDirectory() as d:
+        src, dst = Path(d) / "t.json", Path(d) / "e.npy"
+        src.write_text(json.dumps(texts, ensure_ascii=False), encoding="utf-8")
+        subprocess.run(cmd.split() + [str(HERE / "embed.py"), str(src), str(dst)], check=True)
+        return np.load(dst)
+
+
+def knn_teacher(Ep, El, yl, K, k, tau):
+    """Profesor: para cada texto del pool, sus k vecinos más cercanos (coseno) entre las preguntas
+    etiquetadas, pesados con softmax(similitud / tau) → distribución sobre las K intenciones."""
+    S = Ep @ El.T
+    k = min(k, El.shape[0])
+    idx = np.argpartition(-S, k - 1, axis=1)[:, :k]
+    sv = np.take_along_axis(S, idx, axis=1) / tau
+    w = np.exp(sv - sv.max(1, keepdims=True))
+    w /= w.sum(1, keepdims=True)
+    Q = np.zeros((len(Ep), K), dtype=np.float32)
+    np.add.at(Q, (np.repeat(np.arange(len(Ep)), k), yl[idx].ravel()), w.ravel())
+    return Q
 
 
 # ───────────────────────── keys y reglas (post-proceso) ─────────────────────────
@@ -390,6 +450,11 @@ def main():
     ap.add_argument("--aug", type=int, default=8, help="variantes por pregunta original")
     ap.add_argument("--tpl", type=int, default=40, help="filas de plantillas por intención (0 = sin plantillas)")
     ap.add_argument("--tpl-aug", type=int, default=1, help="variantes por fila de plantilla")
+    ap.add_argument("--distill", type=float, default=0.0, help="λ de la destilación (0 = sin destilación)")
+    ap.add_argument("--pool", type=int, default=6000, help="textos generados en el pool sin etiquetas")
+    ap.add_argument("--knn-k", type=int, default=10)
+    ap.add_argument("--knn-tau", type=float, default=0.05)
+    ap.add_argument("--embed-python", default="py -3.12", help="intérprete con sentence-transformers para embed.py")
     ap.add_argument("--class-weight", choices=["inverse", "sqrt", "none"], default="inverse")
     ap.add_argument("--lr", type=float, default=3e-3)
     ap.add_argument("--l2", type=float, default=1e-4)
@@ -417,10 +482,25 @@ def main():
     K = len(ids)
     feats = Feats()
     Xo = feats(texts)
-    sk, wk, so = rule_indices(texts, ids, KC, social)
+    labels = [r["intent"] for r in rows]
+    # keys débiles promovidos a fuertes por los datos (common.promote_keys). En la validación cruzada se
+    # calculan dentro de cada pliegue, solo con su parte de entrenamiento, para no mirar el pliegue evaluado.
+    fold0 = stratified_folds(y, cfg.folds, random.Random(cfg.seed))   # el mismo reparto que usa run_cv
+    sk, wk, so = (np.full(len(y), -1) for _ in range(3))
+    promo_folds = []
+    for f in range(cfg.folds):
+        tr = [i for i in range(len(y)) if fold0[i] != f]
+        vi = [i for i in range(len(y)) if fold0[i] == f]
+        pf = promote_keys(elia, [texts[i] for i in tr], [labels[i] for i in tr])
+        promo_folds.append(pf)
+        a, b, c = rule_indices([texts[i] for i in vi], ids, compile_keys(elia, pf), social)
+        sk[vi], wk[vi], so[vi] = a, b, c
+    promoted = promote_keys(elia, texts, labels)   # con todos los datos: lo que usa el navegador
+    KC = compile_keys(elia, promoted)
     none = np.full(len(y), -1)
     n_s, n_w = sum(len(k) for _, k in KC["strong"]), sum(len(k) for _, k in KC["weak"])
-    print(f"{len(rows)} preguntas · {K} intenciones · keys {n_s} fuertes + {n_w} débiles · "
+    print(f"{len(rows)} preguntas · {K} intenciones · keys {n_s} fuertes + {n_w} débiles "
+          f"({sum(len(v) for v in promoted.values())} débiles promovidos por los datos) · "
           f"key fuerte {(sk >= 0).mean():.0%} · débil {(wk >= 0).mean():.0%} · forzada {(so >= 0).mean():.0%}")
 
     # plantillas (solo entrenamiento): se generan una vez a partir de content.js, no de las preguntas
@@ -435,7 +515,23 @@ def main():
         extra = (feats(tx), np.array(ty), np.array(th, dtype=float))
         print(f"plantillas: {len(T)} filas + variantes = {len(tx)} filas de entrenamiento")
 
-    def run_cv(ex, tag):
+    pool_base, pool_var, pool_var_all, EMB = [], {}, [], {}
+    if cfg.distill:
+        pool_base = make_pool(intents, random.Random(cfg.seed + 23), cfg.pool)
+        vr = lambda i, f: variants(texts[i], 1, random.Random(cfg.seed * 100003 + f * 7919 + i))
+        pool_var = {f: [v for i in range(len(y)) if fold0[i] != f for v in vr(i, f)] for f in range(cfg.folds)}
+        pool_var_all = [v for i in range(len(y)) for v in vr(i, 99)]
+        need = sorted(set(texts) | set(pool_base) | {v for lst in pool_var.values() for v in lst} | set(pool_var_all))
+        EMB = dict(zip(need, embed_texts(need, cfg.embed_python)))
+        print(f"destilación: λ {cfg.distill} · pool {len(pool_base)} generados + ~{len(pool_var_all)} variantes · "
+              f"kNN k={cfg.knn_k} τ={cfg.knn_tau} · {len(need)} embeddings")
+
+    def teacher_pool(lab_idx, ptexts):
+        Q = knn_teacher(np.stack([EMB[t] for t in ptexts]), np.stack([EMB[texts[i]] for i in lab_idx]),
+                        y[lab_idx], K, cfg.knn_k, cfg.knn_tau)
+        return feats(ptexts), Q
+
+    def run_cv(ex, tag, distill=False):
         rng = random.Random(cfg.seed)
         fold = stratified_folds(y, cfg.folds, rng)
         P, HP, eps, Ts = np.zeros((len(y), K)), np.zeros(len(y)), [], []
@@ -444,7 +540,8 @@ def main():
             vi = [i for i in range(len(y)) if fold[i] == f]
             tr, iv = inner_split(tr_all, y, rng)
             X, ys, hs, sw = build_train(rows, tr, y, h, feats, cfg, random.Random(cfg.seed * 100 + f), K, ex)
-            Pm, ep = train(X, ys, hs, sw, Xo[iv], y[iv], h[iv].astype(float), K, cfg, cfg.seed + f)
+            pool = teacher_pool(tr, pool_base + pool_var[f]) if distill else None   # profesor: solo el pliegue de entrenamiento
+            Pm, ep = train(X, ys, hs, sw, Xo[iv], y[iv], h[iv].astype(float), K, cfg, cfg.seed + f, pool=pool)
             _, _, _, lv, _ = forward(Pm, Xo[iv])
             T = fit_temperature(lv, y[iv])
             _, _, _, lo, hz = forward(Pm, Xo[vi])
@@ -464,9 +561,17 @@ def main():
         stages.append(("+ plantillas", ev(PB, sk, wk, none, hybrids), PB, HB, epsB, TsB, True))
     else:
         PB, HB, epsB, TsB = PA, HA, epsA, TsA
+    PD = None
+    if cfg.distill:
+        _, PD, HD, epsD, TsD = run_cv(extra, "destilación", distill=True)
+        stages.append(("+ destilación", ev(PD, sk, wk, none, hybrids), PD, HD, epsD, TsD, extra is not None))
+        stages.append(("(c) destilación sin keys débiles (con reglas sociales y guardia dura)",
+                       ev(PD, sk, none, so, hybrids), PD, HD, epsD, TsD, extra is not None))
+        PB, HB, epsB, TsB = PD, HD, epsD, TsD
     stages.append(("+ reglas sociales y guardia dura (final)", ev(PB, sk, wk, so, hybrids), PB, HB, epsB, TsB, extra is not None))
     if cfg.dump:
-        np.savez(cfg.dump, PA=PA, PB=PB, fold=fold, y=y, sk=sk, wk=wk, so=so, L=L, HB=HB, h=h)
+        np.savez(cfg.dump, PA=PA, PB=PB, fold=fold, y=y, sk=sk, wk=wk, so=so, L=L, HB=HB, h=h,
+                 **({"PD": PD} if PD is not None else {}))
     for name, st, *_ in stages:
         p = st["params"]
         if p:
@@ -488,7 +593,8 @@ def main():
     if not cfg.no_export and prm:
         X, ys, hs, sw = build_train(rows, list(range(len(y))), y, h, feats, cfg,
                                     random.Random(cfg.seed * 100 + 99), K, extra if use_tpl else None)
-        P, _ = train(X, ys, hs, sw, None, None, None, K, cfg, cfg.seed + 99, epochs=final_ep)
+        pool = teacher_pool(list(range(len(y))), pool_base + pool_var_all) if cfg.distill else None
+        P, _ = train(X, ys, hs, sw, None, None, None, K, cfg, cfg.seed + 99, epochs=final_ep, pool=pool)
         Q, out = {}, {}
         for k in ("W1", "W2", "Wh"):
             out[k], Q[k] = quant(P[k])
@@ -501,6 +607,7 @@ def main():
             "W1": out["W1"], "b1": [round(float(x), 6) for x in P["b1"]],
             "W2": out["W2"], "b2": [round(float(x), 6) for x in P["b2"]],
             "Wh": out["Wh"], "bh": round(float(P["bh"][0]), 6),
+            "promoted": promoted,   # keys débiles que actúan como fuertes (common.promote_keys)
         }
         # los sesgos se redondean al exportar: el modelo cuantizado de referencia usa los mismos valores
         Q["b1"], Q["b2"], Q["bh"] = np.array(model["b1"]), np.array(model["b2"]), np.array([model["bh"]])
@@ -526,13 +633,17 @@ def main():
             "hola", "Hola EL·IA!", "mil gracias", "ok bye", "gracias, chao", "buenos días esteban",
             "thank you so much", "hi what is pulso", "Thanks!!", "adiós", "hola qué tal",
             "cuéntame un chiste", "translate this to german", "qué clima hace en bogotá", "write my essay on pulso",
+            "tienes experiencia en M&A?", "what is your m & a experience", "I'm a recruiter at a bank",
             "cuál es tu mejor proyecto", "what paper do you recommend"]
         pp, ph = quantized_predict(Q, feats(sample), final_T)
         hq, _ = quantized_predict(Q, feats(hsample), final_T)
         hs_, hw_, ho_ = rule_indices(hsample, ids, KC, social)
         hp = apply_keys(hq, hs_, hw_, ho_, prm["keyWeight"], prm["weakBonus"])
         name_of = lambda a: [ids[k] if k >= 0 else None for k in a]
+        norm_cases = ["M&A", "experiencia en m & a?", "M &A deals", "hm&a", "m&ax", "I'm a recruiter",
+                      "¿Qué es EL·IA?", "Ñandú, pingüino y CAFÉ", "sa-ccr / bre-b", "  espacios   raros  "]
         PARITY.write_text(json.dumps({
+            "normalize": [[t, normalize(t)] for t in norm_cases],
             "questions": sample, "probs": pp.round(10).tolist(), "how": ph.round(10).tolist(),
             "hybrid": {"keyWeight": prm["keyWeight"], "weakBonus": prm["weakBonus"], "questions": hsample,
                        "strong": name_of(hs_), "weak": name_of(hw_), "forced": name_of(ho_),
@@ -543,11 +654,13 @@ def main():
 
     if cfg.no_report:
         return
-    write_report(cfg, rows, ids, sk, wk, so, y, L, stages, how_cm, how_acc, final_ep, final_T, size_kb, quant_agree, oos)
+    write_report(cfg, rows, ids, sk, wk, so, y, L, stages, how_cm, how_acc, final_ep, final_T, size_kb, quant_agree, oos,
+                 promoted, promo_folds)
     print(f"reporte: {REPORT.relative_to(ROOT)}")
 
 
-def write_report(cfg, rows, ids, sk, wk, so, y, Lg, stages, how_cm, how_acc, final_ep, final_T, size_kb, quant_agree, oos):
+def write_report(cfg, rows, ids, sk, wk, so, y, Lg, stages, how_cm, how_acc, final_ep, final_T, size_kb, quant_agree, oos,
+                 promoted, promo_folds):
     pct = lambda m: f"{100 * m[0]:.1f} ± {100 * m[1]:.1f} %"
     lang_n = Counter(r["lang"] for r in rows)
     ins = y != oos
@@ -578,6 +691,12 @@ def write_report(cfg, rows, ids, sk, wk, so, y, Lg, stages, how_cm, how_acc, fin
              "`out_of_scope` sin pasar por la red; EL·IA nunca responde y ofrece el correo.")
     L.append("- Reglas sociales (`social`): ≤ 4 palabras formadas solo por frases de una lista (greeting, goodbye o "
              "thanks) y relleno → respuesta directa, sin red.")
+    if cfg.distill:
+        L.append(f"- Destilación (solo entrenamiento): profesor kNN (k = {cfg.knn_k}, τ = {cfg.knn_tau}) sobre embeddings de "
+                 f"`intfloat/multilingual-e5-base` de las preguntas de entrenamiento de cada pliegue; pool sin etiquetas de "
+                 f"{cfg.pool} textos generados (plantillas × keys y títulos de todas las intenciones) más una variante de "
+                 f"cada pregunta de entrenamiento del pliegue. Pérdida CE + {cfg.distill} · KL(profesor ‖ red). La red "
+                 f"exportada es la misma (y del mismo tamaño); el encoder no llega al navegador.")
     L.append(f"- Plantillas: {len(templates.TEMPLATES)} plantillas × keys (fuertes y débiles) y títulos, {cfg.tpl} filas por intención "
              f"(+{cfg.tpl_aug} variante cada una), solo en entrenamiento.")
     L.append(f"- Validación cruzada estratificada de {cfg.folds} pliegues solo con preguntas originales (los mismos "
@@ -598,6 +717,22 @@ def write_report(cfg, rows, ids, sk, wk, so, y, Lg, stages, how_cm, how_acc, fin
                  f"{int((a >= 0)[~ins].sum())} |")
     L.append("\nLos keys los escribí mirando content.js **y** el dataset, así que esta capa sale algo favorecida en la "
              "validación. La prueba sin ese sesgo es `tools/elia/eval_holdout.py` con las preguntas de Esteban.\n")
+
+    L.append("## Keys débiles promovidos a fuertes por los datos\n")
+    L.append("Un key débil actúa como fuerte si en las preguntas de entrenamiento se activa ≥ 3 veces y ≥ 95 % de "
+             "ellas son de su intención. En la validación cruzada se calcula dentro de cada pliegue; la última columna "
+             "dice en cuántos pliegues se promovió. La columna \"todos los datos\" es la lista que usa el navegador "
+             "(`promoted` en `elia-model.js`).\n")
+    allk = sorted({(i, k) for pf in promo_folds + [promoted] for i, ks in pf.items() for k in ks})
+    if allk:
+        L.append("| Intención | Key | Todos los datos | Pliegues |")
+        L.append("|---|---|---|---|")
+        for i, k in allk:
+            L.append(f"| `{i}` | {k} | {'sí' if k in promoted.get(i, []) else 'no'} | "
+                     f"{sum(k in pf.get(i, []) for pf in promo_folds)}/{len(promo_folds)} |")
+    else:
+        L.append("Ninguno.")
+    L.append("")
 
     L.append("## Aporte de cada paso (media ± desviación entre pliegues)\n")
     L.append("Cada etapa con su propia regla óptima de la grilla. \"Anidada\": la regla se elige con 4 pliegues y se mide "

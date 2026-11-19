@@ -3,6 +3,8 @@
   python tools/elia/eval_holdout.py          holdout definitivo (data/holdout.csv): la puerta
   python tools/elia/eval_holdout.py --dev    set de desarrollo (data/dev_holdout.csv): solo referencia
   python tools/elia/eval_holdout.py --file otra.csv
+  python tools/elia/eval_holdout.py --dev --model otro-modelo.js --set weakBonus=0 --set threshold=0.7
+      (para comparar variantes sin tocar content.js ni el modelo publicado)
 
 holdout.csv (columnas text,intent,lang y alt opcional) lo escribe Esteban. NUNCA entra al
 entrenamiento ni se usa para ajustar keys, plantillas o umbrales. dev_holdout.csv es el holdout
@@ -51,8 +53,8 @@ GOAL_CORRECT, GOAL_USEFUL, GOAL_WRONG = 0.70, 0.85, 0.05   # puerta: correctas, 
 OUTCOMES = ("correcta", "equivocada", "¿Te refieres a…?", "correo")
 
 
-def load_model():
-    s = MODEL.read_text(encoding="utf-8")
+def load_model(path=MODEL):
+    s = Path(path).read_text(encoding="utf-8")
     M = json.loads(s[s.index("{"):s.rindex("}") + 1])
     q = lambda k: np.frombuffer(base64.b64decode(M[k]["q"]), dtype=np.int8).astype(np.float64) * M[k]["s"]
     H, K = M["hidden"], len(M["intents"])
@@ -64,6 +66,9 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--file", type=Path)
     ap.add_argument("--dev", action="store_true", help="evalúa data/dev_holdout.csv (solo referencia)")
+    ap.add_argument("--model", type=Path, default=MODEL, help="otro elia-model.js (para comparar variantes)")
+    ap.add_argument("--set", action="append", default=[], metavar="CLAVE=VALOR",
+                    help="cambia un valor de DATA.elia solo para esta evaluación (p. ej. weakBonus=0)")
     args = ap.parse_args()
     args.file = args.file or (DEV if args.dev else HOLDOUT)
     sys.stdout.reconfigure(encoding="utf-8")
@@ -75,7 +80,10 @@ def main():
         return
 
     elia = load_elia()
-    M, W = load_model()
+    for kv in args.set:
+        k, v = kv.split("=", 1)
+        elia[k] = float(v)
+    M, W = load_model(args.model)
     ids = M["intents"]
     for r in rows:
         r["valid"] = [r["intent"].strip()] + [a.strip() for a in (r.get("alt") or "").split("|") if a.strip()]
@@ -89,7 +97,7 @@ def main():
     X = np.stack([featurize(t) for t in texts])
     a = np.maximum(X @ W["W1"] + W["b1"], 0)
     P = softmax((a @ W["W2"] + W["b2"]) / M["T"])
-    sk, wk, so = rule_indices(texts, ids, compile_keys(elia), elia.get("social", {}))
+    sk, wk, so = rule_indices(texts, ids, compile_keys(elia, M.get("promoted")), elia.get("social", {}))
     P = apply_keys(P, sk, wk, so, elia["keyWeight"], elia["weakBonus"])
     t, m, c = elia["threshold"], elia["margin"], elia["clarify"]
     oos = ids.index(OOS)

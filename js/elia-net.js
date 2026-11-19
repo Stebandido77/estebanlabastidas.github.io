@@ -10,8 +10,9 @@
 (function (root) {
   'use strict';
 
+  /* "m&a" y "M & A" pasan al token mna antes de quitar la puntuación (igual que common.py) */
   function normalize(text) {
-    return String(text).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+    return String(text).toLowerCase().replace(/(?<![a-z0-9])m[ \t]*&[ \t]*a(?![a-z0-9])/g, ' mna ').normalize('NFD').replace(/[̀-ͯ]/g, '')
       .replace(/[^a-z0-9]+/g, ' ').trim();
   }
 
@@ -117,12 +118,16 @@
     return false;
   }
 
-  /* elia = DATA.elia → {strong: [[id, frases]], weak: [[id, frases]], hard: frases, soft: frases, social} */
-  function compileKeys(elia) {
+  /* elia = DATA.elia → {strong: [[id, frases]], weak: [[id, frases]], hard: frases, soft: frases, social}.
+     promoted = ELIA_MODEL.promoted: keys de "weak" que los datos de entrenamiento muestran exclusivos de su
+     intención y actúan como fuertes (tools/elia/common.py → promote_keys). */
+  function compileKeys(elia, promoted) {
     const cues = elia.oosCues || {};
     const K = {strong: [], weak: [], hard: phrases(cues.hard), soft: phrases(cues.soft), social: null};
     for (const it of elia.intents) {
-      const s = keyPhrases(it.keys), w = keyPhrases(it.weak);
+      const up = new Set((promoted || {})[it.id] || []);
+      const s = keyPhrases((it.keys || []).concat((it.weak || []).filter(k => up.has(k))));
+      const w = keyPhrases((it.weak || []).filter(k => !up.has(k)));
       if (s.length) K.strong.push([it.id, s]);
       if (w.length) K.weak.push([it.id, w]);
     }
@@ -195,7 +200,7 @@
     return {probs, how: r.how, ranked, key: rule.key, kind: rule.kind, forced: rule.forced};
   }
 
-  /* Lo que usa la app: K = compileKeys(DATA.elia), cfg = DATA.elia. */
+  /* Lo que usa la app: K = compileKeys(DATA.elia, ELIA_MODEL.promoted), cfg = DATA.elia. */
   function ask(M, text, K, cfg) {
     const [key, kind] = keyIntent(text, K);
     return hybrid(M, predict(M, text), {key, kind, forced: forcedIntent(text, K)}, cfg);

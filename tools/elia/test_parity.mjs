@@ -2,7 +2,8 @@
 // con los pesos ya cuantizados) para las preguntas de parity.json:
 //   1. red sola: 50 preguntas, probabilidades de intención y asks_how;
 //   2. híbrido: ~60 preguntas con keys, guardia oosCues y reglas sociales; reglas activadas y
-//      probabilidades tras la mezcla.
+//      probabilidades tras la mezcla;
+//   3. normalización de textos con signos, tildes y M&A.
 //   node tools/elia/test_parity.mjs
 // Sale con código 1 si alguna probabilidad difiere en más de 1e-3 o si una regla no coincide.
 import {readFileSync} from 'node:fs';
@@ -36,7 +37,7 @@ console.log(`red: ${ref.questions.length} preguntas · misma intención top-1: $
   `diferencia máxima ${worst.toExponential(2)} ("${worstQ}")`);
 
 // 2. híbrido: keys fuertes/débiles, oosCues (soft anula keys, hard fuerza out_of_scope) y reglas sociales
-const H = ref.hybrid, K = net.compileKeys(E);
+const H = ref.hybrid, K = net.compileKeys(E, M.promoted);
 if (E.keyWeight !== H.keyWeight || E.weakBonus !== H.weakBonus) {
   fails++;
   console.log(`✗ content.js tiene keyWeight=${E.keyWeight} weakBonus=${E.weakBonus}; parity.json espera ${H.keyWeight} ${H.weakBonus}`);
@@ -54,6 +55,15 @@ H.questions.forEach((q, i) => {
 });
 console.log(`híbrido (keyWeight ${H.keyWeight} · weakBonus ${H.weakBonus}): ${H.questions.length} preguntas · ` +
   `mismas reglas (fuerte/débil/forzada): ${ruleOk}/${H.questions.length} · diferencia máxima ${hw.toExponential(2)} · tolerancia ${TOL}`);
+
+// 3. normalización (incluye "m&a" → mna)
+let nOk = 0;
+for (const [t, want] of ref.normalize || []) {
+  const got = net.normalize(t);
+  if (got === want) nOk++;
+  else { fails++; console.log(`✗ normalize: ${JSON.stringify(t)}  (JS ${JSON.stringify(got)} · Python ${JSON.stringify(want)})`); }
+}
+console.log(`normalización: ${nOk}/${(ref.normalize || []).length} iguales`);
 
 console.log(fails ? `FALLA: ${fails} comprobaciones fuera de tolerancia` : 'OK: JS y Python coinciden');
 process.exit(fails ? 1 : 0);
