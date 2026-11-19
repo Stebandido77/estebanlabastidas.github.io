@@ -72,14 +72,25 @@ def featurize(text: str) -> np.ndarray:
     return v / n if n > 0 else v
 
 
-"""Capa de palabras clave (la misma regla en js/elia-net.js)
-  - Cada key se normaliza igual que la pregunta y se parte en palabras.
-  - Un key coincide si sus palabras aparecen seguidas en la pregunta. Cada palabra del key debe ser
-    igual a la de la pregunta o, si ambas tienen 5 letras o más, estar a distancia de Levenshtein ≤ 1.
-  - Si coinciden keys de una sola intención, esa es la intención del key. Si coinciden keys de dos o
-    más intenciones distintas (o de ninguna), no hay intención del key y decide la red.
+"""Capa de palabras clave y reglas (la misma especificación en js/elia-net.js)
+  Coincidencia de una frase: sus palabras normalizadas aparecen seguidas en la pregunta. Cada palabra
+  debe ser igual o, si las dos tienen ≥ 5 letras, estar a distancia de Levenshtein ≤ 1.
+
+  key_intent(text, K) → (intención, "strong" | "weak") o (None, None):
+    1. Si aparece alguna frase de oosCues → (None, None): decide solo la red.
+    2. Si hay keys fuertes ("keys") de exactamente una intención → (esa, "strong").
+       Si son de dos o más → (None, None).
+    3. Si no hay fuertes y hay débiles ("weak") de exactamente una intención → (esa, "weak").
+       Si son de dos o más → (None, None).
+
+  social_intent(text, social) → greeting | goodbye | thanks | None:
+    el mensaje normalizado tiene ≤ 4 palabras y se puede cubrir de izquierda a derecha solo con frases
+    de las listas (en cada posición, la frase más larga primero; coincidencia exacta) y palabras de
+    relleno ("filler"), usando frases de exactamente una de las tres listas.
 """
 KEY_FUZZY_MIN = 5
+SOCIAL_MAX_TOKENS = 4
+SOCIAL_INTENTS = ("greeting", "goodbye", "thanks")
 
 
 def near(a: str, b: str) -> bool:
@@ -97,31 +108,65 @@ def near(a: str, b: str) -> bool:
     return s[i:] == l[i + 1:]
 
 
-def compile_keys(intents: list[dict]) -> list[tuple[str, list[list[str]]]]:
-    out = []
-    for it in intents:
-        ks = [normalize(k).split() for k in it.get("keys", [])]
-        ks = [k for k in ks if k]
-        if ks:
-            out.append((it["id"], ks))
+def phrases(lst) -> list[list[str]]:
+    return [k for k in (normalize(x).split() for x in lst) if k]
+
+
+def contains(q: list[str], kt: list[str]) -> bool:
+    n = len(kt)
+    return any(all(near(kt[j], q[s + j]) for j in range(n)) for s in range(len(q) - n + 1))
+
+
+def compile_keys(elia: dict) -> dict:
+    """elia = DATA.elia → {"strong": [(id, frases)], "weak": [(id, frases)], "cues": frases}"""
+    out = {"strong": [], "weak": [], "cues": phrases(elia.get("oosCues", []))}
+    for it in elia["intents"]:
+        for kind, field in (("strong", "keys"), ("weak", "weak")):
+            ks = phrases(it.get(field, []))
+            if ks:
+                out[kind].append((it["id"], ks))
     return out
 
 
-def key_hits(text: str, compiled) -> list[str]:
+def key_hits(text: str, compiled_list) -> list[str]:
     q = normalize(text).split()
-    hits = []
-    for iid, keys in compiled:
-        for kt in keys:
-            n = len(kt)
-            if any(all(near(kt[j], q[s + j]) for j in range(n)) for s in range(len(q) - n + 1)):
-                hits.append(iid)
-                break
-    return hits
+    return [iid for iid, keys in compiled_list if any(contains(q, kt) for kt in keys)]
 
 
-def match_keys(text: str, compiled) -> str | None:
-    hits = key_hits(text, compiled)
-    return hits[0] if len(hits) == 1 else None
+def key_intent(text: str, K: dict):
+    q = normalize(text).split()
+    if any(contains(q, c) for c in K["cues"]):
+        return None, None
+    for kind in ("strong", "weak"):
+        hits = key_hits(text, K[kind])
+        if len(hits) == 1:
+            return hits[0], kind
+        if hits:
+            return None, None
+    return None, None
+
+
+def social_intent(text: str, social: dict):
+    q = normalize(text).split()
+    if not q or len(q) > SOCIAL_MAX_TOKENS:
+        return None
+    lists = [(iid, sorted(phrases(social.get(iid, [])), key=len, reverse=True)) for iid in SOCIAL_INTENTS]
+    filler = {w for p in phrases(social.get("filler", [])) for w in p}
+    found, i = set(), 0
+    while i < len(q):
+        best = None
+        for iid, ps in lists:
+            m = next((p for p in ps if q[i:i + len(p)] == p), None)
+            if m and (best is None or len(m) > len(best[1])):
+                best = (iid, m)
+        if best:
+            found.add(best[0])
+            i += len(best[1])
+        elif q[i] in filler:
+            i += 1
+        else:
+            return None
+    return found.pop() if len(found) == 1 else None
 
 
 def featurize_many(texts) -> np.ndarray:

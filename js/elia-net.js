@@ -82,10 +82,13 @@
     return {probs, how, ranked};
   }
 
-  /* ── Capa de palabras clave (la misma regla que tools/elia/common.py) ──
-     Un key coincide si sus palabras aparecen seguidas en la pregunta normalizada; cada palabra debe
-     ser igual o, si las dos tienen ≥ 5 letras, estar a distancia de Levenshtein ≤ 1.
-     Si coinciden keys de una sola intención, se devuelve esa; si de dos o más, null (decide la red). */
+  /* ── Keys, guardia de fuera de alcance y reglas sociales (la misma especificación que tools/elia/common.py) ──
+     Una frase coincide si sus palabras aparecen seguidas en la pregunta normalizada; cada palabra debe ser
+     igual o, si las dos tienen ≥ 5 letras, estar a distancia de Levenshtein ≤ 1.
+     keyIntent: con una frase de oosCues → nada; si no, keys fuertes de una sola intención → [id, 'strong'];
+       si no hay fuertes, débiles de una sola → [id, 'weak']; dos o más intenciones → nada (decide la red).
+     socialIntent: ≤ 4 palabras cubiertas solo por frases de UNA lista social (la más larga primero,
+       coincidencia exacta) y palabras de relleno → greeting | goodbye | thanks. */
   function near(a, b) {
     if (a === b) return true;
     if (a.length < 5 || b.length < 5 || Math.abs(a.length - b.length) > 1) return false;
@@ -96,54 +99,87 @@
     return s.slice(i) === l.slice(i + 1);
   }
 
-  /* intents: DATA.elia.intents → [[id, [[palabras del key], …]], …] */
-  function compileKeys(intents) {
-    const out = [];
-    for (const it of intents) {
-      const ks = (it.keys || []).map(k => normalize(k)).filter(Boolean).map(k => k.split(' '));
-      if (ks.length) out.push([it.id, ks]);
+  const words = t => normalize(t).split(' ').filter(Boolean);
+  const phrases = list => (list || []).map(words).filter(p => p.length);
+  function contains(q, kt) {
+    for (let s = 0; s + kt.length <= q.length; s++) if (kt.every((w, j) => near(w, q[s + j]))) return true;
+    return false;
+  }
+
+  /* elia = DATA.elia → {strong: [[id, frases]], weak: [[id, frases]], cues: frases, social} */
+  function compileKeys(elia) {
+    const K = {strong: [], weak: [], cues: phrases(elia.oosCues), social: null};
+    for (const it of elia.intents) {
+      const s = phrases(it.keys), w = phrases(it.weak);
+      if (s.length) K.strong.push([it.id, s]);
+      if (w.length) K.weak.push([it.id, w]);
     }
-    return out;
+    const so = elia.social || {};
+    K.social = {lists: SOCIAL.map(id => [id, phrases(so[id]).sort((a, b) => b.length - a.length)]),
+                filler: new Set(phrases(so.filler).flat())};
+    return K;
+  }
+  const SOCIAL = ['greeting', 'goodbye', 'thanks'];
+
+  function keyHits(text, list) {
+    const q = words(text);
+    return list.filter(([, keys]) => keys.some(kt => contains(q, kt))).map(([id]) => id);
   }
 
-  function keyHits(text, compiled) {
-    const q = normalize(text).split(' ').filter(Boolean), hits = [];
-    for (const [id, keys] of compiled) {
-      const hit = keys.some(kt => {
-        for (let s = 0; s + kt.length <= q.length; s++) if (kt.every((w, j) => near(w, q[s + j]))) return true;
-        return false;
-      });
-      if (hit) hits.push(id);
+  function keyIntent(text, K) {
+    const q = words(text);
+    if (K.cues.some(c => contains(q, c))) return [null, null];
+    for (const kind of ['strong', 'weak']) {
+      const h = keyHits(text, K[kind]);
+      if (h.length === 1) return [h[0], kind];
+      if (h.length) return [null, null];
     }
-    return hits;
+    return [null, null];
   }
 
-  function matchKeys(text, compiled) {
-    const h = keyHits(text, compiled);
-    return h.length === 1 ? h[0] : null;
+  function socialIntent(text, K) {
+    const q = words(text);
+    if (!q.length || q.length > 4) return null;
+    const found = new Set();
+    let i = 0;
+    while (i < q.length) {
+      let best = null;
+      for (const [id, ps] of K.social.lists) {
+        const m = ps.find(p => p.every((w, j) => q[i + j] === w));
+        if (m && (!best || m.length > best[1].length)) best = [id, m];
+      }
+      if (best) { found.add(best[0]); i += best[1].length; }
+      else if (K.social.filler.has(q[i])) i++;
+      else return null;
+    }
+    return found.size === 1 ? [...found][0] : null;
   }
 
-  /* Mezcla la salida de la red con la intención del key (cfg.keyMode / cfg.keyWeight de content.js):
-       mix    p = w · p_red + (1 − w) · [intención del key]
-       bonus  p ∝ p_red · e^w en la intención del key
+  /* Combina la red con las reglas (cfg = DATA.elia):
+       social  p = [intención]                                 (directa, sin red)
+       fuerte  p = keyWeight · p_red + (1 − keyWeight) · [intención]
+       débil   p ∝ p_red · e^weakBonus en la intención          (nunca basta sin la red)
      asks_how no cambia: siempre sale de la red. */
-  function hybrid(M, r, keyId, cfg) {
-    const k = keyId ? M.intents.indexOf(keyId) : -1;
-    if (k < 0 || !cfg.keyMode || cfg.keyMode === 'none') return Object.assign({}, r, {key: null});
-    let probs;
-    if (cfg.keyMode === 'mix') probs = r.probs.map((p, j) => cfg.keyWeight * p + (j === k ? 1 - cfg.keyWeight : 0));
-    else {
-      probs = r.probs.map((p, j) => j === k ? p * Math.exp(cfg.keyWeight) : p);
-      const s = probs.reduce((a, b) => a + b, 0);
-      probs = probs.map(p => p / s);
+  function hybrid(M, r, rule, cfg) {
+    const idx = id => (id ? M.intents.indexOf(id) : -1);
+    let probs = r.probs.slice();
+    const k = idx(rule.key), s = idx(rule.social);
+    if (k >= 0 && rule.kind === 'strong' && cfg.keyWeight < 1) {
+      probs = probs.map((p, j) => cfg.keyWeight * p + (j === k ? 1 - cfg.keyWeight : 0));
+    } else if (k >= 0 && rule.kind === 'weak' && cfg.weakBonus > 0) {
+      probs[k] *= Math.exp(cfg.weakBonus);
+      const sum = probs.reduce((a, b) => a + b, 0);
+      probs = probs.map(p => p / sum);
     }
+    if (s >= 0) probs = probs.map((_, j) => (j === s ? 1 : 0));
     const ranked = M.intents.map((id, j) => [id, probs[j]]).sort((p, q) => q[1] - p[1]);
-    return {probs, how: r.how, ranked, key: keyId};
+    return {probs, how: r.how, ranked, key: rule.key, kind: rule.kind, social: rule.social};
   }
 
-  /* Red + keys: lo que usa la app. compiled = compileKeys(DATA.elia.intents), cfg = DATA.elia. */
-  function ask(M, text, compiled, cfg) {
-    return hybrid(M, predict(M, text), matchKeys(text, compiled), cfg);
+  /* Lo que usa la app: K = compileKeys(DATA.elia), cfg = DATA.elia. */
+  function ask(M, text, K, cfg) {
+    const [key, kind] = keyIntent(text, K);
+    return hybrid(M, predict(M, text), {key, kind, social: socialIntent(text, K)}, cfg);
   }
 
   /* Regla de decisión (la misma que usa tools/elia/train.py para el reporte):
@@ -157,7 +193,7 @@
     return 'miss';
   }
 
-  const api = {normalize, tokens, fnv1a, featurize, predict, decide, near, compileKeys, keyHits, matchKeys, hybrid, ask};
+  const api = {normalize, tokens, fnv1a, featurize, predict, decide, near, compileKeys, keyHits, keyIntent, socialIntent, hybrid, ask};
   if (typeof module === 'object' && module.exports) module.exports = api;
   else root.EliaNet = api;
 })(typeof window !== 'undefined' ? window : globalThis);

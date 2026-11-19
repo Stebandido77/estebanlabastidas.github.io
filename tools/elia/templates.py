@@ -1,6 +1,6 @@
 """Plantillas de preguntas, SOLO para entrenamiento.
 
-Cruza unas 30 plantillas (15 ES y 15 EN) con los keys y los títulos de cada intención de content.js:
+Cruza unas 30 plantillas (15 ES y 15 EN) con los keys (fuertes y débiles) y los títulos de cada intención de content.js:
 "qué es {X}", "tell me about {X}", "cómo hiciste {X}"… Las filas generadas pasan después por
 augment.py (typos, tildes, sinónimos) igual que las preguntas originales.
 
@@ -46,7 +46,7 @@ def generate(intents: list[dict], rng: random.Random, per_intent: int = 30) -> l
     for it in intents:
         if it["id"] in SKIP:
             continue
-        xs = list(dict.fromkeys(list(it.get("keys", [])) + [it["t"]["es"], it["t"]["en"]]))
+        xs = list(dict.fromkeys(list(it.get("keys", [])) + list(it.get("weak", [])) + [it["t"]["es"], it["t"]["en"]]))
         if not xs:
             continue
         tpl = [t for t in TEMPLATES if t[1] == 0 or "how" in it]
