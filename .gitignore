@@ -1,3 +1,4 @@
 # Handoff package (local reference only, not published)
 handoff/
 estebanos-handoff.zip
+__pycache__/
