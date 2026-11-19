@@ -460,13 +460,15 @@ window.DATA = {
        python tools/elia/train.py
      Lo marcado con TODO(esteban) es un borrador inferido: revísalo antes de publicar. */
   "elia": {
-    "threshold": 0.55,
+    "threshold": 0.6,
     "margin": 0.25,
     "howThreshold": 0.5,
     "keyWeight": 0.4,
     "weakBonus": 1.0,
-    "clarify": 0.2,           // debajo de esto no hay "¿Te refieres a…?": se ofrece escribirle a Esteban
+    "clarify": 0.4,           // debajo de esto no hay "¿Te refieres a…?": se ofrece escribirle a Esteban
     "formEndpoint": null,      // URL de Formspree o Web3Forms para enviar desde EL·IA; null = solo Mail
+    /* noPromote: keys débiles que el criterio de datos (≥ 3 activaciones, precisión ≥ 0,95) nunca sube a fuerte */
+    "noPromote": ["github", "repo", "codigo", "code"],
     "formAccessKey": null,     // solo Web3Forms: la access key pública del formulario (ver tools/elia/README.md)
     /* chips: preguntas sugeridas bajo la conversación. ui: textos de la interfaz por idioma. */
     "chips": {
@@ -633,7 +635,7 @@ window.DATA = {
        "open": [["projects", "11"]],
        "links": [["Ceteris Paribus", "https://ceteris-paribus-pearl.vercel.app/"]]},
       {"id": "ceteris_code", "t": {"es": "Código de Ceteris Paribus", "en": "Ceteris Paribus source code"},
-       "keys": ["codigo de ceteris", "ceteris code", "repo de ceteris"], "weak": ["repositorio", "repository", "codigo fuente", "source code", "github", "open source", "codigo abierto"],
+       "keys": ["codigo de ceteris", "ceteris code", "repo de ceteris"], "weak": ["repositorio", "repository", "codigo fuente", "source code", "open source", "codigo abierto"],
        "combo": [["ceteris"], ["codigo", "code", "repo", "repositorio", "github", "source", "fuente"]],
        "a": {"es": "El repositorio de Ceteris Paribus es privado, pero la plataforma es pública y la puedes usar. Si te interesa el código o colaborar, escríbele a Esteban.",
              "en": "The Ceteris Paribus repository is private, but the platform is public and free to use. If you're interested in the code or in collaborating, write to Esteban."},
@@ -793,11 +795,11 @@ window.DATA = {
        "open": [["notes"]],
        "links": [["Substack", "https://substack.com/@estebanlabastidas"], ["X · @Stbandido_", "https://x.com/Stbandido_"]]},
       {"id": "contact", "t": {"es": "Contacto", "en": "Contact"},
-       "keys": ["te escribo", "le escribo", "escribirle", "escribirte", "le puedo escribir", "write to him", "write to you", "email him", "reach him", "reach you", "contactarlo", "contactarte"], "weak": ["contacto", "contactar", "contact", "correo", "email", "mail", "write to"],
-       "a": {"es": "La forma más directa es el correo estebanlabastidasm@javeriana.edu.co (el botón abre Mail con el mensaje listo). También está en LinkedIn y en X como @Stbandido_.",
-             "en": "The most direct way is email: estebanlabastidasm@javeriana.edu.co (the button opens Mail with a draft ready). Esteban is also on LinkedIn and on X as @Stbandido_."},
+       "keys": ["te escribo", "le escribo", "escribirle", "escribirte", "le puedo escribir", "write to him", "write to you", "email him", "reach him", "reach you", "contactarlo", "contactarte", "perfil de github", "github profile", "tu github", "your github", "tienes github"], "weak": ["contacto", "contactar", "contact", "correo", "email", "mail", "write to", "github"],
+       "a": {"es": "La forma más directa es el correo estebanlabastidasm@javeriana.edu.co (el botón abre Mail con el mensaje listo). También está en LinkedIn, en X como @Stbandido_ y en GitHub como github.com/Stebandido77.",
+             "en": "The most direct way is email: estebanlabastidasm@javeriana.edu.co (the button opens Mail with a draft ready). Esteban is also on LinkedIn, on X as @Stbandido_ and on GitHub as github.com/Stebandido77."},
        "open": [["mail"]],
-       "links": [["LinkedIn", "https://www.linkedin.com/in/esteban-labastidas-cmsa%C2%AE-8272a019a/"]]},
+       "links": [["LinkedIn", "https://www.linkedin.com/in/esteban-labastidas-cmsa%C2%AE-8272a019a/"], ["GitHub", "https://github.com/Stebandido77"]]},
       {"id": "cv", "t": {"es": "Hoja de vida (CV)", "en": "Résumé (CV)"},
        "keys": ["cv", "hoja de vida"], "weak": ["curriculum", "=resume"],
        "a": {"es": "El CV está en PDF. También puedes ver la experiencia y la formación en la app Résumé.",

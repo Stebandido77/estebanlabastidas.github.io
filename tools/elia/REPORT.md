@@ -35,7 +35,6 @@ Un key débil actúa como fuerte si en las preguntas de entrenamiento se activa 
 
 | Intención | Key | Todos los datos | Pliegues |
 |---|---|---|---|
-| `ceteris_code` | github | sí | 3/5 |
 | `contact` | contact | sí | 5/5 |
 | `contact` | contacto | sí | 4/5 |
 | `contact` | correo | sí | 3/5 |
@@ -70,25 +69,25 @@ Cada etapa con su propia regla óptima de la grilla. "Anidada": la regla se elig
 |---|---|---|---|---|---|---|---|---|---|
 | Base (solo red) | t 0.70 · m 0.45 · c 0.15 | 46.3 ± 3.2 % | 44.4 ± 5.9 % | 4.9 ± 2.9 % | 4.6 ± 3.6 % | 4.5 ± 3.2 % | 40.7 ± 6.6 % | 8.0 ± 1.7 % | 98.3 ± 3.3 % |
 | + keys fuertes/débiles + guardia OOS | t 0.70 · m 0.00 · c 0.20 · w 0.3 · β 1.0 | 65.2 ± 1.5 % | 63.0 ± 3.4 % | 4.7 ± 2.1 % | 4.4 ± 2.9 % | 4.8 ± 3.5 % | 22.2 ± 3.3 % | 7.9 ± 0.7 % | 98.3 ± 3.3 % |
-| + plantillas | t 0.80 · m 0.00 · c 0.20 · w 0.3 · β 1.0 | 62.4 ± 4.4 % | 60.7 ± 7.6 % | 3.4 ± 1.5 % | 4.3 ± 2.4 % | 5.6 ± 2.9 % | 27.5 ± 5.4 % | 6.7 ± 3.1 % | 89.7 ± 6.2 % |
-| + destilación | t 0.80 · m 0.00 · c 0.20 · w 0.3 · β 1.0 | 64.4 ± 2.8 % | 68.4 ± 5.9 % | 2.6 ± 1.4 % | 3.8 ± 2.3 % | 4.2 ± 2.9 % | 30.1 ± 2.0 % | 2.8 ± 1.5 % | 91.4 ± 5.3 % |
-| (c) destilación sin keys débiles (con reglas sociales y guardia dura) | t 0.60 · m 0.40 · c 0.30 · w 0.4 · β 0.0 | 73.0 ± 3.4 % | 73.4 ± 5.2 % | 4.2 ± 2.4 % | 4.7 ± 2.5 % | 6.1 ± 3.7 % | 18.4 ± 2.1 % | 4.5 ± 2.4 % | 89.7 ± 9.9 % |
-| + reglas sociales y guardia dura (final) | t 0.55 · m 0.25 · c 0.20 · w 0.4 · β 1.0 | 78.5 ± 2.6 % | 77.6 ± 3.1 % | 4.9 ± 1.6 % | 4.3 ± 2.2 % | 4.6 ± 3.1 % | 14.6 ± 2.5 % | 2.1 ± 1.5 % | 88.0 ± 10.2 % |
+| + plantillas | t 0.75 · m 0.00 · c 0.15 · w 0.3 · β 1.0 | 65.5 ± 4.0 % | 63.9 ± 6.5 % | 3.7 ± 0.9 % | 4.0 ± 1.9 % | 6.0 ± 3.0 % | 26.0 ± 4.4 % | 4.7 ± 2.5 % | 89.5 ± 6.5 % |
+| + destilación | t 0.70 · m 0.00 · c 0.40 · w 0.3 · β 1.0 | 72.1 ± 2.3 % | 69.1 ± 7.8 % | 4.5 ± 2.2 % | 4.3 ± 2.4 % | 4.5 ± 2.9 % | 12.9 ± 2.6 % | 10.5 ± 2.1 % | 86.2 ± 8.5 % |
+| (c) destilación sin keys débiles (con reglas sociales y guardia dura) | t 0.65 · m 0.00 · c 0.35 · w 0.3 · β 0.0 | 72.8 ± 4.0 % | 72.1 ± 2.2 % | 4.7 ± 1.6 % | 4.7 ± 2.6 % | 4.8 ± 3.2 % | 15.0 ± 2.4 % | 7.5 ± 2.4 % | 93.2 ± 9.7 % |
+| + reglas sociales y guardia dura (final) | t 0.60 · m 0.25 · c 0.40 · w 0.4 · β 1.0 | 77.9 ± 2.9 % | 77.2 ± 2.6 % | 4.7 ± 1.5 % | 4.3 ± 2.5 % | 4.5 ± 3.1 % | 9.0 ± 2.1 % | 8.4 ± 2.0 % | 89.8 ± 8.1 % |
 
 ## Etapa final por idioma
 
-Regla: threshold 0.55, margin 0.25, clarify 0.2, keyWeight 0.4, weakBonus 1.0 (ya escritos en content.js). Columnas "anidada": la estimación honesta.
+Regla: threshold 0.6, margin 0.25, clarify 0.4, keyWeight 0.4, weakBonus 1.0 (ya escritos en content.js). Columnas "anidada": la estimación honesta.
 
 | Métrica | Todas | Todas (anidada) | ES | ES (anidada) | EN | EN (anidada) | Meta |
 |---|---|---|---|---|---|---|---|
-| Responde bien | 78.5 ± 2.6 % | 77.6 ± 3.1 % | 76.9 ± 1.8 % | 76.6 ± 1.6 % | 80.0 ± 6.9 % | 78.4 ± 7.0 % | ≥ 80 % (referencia) |
-| Responde mal | 4.9 ± 1.6 % | 4.3 ± 2.2 % | 4.9 ± 2.7 % | 4.6 ± 3.1 % | 4.9 ± 1.2 % | 4.1 ± 1.6 % | ≤ 5 % |
-| "¿Te refieres a…?" | 14.6 ± 2.5 % | 15.7 ± 3.8 % | 16.3 ± 4.4 % | 16.7 ± 4.8 % | 12.8 ± 4.3 % | 14.7 ± 5.4 % |  |
-|   … con la correcta entre las 3 opciones | 10.8 ± 2.9 % | 11.7 ± 4.0 % | 13.0 ± 4.5 % | 13.0 ± 4.5 % | 8.4 ± 2.7 % | 10.4 ± 4.1 % |  |
-| Va a correo | 2.1 ± 1.5 % | 2.4 ± 2.0 % | 1.8 ± 1.3 % | 2.2 ± 1.4 % | 2.3 ± 2.2 % | 2.7 ± 2.9 % |  |
-| Accuracy (argmax, tras reglas) | 83.6 ± 2.6 % | 83.6 ± 2.6 % | 83.7 ± 4.9 % | 83.7 ± 4.9 % | 83.4 ± 4.8 % | 83.4 ± 4.8 % |  |
-| Rechazo de out_of_scope | 88.0 ± 10.2 % | 89.7 ± 9.9 % | 84.1 ± 15.8 % | 88.1 ± 16.8 % | 93.1 ± 8.6 % | 93.1 ± 8.6 % | ≥ 85 % |
-| out_of_scope que cae en "¿Te refieres a…?" | 23.9 ± 15.2 % | 25.6 ± 18.1 % | 21.5 ± 20.2 % | 25.5 ± 27.9 % | 25.2 ± 21.3 % | 25.2 ± 21.3 % |  |
+| Responde bien | 77.9 ± 2.9 % | 77.2 ± 2.6 % | 78.0 ± 0.8 % | 77.3 ± 2.2 % | 77.6 ± 6.6 % | 76.8 ± 6.2 % | ≥ 80 % (referencia) |
+| Responde mal | 4.7 ± 1.5 % | 4.3 ± 2.5 % | 4.5 ± 3.1 % | 4.5 ± 3.1 % | 4.9 ± 2.1 % | 4.1 ± 2.4 % | ≤ 5 % |
+| "¿Te refieres a…?" | 9.0 ± 2.1 % | 13.3 ± 2.4 % | 8.0 ± 2.9 % | 12.2 ± 5.1 % | 10.1 ± 4.0 % | 14.9 ± 5.0 % |  |
+|   … con la correcta entre las 3 opciones | 8.3 ± 1.9 % | 10.3 ± 2.6 % | 7.7 ± 3.3 % | 9.9 ± 4.1 % | 8.9 ± 3.3 % | 11.0 ± 3.9 % |  |
+| Va a correo | 8.4 ± 2.0 % | 5.2 ± 3.4 % | 9.5 ± 1.5 % | 6.0 ± 3.3 % | 7.4 ± 4.6 % | 4.3 ± 4.2 % |  |
+| Accuracy (argmax, tras reglas) | 85.2 ± 3.3 % | 85.2 ± 3.3 % | 85.6 ± 3.6 % | 85.6 ± 3.6 % | 84.6 ± 4.5 % | 84.6 ± 4.5 % |  |
+| Rechazo de out_of_scope | 89.8 ± 8.1 % | 91.5 ± 9.1 % | 84.8 ± 15.7 % | 84.8 ± 15.7 % | 97.1 ± 5.7 % | 100.0 ± 0.0 % | ≥ 85 % |
+| out_of_scope que cae en "¿Te refieres a…?" | 17.3 ± 10.6 % | 25.9 ± 9.2 % | 11.3 ± 15.7 % | 20.4 ± 13.4 % | 23.7 ± 14.1 % | 29.9 ± 18.7 % |  |
 
 **Referencia de la validación cruzada (anidada):** responde bien ✗ · responde mal ✓ · responde mal en ES ✓ · rechazo OOS ✓ → no se cumplen todas las referencias. La puerta de publicación es el holdout (arriba).
 
@@ -97,55 +96,53 @@ Regla: threshold 0.55, margin 0.25, clarify 0.2, keyWeight 0.4, weakBonus 1.0 (y
 | Pregunta | Real | Respondió | p1 | Origen |
 |---|---|---|---|---|
 | el hilo de salario minimo e informalidad | `writing` | `desk_minwage` | 1.00 | fuerte |
-| what do you think about inflation forecasting | `interests` | `proj_inflation` | 1.00 | red |
-| usas Power BI | `stack` | `jpm` | 1.00 | red |
-| cómo combinaste el LLM con los modelos econométricos en el paper | `ews` | `paper_llm` | 0.99 | fuerte |
-| desde dónde trabajas | `location` | `job_current` | 0.99 | débil |
+| cómo combinaste el LLM con los modelos econométricos en el paper | `ews` | `paper_llm` | 1.00 | fuerte |
+| desde dónde trabajas | `location` | `job_current` | 1.00 | débil |
 | eres una inteligencia artificial | `elia` | `proj_abi` | 0.99 | red |
-| hace consultorías de valoración | `hire` | `exp_ms` | 0.99 | fuerte |
-| who owns this website | `who` | `site` | 0.98 | red |
-| are you available for consulting work | `hire` | `exp_ms` | 0.98 | fuerte |
-| cuál es el mejor celular | `out_of_scope` | `desk_uncoli` | 0.98 | red |
+| usas Power BI | `stack` | `jpm` | 0.99 | red |
+| what do you think about inflation forecasting | `interests` | `proj_inflation` | 0.98 | red |
+| hace consultorías de valoración | `hire` | `exp_ms` | 0.97 | fuerte |
 | recomiéndame un celular barato | `out_of_scope` | `desk_uncoli` | 0.97 | red |
-| es economista o ingeniero | `education` | `interests` | 0.95 | red |
-| is he an economist or an engineer | `education` | `interests` | 0.91 | red |
+| are you available for consulting work | `hire` | `exp_ms` | 0.97 | fuerte |
+| who owns this website | `who` | `site` | 0.96 | red |
+| es economista o ingeniero | `education` | `interests` | 0.96 | red |
+| which stack did you use for the bvar backtests | `proj_inflation` | `stack` | 0.94 | débil |
+| cuál es el mejor celular | `out_of_scope` | `desk_uncoli` | 0.93 | red |
+| cómo funciona el sistema de agentes para invertir en acciones | `proj_equitydesk` | `ews` | 0.92 | fuerte |
+| cuáles son tus hobbies | `out_of_scope` | `job_current` | 0.91 | red |
 | lo que publicas en X | `writing` | `list_papers` | 0.90 | red |
-| cómo funciona el sistema de agentes para invertir en acciones | `proj_equitydesk` | `ews` | 0.88 | fuerte |
-| which stack did you use for the bvar backtests | `proj_inflation` | `stack` | 0.85 | débil |
-| qué piensas de la inflación este año | `out_of_scope` | `interests` | 0.78 | red |
-| best phone for students | `out_of_scope` | `desk_uncoli` | 0.76 | red |
-| what are your life goals | `out_of_scope` | `elia` | 0.76 | red |
-| which project would you recommend I look at first | `list_projects` | `list_papers` | 0.73 | red |
-| which paper won the FENADECO award | `paper_coca` | `list_papers` | 0.73 | débil |
-| sobre qué ha investigado | `list_papers` | `interests` | 0.71 | red |
-| where can I read your writing | `writing` | `contact` | 0.70 | red |
-| what are your responsibilities right now | `job_current` | `list_papers` | 0.69 | red |
-| dónde escribes | `writing` | `contact` | 0.68 | red |
-| cuáles son tus hobbies | `out_of_scope` | `job_current` | 0.68 | red |
-| a qué te has dedicado estos años | `who` | `list_papers` | 0.67 | red |
+| el prototipo con LLM y agentes | `ews` | `paper_llm` | 0.86 | fuerte |
+| is he an economist or an engineer | `education` | `interests` | 0.85 | red |
+| which paper won the FENADECO award | `paper_coca` | `list_papers` | 0.81 | débil |
+| where can I read your writing | `writing` | `contact` | 0.80 | red |
+| which project would you recommend I look at first | `list_projects` | `list_papers` | 0.79 | red |
+| are you on X | `contact` | `location` | 0.75 | red |
+| what are your responsibilities right now | `job_current` | `list_papers` | 0.73 | red |
+| con qué herramientas trabajas los datos | `stack` | `job_current` | 0.72 | débil |
+| qué piensas de la inflación este año | `out_of_scope` | `interests` | 0.71 | red |
+| cuál es la capital de francia | `out_of_scope` | `skills_finance` | 0.65 | red |
+| can I see your resume | `cv` | `list_papers` | 0.65 | débil |
+| best phone for students | `out_of_scope` | `desk_uncoli` | 0.64 | red |
+| how does your equity research workflow work | `proj_equitydesk` | `list_papers` | 0.64 | red |
 | who is behind estebanOS | `who` | `site` | 0.60 | fuerte |
-| mil gracias por la info | `thanks` | `interests` | 0.58 | red |
-| qué opinas de petro | `out_of_scope` | `interests` | 0.58 | red |
-| what have you been up to lately | `latest` | `list_papers` | 0.58 | red |
-| are you chatgpt | `elia` | `location` | 0.56 | red |
-| your research using Saber 11 data | `list_papers` | `interests` | 0.56 | red |
+| cuáles son tus funciones actuales | `job_current` | `list_papers` | 0.60 | red |
 
 ## Intenciones que más se quedan sin responder ("¿Te refieres a…?" o correo)
 
-`who` (15), `contact` (9), `latest` (9), `hire` (8), `interests` (7), `stack` (6), `education` (5), `list_papers` (5), `elia` (3), `job_current` (3), `cv` (2), `list_projects` (2), `plates` (2), `location` (2), `proj_saccr` (1)
+`who` (16), `list_papers` (9), `interests` (8), `latest` (8), `hire` (7), `contact` (7), `education` (6), `stack` (5), `elia` (3), `list_projects` (3), `job_current` (3), `proj_saccr` (2), `plates` (2), `jpm` (1), `proj_pgn` (1)
 
 ## asks_how (red de la etapa final, suma de los pliegues)
 
-Accuracy 95.9 ± 2.4 %.
+Accuracy 96.6 ± 2.3 %.
 
 | | predice how=0 | predice how=1 |
 |---|---|---|
-| **real how=0** | 526 | 8 |
-| **real how=1** | 16 | 42 |
+| **real how=0** | 528 | 6 |
+| **real how=1** | 14 | 44 |
 
 ## Exportación
 
-- Modelo final: 100 % de las preguntas y las plantillas, 43 épocas (mediana de la validación cruzada), T = 0.725 (mediana).
+- Modelo final: 100 % de las preguntas y las plantillas, 38 épocas (mediana de la validación cruzada), T = 0.617 (mediana).
 - `assets/data/elia-model.js`: **348.0 KB** (meta ≤ 400 KB). Pesos int8 con escala por capa; coincide con el modelo en float en el 100.0 % de las predicciones.
 - Paridad Python ↔ JS: `node tools/elia/test_parity.mjs` (50 preguntas solo red + 60 con keys, guardia y reglas sociales; tolerancia 1e-3).
 - Holdout de Esteban: `python tools/elia/eval_holdout.py` (lee `tools/elia/data/holdout.csv`).

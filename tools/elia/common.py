@@ -176,13 +176,15 @@ def promote_keys(elia: dict, texts: list[str], labels: list[str]) -> dict:
     """Keys débiles que los datos de entrenamiento muestran exclusivos de su intención: se activan en
     ≥ PROMOTE_MIN preguntas y, de esas, una fracción ≥ PROMOTE_PRECISION es de la propia intención.
     Solo con las preguntas escritas a mano que se le pasen (en la validación cruzada, las del pliegue
-    de entrenamiento), nunca con variantes ni plantillas. → {intención: [keys]}"""
+    de entrenamiento), nunca con variantes ni plantillas. Los keys de DATA.elia.noPromote nunca suben.
+    → {intención: [keys]}"""
     qs = [normalize(t).split() for t in texts]
+    never = {normalize(x.lstrip("=")) for x in elia.get("noPromote", [])}   # nunca suben a fuerte
     out = {}
     for it in elia["intents"]:
         for k in it.get("weak", []):
             (w, ex), = key_phrases([k]) or [(None, None)]
-            if not w:
+            if not w or " ".join(w) in never:
                 continue
             hits = [lab for q, lab in zip(qs, labels) if contains(q, w, ex)]
             if len(hits) >= PROMOTE_MIN and hits.count(it["id"]) / len(hits) >= PROMOTE_PRECISION:

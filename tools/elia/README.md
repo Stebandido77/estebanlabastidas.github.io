@@ -24,6 +24,10 @@ está a una letra de distancia (palabras de 5+ letras) o como prefijo cuando la 
 - **Fuertes** (`keys`): alias que solo pueden ser de esa intención (`uncoli`, `pulso`, `calypso`).
   Si aparecen los de una sola intención, deciden casi solos.
 - **Débiles** (`weak`): palabras genéricas (`celular`, `budget`, `mapa`). Solo suben un poco la
+- **Promovidos por los datos:** un débil actúa como fuerte si en las preguntas de entrenamiento se
+  activa ≥ 3 veces y ≥ 95 % de ellas son de su intención (`train.py` guarda la lista en
+  `elia-model.js`). Los de `noPromote` (`github`, `repo`, `codigo`, `code`) nunca suben.
+- **Combinaciones** (`combo`): una palabra de cada grupo, en cualquier orden ("ceteris" + "github").
   probabilidad; nunca bastan sin la red.
 - Si aparecen keys de dos intenciones, decide solo la red.
 - `oosCues.soft` ("qué opinas de", "el mejor", "recommend"…): se anulan los keys y decide la red.
