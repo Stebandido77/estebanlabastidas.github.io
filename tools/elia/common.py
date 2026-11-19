@@ -123,18 +123,31 @@ def phrases(lst) -> list[list[str]]:
     return [k for k in (normalize(x).split() for x in lst) if k]
 
 
-def contains(q: list[str], kt: list[str]) -> bool:
+def key_phrases(lst) -> list[tuple[list[str], bool]]:
+    """Keys de una intención → [(palabras, exacto)]. Un key que empieza con "=" ("=resume") es exacto:
+    cada palabra debe ser idéntica, sin distancia de una letra ni prefijo."""
+    out = []
+    for x in lst:
+        exact = x.startswith("=")
+        w = normalize(x[1:] if exact else x).split()
+        if w:
+            out.append((w, exact))
+    return out
+
+
+def contains(q: list[str], kt: list[str], exact: bool = False) -> bool:
     n = len(kt)
-    return any(all(near(kt[j], q[s + j]) for j in range(n)) for s in range(len(q) - n + 1))
+    eq = (lambda a, b: a == b) if exact else near
+    return any(all(eq(kt[j], q[s + j]) for j in range(n)) for s in range(len(q) - n + 1))
 
 
 def compile_keys(elia: dict) -> dict:
-    """elia = DATA.elia → {"strong": [(id, frases)], "weak": [(id, frases)], "hard": frases, "soft": frases}"""
+    """elia = DATA.elia → {"strong": [(id, [(palabras, exacto)])], "weak": […], "hard": frases, "soft": frases}"""
     cues = elia.get("oosCues", {})
     out = {"strong": [], "weak": [], "hard": phrases(cues.get("hard", [])), "soft": phrases(cues.get("soft", []))}
     for it in elia["intents"]:
         for kind, field in (("strong", "keys"), ("weak", "weak")):
-            ks = phrases(it.get(field, []))
+            ks = key_phrases(it.get(field, []))
             if ks:
                 out[kind].append((it["id"], ks))
     return out
@@ -142,7 +155,7 @@ def compile_keys(elia: dict) -> dict:
 
 def key_hits(text: str, compiled_list) -> list[str]:
     q = normalize(text).split()
-    return [iid for iid, keys in compiled_list if any(contains(q, kt) for kt in keys)]
+    return [iid for iid, keys in compiled_list if any(contains(q, kt, ex) for kt, ex in keys)]
 
 
 def key_intent(text: str, K: dict):

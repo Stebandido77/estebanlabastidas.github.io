@@ -106,8 +106,14 @@
 
   const words = t => normalize(t).split(' ').filter(Boolean);
   const phrases = list => (list || []).map(words).filter(p => p.length);
-  function contains(q, kt) {
-    for (let s = 0; s + kt.length <= q.length; s++) if (kt.every((w, j) => near(w, q[s + j]))) return true;
+  /* keys de una intención → [{w: palabras, exact}]; "=resume" es exacto: sin distancia de una letra ni prefijo */
+  const keyPhrases = list => (list || []).map(k => {
+    const exact = k.startsWith('=');
+    return {w: words(exact ? k.slice(1) : k), exact};
+  }).filter(p => p.w.length);
+  function contains(q, kt, exact) {
+    const eq = exact ? (a, b) => a === b : near;
+    for (let s = 0; s + kt.length <= q.length; s++) if (kt.every((w, j) => eq(w, q[s + j]))) return true;
     return false;
   }
 
@@ -116,7 +122,7 @@
     const cues = elia.oosCues || {};
     const K = {strong: [], weak: [], hard: phrases(cues.hard), soft: phrases(cues.soft), social: null};
     for (const it of elia.intents) {
-      const s = phrases(it.keys), w = phrases(it.weak);
+      const s = keyPhrases(it.keys), w = keyPhrases(it.weak);
       if (s.length) K.strong.push([it.id, s]);
       if (w.length) K.weak.push([it.id, w]);
     }
@@ -129,7 +135,7 @@
 
   function keyHits(text, list) {
     const q = words(text);
-    return list.filter(([, keys]) => keys.some(kt => contains(q, kt))).map(([id]) => id);
+    return list.filter(([, keys]) => keys.some(k => contains(q, k.w, k.exact))).map(([id]) => id);
   }
 
   function keyIntent(text, K) {

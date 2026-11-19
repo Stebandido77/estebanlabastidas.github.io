@@ -70,7 +70,8 @@ def generate(intents: list[dict], rng: random.Random, per_intent: int = 30) -> l
     for it in intents:
         if it["id"] in SKIP:
             continue
-        xs = list(dict.fromkeys(list(it.get("keys", [])) + list(it.get("weak", [])) + [it["t"]["es"], it["t"]["en"]]))
+        keys = [k.lstrip("=") for k in list(it.get("keys", [])) + list(it.get("weak", []))]   # "=" marca keys exactos
+        xs = list(dict.fromkeys(keys + [it["t"]["es"], it["t"]["en"]]))
         if not xs:
             continue
         tpl = [t for t in TEMPLATES if t[1] == 0 or "how" in it]
