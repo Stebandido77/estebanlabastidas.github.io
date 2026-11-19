@@ -89,7 +89,8 @@
      distancia de Levenshtein ≤ 1.
      forcedIntent: regla social → greeting | goodbye | thanks; si no, una frase de oosCues.hard → out_of_scope
        (EL·IA nunca responde). En los dos casos no se usa la red para decidir.
-     keyIntent: con una frase de oosCues (soft o hard) → nada; si no, keys fuertes de una sola intención → [id, 'strong'];
+     keyIntent: con una frase de oosCues (soft o hard) → nada; si una "combo" (una palabra de cada grupo) coincide
+       para una sola intención → [id, 'strong']; si no, keys fuertes de una sola intención → [id, 'strong'];
        si no hay fuertes, débiles de una sola → [id, 'weak']; dos o más intenciones → nada (decide la red).
      socialIntent: ≤ 4 palabras cubiertas solo por frases de UNA lista social (la más larga primero,
        coincidencia exacta) y palabras de relleno → greeting | goodbye | thanks. */
@@ -123,8 +124,9 @@
      intención y actúan como fuertes (tools/elia/common.py → promote_keys). */
   function compileKeys(elia, promoted) {
     const cues = elia.oosCues || {};
-    const K = {strong: [], weak: [], hard: phrases(cues.hard), soft: phrases(cues.soft), social: null};
+    const K = {strong: [], weak: [], combo: [], hard: phrases(cues.hard), soft: phrases(cues.soft), social: null};
     for (const it of elia.intents) {
+      if (it.combo) K.combo.push([it.id, it.combo.map(keyPhrases)]);
       const up = new Set((promoted || {})[it.id] || []);
       const s = keyPhrases((it.keys || []).concat((it.weak || []).filter(k => up.has(k))));
       const w = keyPhrases((it.weak || []).filter(k => !up.has(k)));
@@ -146,6 +148,9 @@
   function keyIntent(text, K) {
     const q = words(text);
     if (K.hard.concat(K.soft).some(c => contains(q, c))) return [null, null];
+    /* combo: una palabra de CADA grupo, en cualquier orden; si pasa para una sola intención, gana */
+    const combo = K.combo.filter(([, gs]) => gs.every(g => g.some(k => contains(q, k.w, k.exact)))).map(([id]) => id);
+    if (combo.length === 1) return [combo[0], 'strong'];
     for (const kind of ['strong', 'weak']) {
       const h = keyHits(text, K[kind]);
       if (h.length === 1) return [h[0], kind];

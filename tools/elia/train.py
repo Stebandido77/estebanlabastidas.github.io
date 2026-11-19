@@ -450,11 +450,12 @@ def main():
     ap.add_argument("--aug", type=int, default=8, help="variantes por pregunta original")
     ap.add_argument("--tpl", type=int, default=40, help="filas de plantillas por intención (0 = sin plantillas)")
     ap.add_argument("--tpl-aug", type=int, default=1, help="variantes por fila de plantilla")
-    ap.add_argument("--distill", type=float, default=0.0, help="λ de la destilación (0 = sin destilación)")
+    ap.add_argument("--distill", type=float, default=0.5, help="λ de la destilación (0 = sin destilación)")
     ap.add_argument("--pool", type=int, default=6000, help="textos generados en el pool sin etiquetas")
-    ap.add_argument("--knn-k", type=int, default=10)
+    ap.add_argument("--knn-k", type=int, default=20)
     ap.add_argument("--knn-tau", type=float, default=0.05)
     ap.add_argument("--embed-python", default="py -3.12", help="intérprete con sentence-transformers para embed.py")
+    ap.add_argument("--only-distill", action="store_true", help="solo la validación cruzada destilada (barridos)")
     ap.add_argument("--class-weight", choices=["inverse", "sqrt", "none"], default="inverse")
     ap.add_argument("--lr", type=float, default=3e-3)
     ap.add_argument("--l2", type=float, default=1e-4)
@@ -553,14 +554,16 @@ def main():
 
     hybrids = [(w, b) for w in W_GRID for b in B_GRID]
     ev = lambda P, s_, w_, o_, hy: evaluate_stage(P, y, s_, w_, o_, fold, cfg.folds, L, oos, hy)
-    fold, PA, HA, epsA, TsA = run_cv(None, "base")
-    stages = [("Base (solo red)", ev(PA, none, none, none, [(1.0, 0.0)]), PA, HA, epsA, TsA, False),
-              ("+ keys fuertes/débiles + guardia OOS", ev(PA, sk, wk, none, hybrids), PA, HA, epsA, TsA, False)]
-    if extra is not None:
-        _, PB, HB, epsB, TsB = run_cv(extra, "plantillas")
-        stages.append(("+ plantillas", ev(PB, sk, wk, none, hybrids), PB, HB, epsB, TsB, True))
-    else:
-        PB, HB, epsB, TsB = PA, HA, epsA, TsA
+    fold, stages, PA, PB = fold0, [], None, None
+    if not cfg.only_distill:   # --only-distill (para barridos): salta base y plantillas sin destilar
+        fold, PA, HA, epsA, TsA = run_cv(None, "base")
+        stages = [("Base (solo red)", ev(PA, none, none, none, [(1.0, 0.0)]), PA, HA, epsA, TsA, False),
+                  ("+ keys fuertes/débiles + guardia OOS", ev(PA, sk, wk, none, hybrids), PA, HA, epsA, TsA, False)]
+        if extra is not None:
+            _, PB, HB, epsB, TsB = run_cv(extra, "plantillas")
+            stages.append(("+ plantillas", ev(PB, sk, wk, none, hybrids), PB, HB, epsB, TsB, True))
+        else:
+            PB, HB, epsB, TsB = PA, HA, epsA, TsA
     PD = None
     if cfg.distill:
         _, PD, HD, epsD, TsD = run_cv(extra, "destilación", distill=True)
@@ -570,8 +573,8 @@ def main():
         PB, HB, epsB, TsB = PD, HD, epsD, TsD
     stages.append(("+ reglas sociales y guardia dura (final)", ev(PB, sk, wk, so, hybrids), PB, HB, epsB, TsB, extra is not None))
     if cfg.dump:
-        np.savez(cfg.dump, PA=PA, PB=PB, fold=fold, y=y, sk=sk, wk=wk, so=so, L=L, HB=HB, h=h,
-                 **({"PD": PD} if PD is not None else {}))
+        np.savez(cfg.dump, fold=fold, y=y, sk=sk, wk=wk, so=so, L=L, HB=HB, h=h,
+                 **{k: v for k, v in (("PA", PA), ("PB", PB), ("PD", PD)) if v is not None})
     for name, st, *_ in stages:
         p = st["params"]
         if p:
@@ -634,6 +637,8 @@ def main():
             "thank you so much", "hi what is pulso", "Thanks!!", "adiós", "hola qué tal",
             "cuéntame un chiste", "translate this to german", "qué clima hace en bogotá", "write my essay on pulso",
             "tienes experiencia en M&A?", "what is your m & a experience", "I'm a recruiter at a bank",
+            "dónde le escribo", "cómo te escribo", "qué escribe Esteban", "puedo ver el código de ceteris",
+            "qué es ceteris paribus", "is the source of ceteris public", "which roles interest you",
             "cuál es tu mejor proyecto", "what paper do you recommend"]
         pp, ph = quantized_predict(Q, feats(sample), final_T)
         hq, _ = quantized_predict(Q, feats(hsample), final_T)
@@ -672,12 +677,16 @@ def write_report(cfg, rows, ids, sk, wk, so, y, Lg, stages, how_cm, how_acc, fin
     L.append("**Lo que decide si EL·IA se publica es el holdout, no esta validación cruzada:** "
              "`python tools/elia/eval_holdout.py` sobre `tools/elia/data/holdout.csv` (preguntas que escribe Esteban y "
              "que nunca entran al entrenamiento ni sirven para ajustar keys). Las tres metas del holdout, sobre todas sus "
-             "preguntas, deben cumplirse: **correctas ≥ 70 %; correctas + \"¿Te refieres a…?\" con una opción válida "
-             "≥ 85 %; equivocadas ≤ 5 %.** Una respuesta es correcta si coincide con `intent` o con alguna de `alt`; si "
+             "preguntas, deben cumplirse: **correctas ≥ 65 %; correctas + \"¿Te refieres a…?\" con una opción válida "
+             "≥ 85 %; equivocadas ≤ 5 %.** Aviso que no bloquea si las equivocadas en ES pasan de 6 %. Una respuesta es correcta si coincide con `intent` o con alguna de `alt`; si "
              "`out_of_scope` es válida, mandar al correo también cuenta. `dev_holdout.csv` (el holdout anterior) ya se "
              "usó para decidir cambios y solo es referencia. El 80 % de respuestas correctas de la validación cruzada "
              "es una referencia, no un requisito: con pocas preguntas por intención, la cifra se mueve varios puntos "
              "según el reparto de los pliegues (73–80 % con el mismo diseño en dos semillas).\n")
+    L.append("**Cambio de criterio (2026-11-19), fijado antes de ver el holdout definitivo:** la primera meta bajó de "
+             "≥ 70 % a ≥ 65 % de respuestas correctas, y se agregó el aviso de ES. Es un criterio de producto: un \"¿Te "
+             "refieres a…?\" con la opción correcta le cuesta al visitante un clic, mientras que una respuesta "
+             "equivocada hace daño; por eso se mantienen las metas de respuestas útiles (≥ 85 %) y equivocadas (≤ 5 %).\n")
     L.append("## Configuración\n")
     L.append(f"- Red: {DIM} → {cfg.hidden} (ReLU, dropout {cfg.dropout}) → {len(ids)} (softmax) + asks_how (sigmoide). "
              f"Pérdida: CE con pesos de clase `{cfg.class_weight}` + {cfg.how_weight} × BCE(asks_how) + L2 {cfg.l2}. "

@@ -33,11 +33,14 @@ está a una letra de distancia (palabras de 5+ letras) o como prefijo cuando la 
 
 ## Reentrenar
 
-Requisitos: Python 3 con NumPy y Node (para leer `content.js`). Nada más.
+Requisitos: Python 3 con NumPy y Node (para leer `content.js`). Para la destilación, además, un
+segundo intérprete con `sentence-transformers` y `torch` (por defecto `py -3.12`; cámbialo con
+`--embed-python`) y el modelo `intfloat/multilingual-e5-base` en la caché de Hugging Face: corre sin
+conexión y solo durante el entrenamiento. Sin eso, `--distill 0` entrena sin destilación.
 
 ```sh
 python tools/elia/augment.py          # valida questions.csv contra content.js
-python tools/elia/train.py            # ~10 min: validación cruzada, modelo, regla y REPORT.md
+python tools/elia/train.py            # ~50 min: validación cruzada (con destilación), modelo, regla y REPORT.md
 node tools/elia/test_parity.mjs       # JS y Python dan lo mismo (tolerancia 1e-3)
 python tools/elia/eval_holdout.py     # métricas sobre tus preguntas de prueba
 ```
@@ -48,9 +51,13 @@ umbrales (`threshold`, `margin`, `clarify`, `keyWeight`, `weakBonus`) en `conten
 **La puerta de publicación es el holdout, no el reporte.** `eval_holdout.py` debe cumplir las tres
 metas, sobre todas las preguntas (sale con código 1 si no):
 
-- correctas ≥ 70 %;
+- correctas ≥ 65 %;
 - correctas + "¿Te refieres a…?" con una opción válida ≥ 85 %;
 - equivocadas ≤ 5 %.
+
+Además avisa, sin bloquear, si las equivocadas en español pasan de 6 %. La primera meta era 70 % y
+bajó a 65 % el 2026-11-19, antes de escribir el holdout definitivo: un "¿Te refieres a…?" con la
+opción correcta cuesta un clic; una respuesta equivocada hace daño.
 
 Una respuesta es correcta si coincide con `intent` o con alguna intención de `alt` (separadas por
 `|`); si `out_of_scope` es válida, mandar al correo también cuenta. El reporte de la
@@ -70,6 +77,7 @@ Archivos:
 | `augment.py` | Variantes con typos, sin tildes y sinónimos (solo entrenamiento) |
 | `templates.py` | Plantillas "qué es {X}" × keys (solo entrenamiento) |
 | `train.py` | Entrenamiento, grilla de la regla, exportación y reporte |
+| `embed.py` | Embeddings del profesor (e5-base) para la destilación; caché en `.cache/` (ignorada) |
 | `test_parity.mjs` | Paridad Python ↔ JS |
 | `eval_holdout.py` | Evalúa el modelo exportado sobre `holdout.csv` |
 

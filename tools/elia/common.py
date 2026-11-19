@@ -88,6 +88,9 @@ def featurize(text: str) -> np.ndarray:
 
   key_intent(text, K) → (intención, "strong" | "weak") o (None, None):
     1. Si aparece alguna frase de oosCues (soft o hard) → (None, None): decide solo la red.
+    1b. Combinaciones ("combo": grupos de palabras): si la pregunta tiene una palabra de CADA grupo, en
+       cualquier orden ("ceteris" + "codigo"), y eso pasa para exactamente una intención → (esa, "strong"),
+       por encima de los demás keys fuertes.
     2. Si hay keys fuertes ("keys") de exactamente una intención → (esa, "strong").
        Si son de dos o más → (None, None).
     3. Si no hay fuertes y hay débiles ("weak") de exactamente una intención → (esa, "weak").
@@ -153,9 +156,12 @@ def compile_keys(elia: dict, promoted: dict | None = None) -> dict:
     """elia = DATA.elia → {"strong": [(id, [(palabras, exacto)])], "weak": […], "hard": frases, "soft": frases}.
     promoted = {intención: [keys de "weak" que actúan como fuertes]} (ver promote_keys)."""
     cues = elia.get("oosCues", {})
-    out = {"strong": [], "weak": [], "hard": phrases(cues.get("hard", [])), "soft": phrases(cues.get("soft", []))}
+    out = {"strong": [], "weak": [], "combo": [],
+           "hard": phrases(cues.get("hard", [])), "soft": phrases(cues.get("soft", []))}
     promoted = promoted or {}
     for it in elia["intents"]:
+        if it.get("combo"):
+            out["combo"].append((it["id"], [key_phrases(g) for g in it["combo"]]))
         up = set(promoted.get(it["id"], []))
         strong = list(it.get("keys", [])) + [k for k in it.get("weak", []) if k in up]
         weak = [k for k in it.get("weak", []) if k not in up]
@@ -193,6 +199,10 @@ def key_intent(text: str, K: dict):
     q = normalize(text).split()
     if any(contains(q, c) for c in K["hard"] + K["soft"]):
         return None, None
+    combo = [iid for iid, groups in K.get("combo", [])
+             if all(any(contains(q, w, ex) for w, ex in g) for g in groups)]
+    if len(combo) == 1:
+        return combo[0], "strong"
     for kind in ("strong", "weak"):
         hits = key_hits(text, K[kind])
         if len(hits) == 1:

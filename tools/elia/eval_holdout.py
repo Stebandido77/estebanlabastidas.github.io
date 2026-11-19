@@ -24,10 +24,12 @@ Cada pregunta cae en uno de cuatro resultados:
   correo     no responde y ofrece escribirle a Esteban, cuando out_of_scope no era válida.
 
 Puerta de publicación, sobre TODAS las preguntas del holdout; las tres deben cumplirse:
-  correctas ≥ 70 %
+  correctas ≥ 65 %
   correctas + "¿Te refieres a…?" con una opción válida ≥ 85 %
   equivocadas ≤ 5 %
+Además, un aviso que NO bloquea si las equivocadas en ES pasan de 6 %.
 Sale con código 1 si no se cumple (con --dev, siempre 0: es solo referencia).
+(2026-11-19: la primera meta bajó de 70 % a 65 % antes de escribir el holdout definitivo; ver REPORT.md.)
 """
 from __future__ import annotations
 
@@ -49,7 +51,8 @@ from train import OOS, apply_keys, rule_indices, sigmoid, softmax  # noqa: E402
 MODEL = ROOT / "assets" / "data" / "elia-model.js"
 HOLDOUT = HERE / "data" / "holdout.csv"
 DEV = HERE / "data" / "dev_holdout.csv"
-GOAL_CORRECT, GOAL_USEFUL, GOAL_WRONG = 0.70, 0.85, 0.05   # puerta: correctas, correctas + opción válida, equivocadas
+GOAL_CORRECT, GOAL_USEFUL, GOAL_WRONG = 0.65, 0.85, 0.05   # puerta: correctas, correctas + opción válida, equivocadas
+WARN_WRONG_ES = 0.06   # aviso (no bloquea) si las equivocadas en español pasan de esto
 OUTCOMES = ("correcta", "equivocada", "¿Te refieres a…?", "correo")
 
 
@@ -169,6 +172,13 @@ def main():
     for label, c in checks:
         print(f"  {'✓' if c else '✗'} {label}")
     print("  → " + ("cumple las tres" if ok else "no cumple las tres") + ("" if args.dev else (" · SE PUEDE PUBLICAR" if ok else " · NO SE PUBLICA")))
+    es = [x for x, lg in zip(res, L) if lg == "es"]
+    if es:
+        bad_es = sum(x["out"] == "equivocada" for x in es) / len(es)
+        if bad_es > WARN_WRONG_ES:
+            print(f"  ⚠ aviso (no bloquea): equivocadas en ES {100 * bad_es:.1f} % (> {WARN_WRONG_ES:.0%}, {len(es)} preguntas en ES)")
+        else:
+            print(f"  equivocadas en ES {100 * bad_es:.1f} % (aviso si > {WARN_WRONG_ES:.0%})")
     print(f"  con {n} preguntas, cada una mueve {100 / n:.1f} puntos.")
     sys.exit(0 if ok or args.dev else 1)
 

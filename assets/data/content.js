@@ -460,10 +460,10 @@ window.DATA = {
        python tools/elia/train.py
      Lo marcado con TODO(esteban) es un borrador inferido: revísalo antes de publicar. */
   "elia": {
-    "threshold": 0.75,
-    "margin": 0.0,
+    "threshold": 0.55,
+    "margin": 0.25,
     "howThreshold": 0.5,
-    "keyWeight": 0.5,
+    "keyWeight": 0.4,
     "weakBonus": 1.0,
     "clarify": 0.2,           // debajo de esto no hay "¿Te refieres a…?": se ofrece escribirle a Esteban
     "formEndpoint": null,      // URL de Formspree o Web3Forms para enviar desde EL·IA; null = solo Mail
@@ -634,6 +634,7 @@ window.DATA = {
        "links": [["Ceteris Paribus", "https://ceteris-paribus-pearl.vercel.app/"]]},
       {"id": "ceteris_code", "t": {"es": "Código de Ceteris Paribus", "en": "Ceteris Paribus source code"},
        "keys": ["codigo de ceteris", "ceteris code", "repo de ceteris"], "weak": ["repositorio", "repository", "codigo fuente", "source code", "github", "open source", "codigo abierto"],
+       "combo": [["ceteris"], ["codigo", "code", "repo", "repositorio", "github", "source", "fuente"]],
        "a": {"es": "El repositorio de Ceteris Paribus es privado, pero la plataforma es pública y la puedes usar. Si te interesa el código o colaborar, escríbele a Esteban.",
              "en": "The Ceteris Paribus repository is private, but the platform is public and free to use. If you're interested in the code or in collaborating, write to Esteban."},
        "open": [["mail"]],
@@ -792,7 +793,7 @@ window.DATA = {
        "open": [["notes"]],
        "links": [["Substack", "https://substack.com/@estebanlabastidas"], ["X · @Stbandido_", "https://x.com/Stbandido_"]]},
       {"id": "contact", "t": {"es": "Contacto", "en": "Contact"},
-       "keys": [], "weak": ["contacto", "contactar", "contact", "escribirle", "correo", "email", "mail", "write to", "reach him"],
+       "keys": ["te escribo", "le escribo", "escribirle", "escribirte", "le puedo escribir", "write to him", "write to you", "email him", "reach him", "reach you", "contactarlo", "contactarte"], "weak": ["contacto", "contactar", "contact", "correo", "email", "mail", "write to"],
        "a": {"es": "La forma más directa es el correo estebanlabastidasm@javeriana.edu.co (el botón abre Mail con el mensaje listo). También está en LinkedIn y en X como @Stbandido_.",
              "en": "The most direct way is email: estebanlabastidasm@javeriana.edu.co (the button opens Mail with a draft ready). Esteban is also on LinkedIn and on X as @Stbandido_."},
        "open": [["mail"]],
@@ -804,7 +805,7 @@ window.DATA = {
        "open": [["path"]],
        "links": [["CV (PDF)", "assets/docs/CV_Esteban_Labastidas.pdf"]]},
       {"id": "hire", "t": {"es": "Colaborar o contratar", "en": "Collaborate or hire"},
-       "keys": [], "weak": ["contratar", "contratarlo", "hire", "hiring", "freelance", "job offer", "oferta laboral", "colaborar", "collaborate", "collaboration", "colaboracion", "trabajar con", "work with", "available", "availability", "disponible", "disponibilidad"],
+       "keys": [], "weak": ["contratar", "contratarlo", "hire", "hiring", "freelance", "job offer", "oferta laboral", "colaborar", "collaborate", "collaboration", "colaboracion", "trabajar con", "work with", "available", "availability", "disponible", "disponibilidad", "roles", "positions", "cargos", "vacantes", "oportunidades", "opportunities"],
        "a": {"es": "Esteban está abierto a colaboraciones de investigación, valoración y M&A. Escríbele contando la idea.",
              "en": "Esteban is open to research, valuation and M&A collaborations. Write with your idea."},
        "open": [["mail"]]},
