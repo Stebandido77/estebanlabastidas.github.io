@@ -35,7 +35,7 @@ ref.questions.forEach((q, i) => {
 console.log(`red: ${ref.questions.length} preguntas · misma intención top-1: ${top1}/${ref.questions.length} · ` +
   `diferencia máxima ${worst.toExponential(2)} ("${worstQ}")`);
 
-// 2. híbrido: keys fuertes/débiles, guardia oosCues y reglas sociales de content.js
+// 2. híbrido: keys fuertes/débiles, oosCues (soft anula keys, hard fuerza out_of_scope) y reglas sociales
 const H = ref.hybrid, K = net.compileKeys(E);
 if (E.keyWeight !== H.keyWeight || E.weakBonus !== H.weakBonus) {
   fails++;
@@ -44,8 +44,8 @@ if (E.keyWeight !== H.keyWeight || E.weakBonus !== H.weakBonus) {
 let hw = 0, ruleOk = 0;
 H.questions.forEach((q, i) => {
   const r = net.ask(M, q, K, {keyWeight: H.keyWeight, weakBonus: H.weakBonus});
-  const js = [r.kind === 'strong' ? r.key : null, r.kind === 'weak' ? r.key : null, r.social];
-  const py = [H.strong[i], H.weak[i], H.social[i]];
+  const js = [r.kind === 'strong' ? r.key : null, r.kind === 'weak' ? r.key : null, r.forced];
+  const py = [H.strong[i], H.weak[i], H.forced[i]];
   if (JSON.stringify(js) === JSON.stringify(py)) ruleOk++;
   else { fails++; console.log(`✗ reglas: ${q}  (JS ${JSON.stringify(js)} · Python ${JSON.stringify(py)})`); }
   const d = maxDiff(r.probs, H.probs[i]);
@@ -53,7 +53,7 @@ H.questions.forEach((q, i) => {
   if (d > TOL) { fails++; console.log(`✗ híbrido: ${q}  (diferencia ${d.toExponential(2)})`); }
 });
 console.log(`híbrido (keyWeight ${H.keyWeight} · weakBonus ${H.weakBonus}): ${H.questions.length} preguntas · ` +
-  `mismas reglas (fuerte/débil/social): ${ruleOk}/${H.questions.length} · diferencia máxima ${hw.toExponential(2)} · tolerancia ${TOL}`);
+  `mismas reglas (fuerte/débil/forzada): ${ruleOk}/${H.questions.length} · diferencia máxima ${hw.toExponential(2)} · tolerancia ${TOL}`);
 
 console.log(fails ? `FALLA: ${fails} comprobaciones fuera de tolerancia` : 'OK: JS y Python coinciden');
 process.exit(fails ? 1 : 0);

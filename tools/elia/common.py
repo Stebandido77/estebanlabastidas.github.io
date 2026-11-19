@@ -76,8 +76,12 @@ def featurize(text: str) -> np.ndarray:
   Coincidencia de una frase: sus palabras normalizadas aparecen seguidas en la pregunta. Cada palabra
   debe ser igual o, si las dos tienen ≥ 5 letras, estar a distancia de Levenshtein ≤ 1.
 
+  forced_intent(text, K, social) → intención o None (se responde/rechaza sin red):
+    1. regla social (abajo) → greeting | goodbye | thanks;
+    2. si no, una frase de oosCues.hard → out_of_scope (EL·IA nunca responde: ofrece el correo).
+
   key_intent(text, K) → (intención, "strong" | "weak") o (None, None):
-    1. Si aparece alguna frase de oosCues → (None, None): decide solo la red.
+    1. Si aparece alguna frase de oosCues (soft o hard) → (None, None): decide solo la red.
     2. Si hay keys fuertes ("keys") de exactamente una intención → (esa, "strong").
        Si son de dos o más → (None, None).
     3. Si no hay fuertes y hay débiles ("weak") de exactamente una intención → (esa, "weak").
@@ -91,6 +95,7 @@ def featurize(text: str) -> np.ndarray:
 KEY_FUZZY_MIN = 5
 SOCIAL_MAX_TOKENS = 4
 SOCIAL_INTENTS = ("greeting", "goodbye", "thanks")
+OOS_ID = "out_of_scope"
 
 
 def near(a: str, b: str) -> bool:
@@ -118,8 +123,9 @@ def contains(q: list[str], kt: list[str]) -> bool:
 
 
 def compile_keys(elia: dict) -> dict:
-    """elia = DATA.elia → {"strong": [(id, frases)], "weak": [(id, frases)], "cues": frases}"""
-    out = {"strong": [], "weak": [], "cues": phrases(elia.get("oosCues", []))}
+    """elia = DATA.elia → {"strong": [(id, frases)], "weak": [(id, frases)], "hard": frases, "soft": frases}"""
+    cues = elia.get("oosCues", {})
+    out = {"strong": [], "weak": [], "hard": phrases(cues.get("hard", [])), "soft": phrases(cues.get("soft", []))}
     for it in elia["intents"]:
         for kind, field in (("strong", "keys"), ("weak", "weak")):
             ks = phrases(it.get(field, []))
@@ -135,7 +141,7 @@ def key_hits(text: str, compiled_list) -> list[str]:
 
 def key_intent(text: str, K: dict):
     q = normalize(text).split()
-    if any(contains(q, c) for c in K["cues"]):
+    if any(contains(q, c) for c in K["hard"] + K["soft"]):
         return None, None
     for kind in ("strong", "weak"):
         hits = key_hits(text, K[kind])
@@ -167,6 +173,14 @@ def social_intent(text: str, social: dict):
         else:
             return None
     return found.pop() if len(found) == 1 else None
+
+
+def forced_intent(text: str, K: dict, social: dict):
+    s = social_intent(text, social)
+    if s:
+        return s
+    q = normalize(text).split()
+    return OOS_ID if any(contains(q, c) for c in K["hard"]) else None
 
 
 def featurize_many(texts) -> np.ndarray:

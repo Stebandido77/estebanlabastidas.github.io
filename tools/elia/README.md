@@ -11,7 +11,7 @@ de `assets/data/elia-model.js`, y todo el contenido vive en `assets/data/content
 | Cambiar una respuesta (`a`, `how`), sus botones (`open`) o enlaces (`links`) | `content.js` → `elia.intents` | No |
 | Llenar un `TODO(esteban)` | `content.js` | No |
 | Agregar o quitar keys fuertes (`keys`) o débiles (`weak`) | `content.js` → cada intención | No (pero `test_parity.mjs` fallará hasta reentrenar, porque `parity.json` se genera con los keys del entrenamiento) |
-| Cambiar `oosCues`, `social`, `chips` o `ui` | `content.js` → `elia` | No |
+| Cambiar `oosCues` (`hard`/`soft`), `social`, `chips` o `ui` | `content.js` → `elia` | No |
 | Agregar preguntas de entrenamiento | `tools/elia/data/questions.csv` | Sí |
 | Agregar una intención nueva | `content.js` (intención con `t`, `a`, keys) **y** ≥ 5 preguntas en `questions.csv` | Sí |
 | Cambiar umbrales a mano (`threshold`, `margin`, `clarify`, `keyWeight`, `weakBonus`) | `content.js` → `elia` | No, pero `train.py` los vuelve a escribir al reentrenar |
@@ -23,8 +23,11 @@ que escríbelos así: `"sa ccr"`, `"bre b"`, `"codigo fuente"`.
   Si aparecen los de una sola intención, deciden casi solos.
 - **Débiles** (`weak`): palabras genéricas (`celular`, `budget`, `mapa`). Solo suben un poco la
   probabilidad; nunca bastan sin la red.
-- Si aparecen keys de dos intenciones, o una frase de `oosCues` ("qué opinas de", "write my"…),
-  decide solo la red.
+- Si aparecen keys de dos intenciones, decide solo la red.
+- `oosCues.soft` ("qué opinas de", "el mejor", "recommend"…): se anulan los keys y decide la red.
+  Sirve para "cuál es el mejor celular", pero deja pasar "cuál es tu mejor proyecto".
+- `oosCues.hard` ("chiste", "clima", "traduce", "redacta", "write my"…): EL·IA nunca responde; la
+  pregunta se trata como fuera de alcance y se ofrece escribirle a Esteban.
 
 ## Reentrenar
 
@@ -38,9 +41,13 @@ python tools/elia/eval_holdout.py     # métricas sobre tus preguntas de prueba
 ```
 
 `train.py` escribe `assets/data/elia-model.js`, `tools/elia/parity.json`, `tools/elia/REPORT.md` y los
-umbrales (`threshold`, `margin`, `clarify`, `keyWeight`, `weakBonus`) en `content.js`. Revisa el
-reporte antes de publicar: las metas son ≥ 80 % de respuestas correctas, ≤ 5 % equivocadas (también
-en español) y ≥ 85 % de rechazo de preguntas fuera de alcance, en la columna "anidada".
+umbrales (`threshold`, `margin`, `clarify`, `keyWeight`, `weakBonus`) en `content.js`.
+
+**La puerta de publicación es el holdout, no el reporte:** `eval_holdout.py` debe dar ≥ 75 % de
+respuestas correctas y ≤ 5 % de respuestas equivocadas (sale con código 1 si no). El reporte de la
+validación cruzada es una referencia (≥ 80 % correctas, ≤ 5 % equivocadas también en español, ≥ 85 %
+de rechazo fuera de alcance, en la columna "anidada"): con pocas preguntas por intención, se mueve
+varios puntos según cómo caigan los pliegues.
 
 Archivos:
 
@@ -48,7 +55,7 @@ Archivos:
 |---|---|
 | `data/questions.csv` | Preguntas escritas a mano (`text,intent,lang,how`). `how=1` si preguntan cómo se hizo algo |
 | `data/holdout.csv` | Tus preguntas de prueba (`text,intent,lang`). Nunca entran al entrenamiento ni sirven para ajustar keys |
-| `data/draft_batch1.csv` | Borrador de preguntas nuevas para revisar antes de pasarlas a `questions.csv` |
+| `data/draft_batch*.csv` | Borradores de preguntas nuevas para revisar antes de pasarlas a `questions.csv` |
 | `common.py` | Normalización, features (hashing FNV-1a), keys y reglas sociales. Debe coincidir con `js/elia-net.js` |
 | `augment.py` | Variantes con typos, sin tildes y sinónimos (solo entrenamiento) |
 | `templates.py` | Plantillas "qué es {X}" × keys (solo entrenamiento) |

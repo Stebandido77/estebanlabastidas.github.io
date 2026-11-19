@@ -10,6 +10,9 @@ después a questions.csv y escribe preguntas nuevas para el holdout.
 Usa el modelo exportado (assets/data/elia-model.js, pesos int8) y la configuración de content.js
 (keys, oosCues, social, keyWeight, weakBonus, threshold, margin, clarify), con la misma regla de
 decisión que train.py y js/elia-net.js. Imprime las métricas del reporte y las respuestas equivocadas.
+
+Esta es la puerta de publicación: EL·IA se publica si el holdout tiene ≥ 75 % de respuestas correctas
+y ≤ 5 % de respuestas equivocadas (sobre las preguntas dentro del alcance). Sale con código 1 si no.
 """
 from __future__ import annotations
 
@@ -29,6 +32,7 @@ from train import OOS, Outcomes, apply_keys, rule_indices, sigmoid, softmax  # n
 
 MODEL = ROOT / "assets" / "data" / "elia-model.js"
 HOLDOUT = HERE / "data" / "holdout.csv"
+GOAL_CORRECT, GOAL_WRONG = 0.75, 0.05   # puerta de publicación
 
 
 def load_model():
@@ -75,10 +79,10 @@ def main():
     pct = lambda v: "   —   " if np.isnan(v) else f"{100 * v:5.1f} %"
     langs = [lg for lg in ("es", "en") if (L == lg).any()]
     print(f"{'':44}{'Todas':>9}" + "".join(f"{lg.upper():>9}" for lg in langs) + "   Meta")
-    for lbl, k, goal in [("Responde bien", "answered_correct", "≥ 80 %"), ("Responde mal", "answered_wrong", "≤ 5 %"),
+    for lbl, k, goal in [("Responde bien", "answered_correct", f"≥ {GOAL_CORRECT:.0%}"), ("Responde mal", "answered_wrong", f"≤ {GOAL_WRONG:.0%}"),
                          ("\"¿Te refieres a…?\"", "clarify", ""), ("  … con la correcta entre las 3", "clarify_hit", ""),
                          ("Va a correo", "miss", ""), ("Accuracy (argmax, tras reglas)", "acc_in", ""),
-                         ("Rechazo de out_of_scope", "oos_reject", "≥ 85 %")]:
+                         ("Rechazo de out_of_scope", "oos_reject", "")]:
         cells = [O.rates(np.ones(len(y), bool), t, m, c)[k]] + [O.rates(L == lg, t, m, c)[k] for lg in langs]
         print(f"{lbl:<44}" + "".join(f"{pct(v):>9}" for v in cells) + f"   {goal}")
     n_in, n_oos = int((~O.isoos).sum()), int(O.isoos.sum())
@@ -98,6 +102,15 @@ def main():
         top3 = ", ".join(ids[k] for k in np.argsort(-P[i])[:3])
         kind = "¿Te refieres a…?" if O.p1[i] >= c and not O.topoos[i] else "correo"
         print(f"  {texts[i]!r}  real {ids[y[i]]} → {kind} (top 3: {top3})")
+
+    allr = O.rates(np.ones(len(y), bool), t, m, c)
+    good, bad = allr["answered_correct"], allr["answered_wrong"]
+    ok = good >= GOAL_CORRECT and bad <= GOAL_WRONG
+    print(f"\nPuerta de publicación: responde bien {100 * good:.1f} % (meta ≥ {GOAL_CORRECT:.0%}) · responde mal "
+          f"{100 * bad:.1f} % (meta ≤ {GOAL_WRONG:.0%}) → " + ("SE PUEDE PUBLICAR" if ok else "NO SE PUBLICA"))
+    if n_in < 60:
+        print(f"  ojo: con {n_in} preguntas dentro del alcance, cada pregunta mueve {100 / max(n_in, 1):.1f} puntos.")
+    sys.exit(0 if ok else 1)
 
 
 if __name__ == "__main__":

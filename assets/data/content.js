@@ -461,11 +461,11 @@ window.DATA = {
      Lo marcado con TODO(esteban) es un borrador inferido: revísalo antes de publicar. */
   "elia": {
     "threshold": 0.6,
-    "margin": 0.45,
+    "margin": 0.3,
     "howThreshold": 0.5,
     "keyWeight": 0.4,
     "weakBonus": 1.0,
-    "clarify": 0.35,           // debajo de esto no hay "¿Te refieres a…?": se ofrece escribirle a Esteban
+    "clarify": 0.3,           // debajo de esto no hay "¿Te refieres a…?": se ofrece escribirle a Esteban
     "formEndpoint": null,      // URL de Formspree o Web3Forms para enviar desde EL·IA; null = solo Mail
     "formAccessKey": null,     // solo Web3Forms: la access key pública del formulario (ver tools/elia/README.md)
     /* chips: preguntas sugeridas bajo la conversación. ui: textos de la interfaz por idioma. */
@@ -528,8 +528,13 @@ window.DATA = {
        coinciden exactos o a 1 letra de distancia en palabras de 5+ letras. Si hay keys fuertes de una sola
        intención, se mezcla p = keyWeight·p_red + (1 − keyWeight)·[esa intención] (basta para responder).
        Si no hay fuertes y hay débiles de una sola, esa intención sube con un bonus (p × e^weakBonus), que
-       nunca basta sin la red. Si hay keys de dos intenciones, o una frase de oosCues, decide solo la red. */
-    "oosCues": ["opinas", "que piensas de", "el mejor", "la mejor", "recomiendame", "escribeme", "hazme", "redacta", "traduce", "chiste", "clima", "precio de", "what do you think", "best", "recommend", "write my", "do my", "translate", "joke", "weather"],
+       nunca basta sin la red. Si hay keys de dos intenciones, o una frase de oosCues.soft, decide solo la red. */
+    /* oosCues.hard: EL·IA nunca responde (va a out_of_scope y ofrece el correo).
+       oosCues.soft: se anulan los keys y decide solo la red. */
+    "oosCues": {
+      "hard": ["clima", "chiste", "traduce", "escribeme", "redacta", "hazme", "weather", "joke", "translate", "write my", "do my"],
+      "soft": ["opinas", "que piensas de", "el mejor", "la mejor", "recomiendame", "precio de", "what do you think", "best", "recommend"]
+    },
     /* social: si el mensaje tiene ≤ 4 palabras y solo contiene frases de UNA de estas listas (más palabras
        de relleno), la respuesta es directa, sin red. */
     "social": {
@@ -734,7 +739,7 @@ window.DATA = {
 
       /* ── generales ── */
       {"id": "who", "t": {"es": "Quién es Esteban", "en": "Who Esteban is"},
-       "keys": ["quien es esteban", "who is esteban"], "weak": ["quien es el", "who is he"],
+       "keys": ["quien es esteban", "who is esteban", "detras de este sitio", "detras de esta pagina", "behind this site", "behind this website", "dueno de esta pagina", "dueno de este sitio", "who owns this"], "weak": ["quien es el", "who is he"],
        "a": {"es": "Esteban David Labastidas Martínez es economista e ingeniero industrial, de Bogotá. Trabaja entre mercados y modelos: valora bancos y negocios en Grupo Aval, investiga pronóstico de inflación y escribe sobre la economía colombiana. La versión corta: Economist · Banker · Builder.",
              "en": "Esteban David Labastidas Martínez is an economist and industrial engineer from Bogotá. The work sits between markets and models: valuing banks and deals at Grupo Aval, forecasting inflation in research, and writing about Colombia's economy. The short version: Economist · Banker · Builder."},
        "open": [["about"]]},
@@ -807,7 +812,7 @@ window.DATA = {
        "a": {"es": "Español (nativo) e inglés (profesional). EL·IA responde en los dos.",
              "en": "Spanish (native) and English (professional). EL·IA answers in both."}},
       {"id": "site", "t": {"es": "Este sitio (estebanOS)", "en": "This site (estebanOS)"},
-       "keys": ["este sitio", "esta pagina", "this site", "this website", "estebanos", "pagina web"], "weak": ["macos", "dock", "spotlight"],
+       "keys": ["estebanos", "pagina web"], "weak": ["este sitio", "esta pagina", "this site", "this website", "macos", "dock", "spotlight"],
        "a": {"es": "Este es estebanOS: el sitio personal de Esteban como un escritorio tipo macOS en el navegador, con ventanas, Dock, Spotlight (⌘K), Terminal y música generativa. En el celular es una pantalla de inicio tipo iOS. La versión anterior sigue en /classic/.",
              "en": "This is estebanOS: Esteban's personal site as a macOS-style desktop in the browser, with windows, a Dock, Spotlight (⌘K), a Terminal and generative music. On a phone it becomes an iOS-style home screen. The previous version lives at /classic/."},
        "how": {"es": "HTML, CSS y JavaScript sin frameworks ni build step; funciona en GitHub Pages y abriendo el archivo directamente. Todo el contenido vive en un solo archivo (content.js). Las ventanas se mueven solo con transform para que sea fluido, la música se genera con Web Audio y cada cambio se mide con una herramienta propia en Chrome headless y con axe para accesibilidad.",
@@ -815,7 +820,7 @@ window.DATA = {
        "open": [["about"]],
        "links": [["The classic notebook", "classic/"]]},
       {"id": "elia", "t": {"es": "Qué es EL·IA", "en": "What EL·IA is"},
-       "keys": ["elia", "el ia", "estebania", "chatbot", "red neuronal", "neural network"], "weak": ["quien eres", "que eres", "who are you", "what are you", "bot"],
+       "keys": ["elia", "el ia", "estebania", "chatbot", "red neuronal", "neural network"], "weak": ["que eres", "what are you", "bot"],
        "a": {"es": "Soy EL·IA (o Estebania), una red neuronal pequeña que entrenó Esteban para responder sobre su trabajo. No soy un LLM ni consulto ninguna API: reconozco unas 50 preguntas y, si no estoy segura, te ofrezco escribirle a Esteban en vez de inventar.",
              "en": "I'm EL·IA (or Estebania), a small neural network Esteban trained to answer questions about Esteban's work. I'm not an LLM and I don't call any API: I recognize about 50 kinds of questions and, when I'm not sure, I offer to email Esteban instead of making things up."},
        "how": {"es": "Normalizo tu pregunta (minúsculas, sin tildes), la parto en pedazos de 3 a 5 letras y en palabras, y los convierto en 4.096 números con hashing FNV-1a. Una capa oculta de 64 neuronas y un softmax eligen el tema; otra salida decide si preguntas \"cómo\". Los pesos van en 8 bits y todo corre en tu navegador: tu pregunta no sale de aquí.",

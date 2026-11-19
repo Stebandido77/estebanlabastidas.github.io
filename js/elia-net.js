@@ -85,7 +85,9 @@
   /* ── Keys, guardia de fuera de alcance y reglas sociales (la misma especificación que tools/elia/common.py) ──
      Una frase coincide si sus palabras aparecen seguidas en la pregunta normalizada; cada palabra debe ser
      igual o, si las dos tienen ≥ 5 letras, estar a distancia de Levenshtein ≤ 1.
-     keyIntent: con una frase de oosCues → nada; si no, keys fuertes de una sola intención → [id, 'strong'];
+     forcedIntent: regla social → greeting | goodbye | thanks; si no, una frase de oosCues.hard → out_of_scope
+       (EL·IA nunca responde). En los dos casos no se usa la red para decidir.
+     keyIntent: con una frase de oosCues (soft o hard) → nada; si no, keys fuertes de una sola intención → [id, 'strong'];
        si no hay fuertes, débiles de una sola → [id, 'weak']; dos o más intenciones → nada (decide la red).
      socialIntent: ≤ 4 palabras cubiertas solo por frases de UNA lista social (la más larga primero,
        coincidencia exacta) y palabras de relleno → greeting | goodbye | thanks. */
@@ -106,9 +108,10 @@
     return false;
   }
 
-  /* elia = DATA.elia → {strong: [[id, frases]], weak: [[id, frases]], cues: frases, social} */
+  /* elia = DATA.elia → {strong: [[id, frases]], weak: [[id, frases]], hard: frases, soft: frases, social} */
   function compileKeys(elia) {
-    const K = {strong: [], weak: [], cues: phrases(elia.oosCues), social: null};
+    const cues = elia.oosCues || {};
+    const K = {strong: [], weak: [], hard: phrases(cues.hard), soft: phrases(cues.soft), social: null};
     for (const it of elia.intents) {
       const s = phrases(it.keys), w = phrases(it.weak);
       if (s.length) K.strong.push([it.id, s]);
@@ -128,7 +131,7 @@
 
   function keyIntent(text, K) {
     const q = words(text);
-    if (K.cues.some(c => contains(q, c))) return [null, null];
+    if (K.hard.concat(K.soft).some(c => contains(q, c))) return [null, null];
     for (const kind of ['strong', 'weak']) {
       const h = keyHits(text, K[kind]);
       if (h.length === 1) return [h[0], kind];
@@ -155,15 +158,22 @@
     return found.size === 1 ? [...found][0] : null;
   }
 
+  function forcedIntent(text, K) {
+    const s = socialIntent(text, K);
+    if (s) return s;
+    const q = words(text);
+    return K.hard.some(c => contains(q, c)) ? 'out_of_scope' : null;
+  }
+
   /* Combina la red con las reglas (cfg = DATA.elia):
-       social  p = [intención]                                 (directa, sin red)
+       forzada p = [intención]                     (social u oosCues.hard → out_of_scope, sin red)
        fuerte  p = keyWeight · p_red + (1 − keyWeight) · [intención]
        débil   p ∝ p_red · e^weakBonus en la intención          (nunca basta sin la red)
      asks_how no cambia: siempre sale de la red. */
   function hybrid(M, r, rule, cfg) {
     const idx = id => (id ? M.intents.indexOf(id) : -1);
     let probs = r.probs.slice();
-    const k = idx(rule.key), s = idx(rule.social);
+    const k = idx(rule.key), s = idx(rule.forced);
     if (k >= 0 && rule.kind === 'strong' && cfg.keyWeight < 1) {
       probs = probs.map((p, j) => cfg.keyWeight * p + (j === k ? 1 - cfg.keyWeight : 0));
     } else if (k >= 0 && rule.kind === 'weak' && cfg.weakBonus > 0) {
@@ -173,13 +183,13 @@
     }
     if (s >= 0) probs = probs.map((_, j) => (j === s ? 1 : 0));
     const ranked = M.intents.map((id, j) => [id, probs[j]]).sort((p, q) => q[1] - p[1]);
-    return {probs, how: r.how, ranked, key: rule.key, kind: rule.kind, social: rule.social};
+    return {probs, how: r.how, ranked, key: rule.key, kind: rule.kind, forced: rule.forced};
   }
 
   /* Lo que usa la app: K = compileKeys(DATA.elia), cfg = DATA.elia. */
   function ask(M, text, K, cfg) {
     const [key, kind] = keyIntent(text, K);
-    return hybrid(M, predict(M, text), {key, kind, social: socialIntent(text, K)}, cfg);
+    return hybrid(M, predict(M, text), {key, kind, forced: forcedIntent(text, K)}, cfg);
   }
 
   /* Regla de decisión (la misma que usa tools/elia/train.py para el reporte):
@@ -193,7 +203,7 @@
     return 'miss';
   }
 
-  const api = {normalize, tokens, fnv1a, featurize, predict, decide, near, compileKeys, keyHits, keyIntent, socialIntent, hybrid, ask};
+  const api = {normalize, tokens, fnv1a, featurize, predict, decide, near, compileKeys, keyHits, keyIntent, socialIntent, forcedIntent, hybrid, ask};
   if (typeof module === 'object' && module.exports) module.exports = api;
   else root.EliaNet = api;
 })(typeof window !== 'undefined' ? window : globalThis);
