@@ -3,16 +3,25 @@
   python tools/elia/eval_holdout.py
   python tools/elia/eval_holdout.py --file otra.csv
 
-holdout.csv (columnas text,intent,lang) lo escribe Esteban. NUNCA entra al entrenamiento ni se usa
-para ajustar keys, plantillas o umbrales: si una pregunta del holdout te hace cambiar algo, pásala
-después a questions.csv y escribe preguntas nuevas para el holdout.
+holdout.csv (columnas text,intent,lang y alt opcional) lo escribe Esteban. NUNCA entra al
+entrenamiento ni se usa para ajustar keys, plantillas o umbrales: si una pregunta del holdout te hace
+cambiar algo, pásala después a questions.csv y escribe preguntas nuevas para el holdout.
+
+  alt: otras intenciones también válidas, separadas por "|" (puede incluir out_of_scope).
 
 Usa el modelo exportado (assets/data/elia-model.js, pesos int8) y la configuración de content.js
 (keys, oosCues, social, keyWeight, weakBonus, threshold, margin, clarify), con la misma regla de
-decisión que train.py y js/elia-net.js. Imprime las métricas del reporte y las respuestas equivocadas.
+decisión que train.py y js/elia-net.js.
 
-Esta es la puerta de publicación: EL·IA se publica si el holdout tiene ≥ 75 % de respuestas correctas
-y ≤ 5 % de respuestas equivocadas (sobre las preguntas dentro del alcance). Sale con código 1 si no.
+Cada pregunta cae en uno de cuatro resultados:
+  correcta   EL·IA responde una intención válida (intent o alt), o manda al correo cuando
+             out_of_scope es válida (intent o alt).
+  equivocada EL·IA responde una intención que no es válida.
+  "¿Te refieres a…?"  no responde y muestra 3 opciones (se reporta si alguna era válida).
+  correo     no responde y ofrece escribirle a Esteban, cuando out_of_scope no era válida.
+
+Puerta de publicación, sobre TODAS las preguntas del holdout: ≥ 75 % correctas y ≤ 5 % equivocadas.
+Sale con código 1 si no se cumple.
 """
 from __future__ import annotations
 
@@ -21,6 +30,7 @@ import base64
 import csv
 import json
 import sys
+from collections import Counter
 from pathlib import Path
 
 import numpy as np
@@ -28,11 +38,12 @@ import numpy as np
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 from common import ROOT, compile_keys, featurize, load_elia  # noqa: E402
-from train import OOS, Outcomes, apply_keys, rule_indices, sigmoid, softmax  # noqa: E402
+from train import OOS, apply_keys, rule_indices, sigmoid, softmax  # noqa: E402
 
 MODEL = ROOT / "assets" / "data" / "elia-model.js"
 HOLDOUT = HERE / "data" / "holdout.csv"
 GOAL_CORRECT, GOAL_WRONG = 0.75, 0.05   # puerta de publicación
+OUTCOMES = ("correcta", "equivocada", "¿Te refieres a…?", "correo")
 
 
 def load_model():
@@ -51,65 +62,92 @@ def main():
     sys.stdout.reconfigure(encoding="utf-8")
 
     with open(args.file, encoding="utf-8", newline="") as f:
-        rows = [r for r in csv.DictReader(f) if r.get("text", "").strip()]
+        rows = [r for r in csv.DictReader(f) if (r.get("text") or "").strip()]
     if not rows:
-        print(f"{args.file.relative_to(ROOT)} está vacío: agrega filas text,intent,lang y vuelve a correr.")
+        print(f"{args.file} está vacío: agrega filas text,intent,lang[,alt] y vuelve a correr.")
         return
 
     elia = load_elia()
     M, W = load_model()
     ids = M["intents"]
-    unknown = sorted({r["intent"] for r in rows} - set(ids))
+    for r in rows:
+        r["valid"] = [r["intent"].strip()] + [a.strip() for a in (r.get("alt") or "").split("|") if a.strip()]
+    unknown = sorted({v for r in rows for v in r["valid"]} - set(ids))
     if unknown:
         sys.exit(f"intenciones que no existen en el modelo: {', '.join(unknown)}")
     texts = [r["text"] for r in rows]
-    y = np.array([ids.index(r["intent"]) for r in rows])
-    L = np.array([r.get("lang", "").strip() for r in rows])
+    L = [r.get("lang", "").strip() for r in rows]
 
+    # la misma cadena que el navegador: red → keys / reglas → regla de decisión
     X = np.stack([featurize(t) for t in texts])
     a = np.maximum(X @ W["W1"] + W["b1"], 0)
-    P, how = softmax((a @ W["W2"] + W["b2"]) / M["T"]), sigmoid(a @ W["Wh"] + W["bh"])
+    P = softmax((a @ W["W2"] + W["b2"]) / M["T"])
     sk, wk, so = rule_indices(texts, ids, compile_keys(elia), elia.get("social", {}))
     P = apply_keys(P, sk, wk, so, elia["keyWeight"], elia["weakBonus"])
-    O = Outcomes(P, y, ids.index(OOS))
     t, m, c = elia["threshold"], elia["margin"], elia["clarify"]
+    oos = ids.index(OOS)
 
-    print(f"{len(rows)} preguntas del holdout · modelo {M['generated']} (dataset {M['dataset']}) · "
-          f"threshold {t} · margin {m} · clarify {c} · keyWeight {elia['keyWeight']} · weakBonus {elia['weakBonus']}\n")
-    pct = lambda v: "   —   " if np.isnan(v) else f"{100 * v:5.1f} %"
-    langs = [lg for lg in ("es", "en") if (L == lg).any()]
-    print(f"{'':44}{'Todas':>9}" + "".join(f"{lg.upper():>9}" for lg in langs) + "   Meta")
-    for lbl, k, goal in [("Responde bien", "answered_correct", f"≥ {GOAL_CORRECT:.0%}"), ("Responde mal", "answered_wrong", f"≤ {GOAL_WRONG:.0%}"),
-                         ("\"¿Te refieres a…?\"", "clarify", ""), ("  … con la correcta entre las 3", "clarify_hit", ""),
-                         ("Va a correo", "miss", ""), ("Accuracy (argmax, tras reglas)", "acc_in", ""),
-                         ("Rechazo de out_of_scope", "oos_reject", "")]:
-        cells = [O.rates(np.ones(len(y), bool), t, m, c)[k]] + [O.rates(L == lg, t, m, c)[k] for lg in langs]
-        print(f"{lbl:<44}" + "".join(f"{pct(v):>9}" for v in cells) + f"   {goal}")
-    n_in, n_oos = int((~O.isoos).sum()), int(O.isoos.sum())
-    print(f"\n({n_in} dentro del alcance · {n_oos} fuera de alcance)")
+    res = []
+    for i, r in enumerate(rows):
+        o = np.argsort(-P[i], kind="stable")
+        top, p1, p2 = int(o[0]), float(P[i, o[0]]), float(P[i, o[1]])
+        options = [ids[k] for k in o if k != oos][:3]
+        answered = top != oos and p1 >= t and p1 - p2 >= m
+        clarify = not answered and top != oos and p1 >= c
+        valid = set(r["valid"])
+        if answered:
+            out = "correcta" if ids[top] in valid else "equivocada"
+        elif clarify:
+            out = "¿Te refieres a…?"
+        else:
+            out = "correcta" if OOS in valid else "correo"
+        src = ("social / guardia dura" if so[i] >= 0 else "key fuerte" if sk[i] >= 0
+               else "key débil" if wk[i] >= 0 else "red")
+        res.append({"i": i, "out": out, "top": ids[top], "p1": p1, "src": src, "options": options,
+                    "hit": clarify and bool(valid & set(options)), "decision": "responde" if answered
+                    else "¿Te refieres a…?" if clarify else "correo"})
 
-    ans = O.answered(t, m)
-    src = lambda i: "social" if so[i] >= 0 else "key fuerte" if sk[i] >= 0 else "key débil" if wk[i] >= 0 else "red"
-    wrong = [i for i in range(len(y)) if ans[i] and not O.ok[i]]
-    print(f"\nRespuestas equivocadas ({len(wrong)}):")
-    for i in sorted(wrong, key=lambda i: -O.p1[i]):
-        print(f"  {texts[i]!r}  real {ids[y[i]]} → respondió {ids[O.top[i]]} (p1 {O.p1[i]:.2f}, {src(i)})")
-    if not wrong:
-        print("  ninguna")
-    unanswered = [i for i in range(len(y)) if not O.isoos[i] and not ans[i]]
-    print(f"\nSin responder dentro del alcance ({len(unanswered)}):")
-    for i in unanswered:
-        top3 = ", ".join(ids[k] for k in np.argsort(-P[i])[:3])
-        kind = "¿Te refieres a…?" if O.p1[i] >= c and not O.topoos[i] else "correo"
-        print(f"  {texts[i]!r}  real {ids[y[i]]} → {kind} (top 3: {top3})")
+    print(f"{len(rows)} preguntas del holdout · modelo {M['generated']} (dataset {M['dataset']}) · threshold {t} · "
+          f"margin {m} · clarify {c} · keyWeight {elia['keyWeight']} · weakBonus {elia['weakBonus']}\n")
 
-    allr = O.rates(np.ones(len(y), bool), t, m, c)
-    good, bad = allr["answered_correct"], allr["answered_wrong"]
+    def table(sel, label):
+        n = len(sel)
+        if not n:
+            return
+        cnt = Counter(res[i]["out"] for i in sel)
+        hits = sum(res[i]["hit"] for i in sel)
+        cells = "  ".join(f"{k} {cnt[k]:>2} ({100 * cnt[k] / n:5.1f} %)" for k in OUTCOMES)
+        print(f"{label:<34} n={n:>2}  {cells}   [opciones con una válida: {hits}]")
+
+    allr = list(range(len(rows)))
+    table(allr, "Todas")
+    for lg in ("es", "en"):
+        table([i for i in allr if L[i] == lg], f"  {lg.upper()}")
+    table([i for i in allr if rows[i]["intent"] != OOS], "  intent dentro del alcance")
+    table([i for i in allr if rows[i]["intent"] == OOS], "  intent = out_of_scope")
+
+    def show(title, sel):
+        print(f"\n{title} ({len(sel)}):")
+        for i in sel:
+            r, x = rows[i], res[i]
+            valid = r["intent"] + (" | alt: " + ", ".join(r["valid"][1:]) if len(r["valid"]) > 1 else "")
+            pick = (f"respondió {x['top']} (p1 {x['p1']:.2f}, {x['src']})" if x["decision"] == "responde"
+                    else f"{x['decision']} — 1.ª {x['top']} (p1 {x['p1']:.2f}, {x['src']}); opciones: {', '.join(x['options'])}")
+            print(f"  {r['text']}\n      válidas: {valid}\n      → {pick}")
+        if not sel:
+            print("  ninguna")
+
+    show("Respuestas equivocadas", [i for i in allr if res[i]["out"] == "equivocada"])
+    show("No respondidas (\"¿Te refieres a…?\" o correo, sin ser correctas)",
+         [i for i in allr if res[i]["out"] in ("¿Te refieres a…?", "correo")])
+
+    n = len(rows)
+    good = sum(x["out"] == "correcta" for x in res) / n
+    bad = sum(x["out"] == "equivocada" for x in res) / n
     ok = good >= GOAL_CORRECT and bad <= GOAL_WRONG
-    print(f"\nPuerta de publicación: responde bien {100 * good:.1f} % (meta ≥ {GOAL_CORRECT:.0%}) · responde mal "
-          f"{100 * bad:.1f} % (meta ≤ {GOAL_WRONG:.0%}) → " + ("SE PUEDE PUBLICAR" if ok else "NO SE PUBLICA"))
-    if n_in < 60:
-        print(f"  ojo: con {n_in} preguntas dentro del alcance, cada pregunta mueve {100 / max(n_in, 1):.1f} puntos.")
+    print(f"\nPuerta de publicación (todas las preguntas): correctas {100 * good:.1f} % (meta ≥ {GOAL_CORRECT:.0%}) · "
+          f"equivocadas {100 * bad:.1f} % (meta ≤ {GOAL_WRONG:.0%}) → " + ("SE PUEDE PUBLICAR" if ok else "NO SE PUBLICA"))
+    print(f"  con {n} preguntas, cada una mueve {100 / n:.1f} puntos.")
     sys.exit(0 if ok else 1)
 
 
