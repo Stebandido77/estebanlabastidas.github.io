@@ -42,6 +42,7 @@ Las apps solo leen de ahí; no hace falta tocar HTML ni JS.
 | Palabras del retrato | `portraitWords`, `portraitKeyWords` (en ámbar) | About |
 | Correo, CV, redes | `contact`, `mail` | Contact (Mail), Terminal, menú EL |
 | Frase del widget del celular | `homeTagline` | Inicio en el celular |
+| Respuestas, keys, reglas y textos de EL·IA | `elia` (`intents`, `oosCues`, `social`, `chips`, `ui`, umbrales) | EL·IA, Terminal (`ask`, `elia misses`). Cómo reentrenar: [`tools/elia/README.md`](tools/elia/README.md) |
 
 Los pendientes que dependen de ti están marcados con `TODO(esteban)` dentro de `content.js`
 (fechas de EUDE, link del paper de EMR si es SSRN 6968222, fechas de OCT/SEP 2026 en el

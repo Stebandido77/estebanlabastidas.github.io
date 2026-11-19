@@ -1,4 +1,4 @@
-/* Mail ("Contact"): compose with Copy and "Open in Mail". */
+/* Mail ("Contact"): compose with Copy and "Open in Mail". openApp('mail', {subject, body}) prefills it. */
 (() => {
 const EOS = window.EOS, {D, $, esc} = EOS;
 const EMAIL = D.contact.email;
@@ -10,9 +10,12 @@ EOS.register('mail', {
     <div class="foot"><small>${esc(D.mail.note)}</small>
       <span style="display:flex;gap:8px"><a class="btn" href="${D.contact.linkedin}" target="_blank" rel="noopener">LinkedIn ↗</a><a class="btn pri" data-send href="mailto:${EMAIL}">Open in Mail</a></span></div>
   </div>`,
-  init(w){
+  init(w, sel){
     const upd = () => { $('[data-send]', w).href = `mailto:${EMAIL}?subject=${encodeURIComponent($('#m-sub',w).value)}&body=${encodeURIComponent($('#m-body',w).value)}`; };
-    $('#m-sub', w).oninput = upd; $('#m-body', w).oninput = upd; upd();
+    $('#m-sub', w).oninput = upd; $('#m-body', w).oninput = upd;
+    /* EOS.openApp('mail', {subject, body}) rellena el borrador (lo usa EL·IA) */
+    w._select = s => { if (!s) return; if (s.subject) $('#m-sub', w).value = s.subject; if (s.body) $('#m-body', w).value = s.body; upd(); };
+    w._select(sel); upd();
     $('[data-copy]', w).onclick = async e => { const b=e.currentTarget; try{ await navigator.clipboard.writeText(EMAIL); b.textContent='Copied'; }catch{ const i=$('#m-to',w); i.select(); b.textContent='Selected'; } setTimeout(()=>b.textContent='Copy',1500); };
   }
 });
