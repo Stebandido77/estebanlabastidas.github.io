@@ -1,24 +1,27 @@
-"""Entrena la red de EL·IA, escribe REPORT.md y exporta assets/data/elia-model.js.
+"""Entrena la red de EL·IA, elige la regla de decisión, escribe REPORT.md y exporta el modelo.
 
-  python tools/elia/train.py                    validación cruzada + modelo final + exportación
-  python tools/elia/train.py --no-export        solo validación cruzada y reporte
-  python tools/elia/train.py --how-weight 0.8   cambia el peso de la pérdida de asks_how
+  python tools/elia/train.py                 validación cruzada (base → +keys → +plantillas), modelo final,
+                                             exportación y regla escrita en content.js
+  python tools/elia/train.py --no-export     solo validación cruzada y reporte
+  python tools/elia/train.py --tpl 0         sin plantillas
 
 Método
   - Features: tools/elia/common.py (hashing FNV-1a a 4096 dimensiones).
   - Red: 4096 → 64 (ReLU, dropout 0.3) → N intenciones (softmax), y de la capa oculta una
     salida sigmoide asks_how. Pérdida = CE ponderada por clase + how_weight × BCE + L2.
     Adam escrito a mano en NumPy.
+  - Keys (common.py): si la pregunta contiene keys de una sola intención, se mezcla la red con
+    esa intención (mix: p = w·p_red + (1 − w)·[key]) o se le suma un bonus al logit.
+  - Plantillas (templates.py): filas extra solo para entrenamiento, generadas desde content.js.
   - Evaluación: validación cruzada estratificada de 5 pliegues SOLO con preguntas originales.
-    En cada pliegue, las variantes de augment.py se generan a partir de las preguntas de
-    entrenamiento de ese pliegue, así que ninguna variante cae en validación. Dentro del
-    entrenamiento se separa una pregunta original por clase (validación interna) para el early
-    stopping y para el temperature scaling; el pliegue externo nunca se usa para decidir nada.
-  - Modelo final: 100 % de las preguntas. Como ya no queda validación, entrena el número de
-    épocas mediano de la validación cruzada y usa la temperatura mediana.
-  - Exportación: pesos int8 con una escala por capa (peso = q × escala), en base64.
-    Las probabilidades de parity.json se calculan con esos pesos cuantizados, que son los que
-    usa el navegador.
+    Las variantes y las plantillas nunca caen en validación. Early stopping y temperatura con
+    una pregunta original por clase separada del entrenamiento.
+  - Regla: grilla de threshold, margin, clarify y mezcla con keys sobre las probabilidades fuera
+    de pliegue. Se elige la que maximiza las respuestas correctas con ≤ 5 % de respuestas
+    equivocadas y ≥ 85 % de rechazo fuera de alcance. Una versión anidada (elegir con 4
+    pliegues, medir en el 5.º) da la estimación sin optimismo.
+  - Modelo final: 100 % de las preguntas, número de épocas y temperatura medianos de la
+    validación cruzada. Pesos int8 con una escala por capa, en base64.
 """
 from __future__ import annotations
 
@@ -27,6 +30,7 @@ import base64
 import hashlib
 import json
 import random
+import re
 import sys
 from collections import Counter, defaultdict
 from datetime import date
@@ -36,8 +40,10 @@ import numpy as np
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
+import templates  # noqa: E402
 from augment import variants  # noqa: E402
-from common import CHAR_N, DIM, QUESTIONS, ROOT, featurize, load_elia, load_questions  # noqa: E402
+from common import (CHAR_N, CONTENT, DIM, QUESTIONS, ROOT, compile_keys, featurize, key_hits,  # noqa: E402
+                    load_elia, load_questions, match_keys)
 
 OUT_JS = ROOT / "assets" / "data" / "elia-model.js"
 REPORT = HERE / "REPORT.md"
@@ -200,60 +206,125 @@ def class_weights(y_tr, K, mode):
     return w
 
 
-def build_train(rows, idx, y, h, feats, cfg, rng_aug, K):
+def build_train(rows, idx, y, h, feats, cfg, rng_aug, K, extra=None):
+    """Originales de entrenamiento + sus variantes (+ las filas de plantillas, si se pasan)."""
     texts, ys, hs = [], [], []
     for i in idx:
         texts.append(rows[i]["text"]); ys.append(y[i]); hs.append(h[i])
         for v in variants(rows[i]["text"], cfg.aug, rng_aug):
             texts.append(v); ys.append(y[i]); hs.append(h[i])
-    ys, hs = np.array(ys), np.array(hs, dtype=float)
+    X, ys, hs = feats(texts), np.array(ys), np.array(hs, dtype=float)
+    if extra is not None:
+        X, ys, hs = np.vstack([X, extra[0]]), np.concatenate([ys, extra[1]]), np.concatenate([hs, extra[2]])
     cw = class_weights(np.array([y[i] for i in idx]), K, cfg.class_weight)
-    return feats(texts), ys, hs, cw[ys]
+    return X, ys, hs, cw[ys]
 
 
-# ───────────────────────── métricas ─────────────────────────
-def decide(p, ids, cfg):
-    o = np.argsort(-p)
-    p1, p2, top = p[o[0]], p[o[1]], ids[o[0]]
-    if top != OOS and p1 >= cfg.threshold and p1 - p2 >= cfg.margin:
-        return "answer"
-    if top != OOS and p1 >= cfg.clarify:
-        return "clarify"
-    return "miss"
 
 
-def macro_f1(yt, yp):
-    labels = sorted(set(yt) | set(yp))
-    f = []
-    for c in labels:
-        tp = sum(1 for a, b in zip(yt, yp) if a == c and b == c)
-        fp = sum(1 for a, b in zip(yt, yp) if a != c and b == c)
-        fn = sum(1 for a, b in zip(yt, yp) if a == c and b != c)
-        f.append(0.0 if tp == 0 else 2 * tp / (2 * tp + fp + fn))
-    return float(np.mean(f)) if f else float("nan")
+# ───────────────────────── capa de keys (post-proceso) ─────────────────────────
+def apply_keys(P, kidx, mode, w):
+    """Mezcla la red con la intención del key (kidx = −1 si no hay una sola).
+    mix:   p = w · p_red + (1 − w) · [intención del key]
+    bonus: p ∝ p_red · e^w en la intención del key (equivale a sumar w al logit antes del softmax)."""
+    P = P.copy()
+    r = np.where(kidx >= 0)[0]
+    if mode == "none" or not len(r):
+        return P
+    k = kidx[r]
+    if mode == "mix":
+        P[r] *= w
+        P[r, k] += 1 - w
+    else:
+        P[r, k] *= np.exp(w)
+        P[r] /= P[r].sum(1, keepdims=True)
+    return P
 
 
-def fold_metrics(rows, vi, y, h, probs, hp, ids, cfg):
-    oos = ids.index(OOS)
-    pred = probs.argmax(1)
-    M = {}
-    for lang in ("all", "es", "en"):
-        sel = [k for k, i in enumerate(vi) if lang == "all" or rows[i]["lang"] == lang]
-        ins = [k for k in sel if y[vi[k]] != oos]
-        out = [k for k in sel if y[vi[k]] == oos]
-        dec = {k: decide(probs[k], ids, cfg) for k in sel}
-        M[lang] = {
-            "acc_in": np.mean([pred[k] == y[vi[k]] for k in ins]) if ins else np.nan,
-            "f1_macro": macro_f1([y[vi[k]] for k in sel], [pred[k] for k in sel]),
-            "oos_reject": np.mean([dec[k] != "answer" for k in out]) if out else np.nan,
-            "answered_correct": np.mean([dec[k] == "answer" and pred[k] == y[vi[k]] for k in ins]) if ins else np.nan,
-            "answered_wrong": np.mean([dec[k] == "answer" and pred[k] != y[vi[k]] for k in ins]) if ins else np.nan,
-            "clarify": np.mean([dec[k] == "clarify" for k in ins]) if ins else np.nan,
-            "clarify_hit": np.mean([dec[k] == "clarify" and y[vi[k]] in np.argsort(-probs[k])[:3] for k in ins]) if ins else np.nan,
-            "miss": np.mean([dec[k] == "miss" for k in ins]) if ins else np.nan,
-            "how_acc": np.mean([(hp[k] >= cfg.how_threshold) == bool(h[vi[k]]) for k in sel]) if sel else np.nan,
-        }
-    return M
+HYBRIDS = [("none", 0.0)] + [("mix", w) for w in (0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3)] + \
+          [("bonus", b) for b in (0.5, 1.0, 1.5, 2.0, 3.0, 4.0)]
+T_GRID = np.round(np.arange(0.30, 0.901, 0.05), 2)
+M_GRID = np.round(np.arange(0.00, 0.501, 0.05), 2)
+C_GRID = np.round(np.arange(0.10, 0.601, 0.05), 2)
+MAX_WRONG, MIN_REJECT = 0.05, 0.85
+
+
+class Outcomes:
+    """Lo que la regla de decisión necesita de cada pregunta, calculado una vez por matriz P."""
+    def __init__(self, P, y, oos):
+        o = np.argsort(-P, axis=1)
+        self.top, self.p1 = o[:, 0], P[np.arange(len(P)), o[:, 0]]
+        self.p2 = P[np.arange(len(P)), o[:, 1]]
+        self.ok = self.top == y
+        self.hit3 = (o[:, :3] == y[:, None]).any(1)
+        self.isoos, self.topoos = y == oos, self.top == oos
+
+    def rates(self, S, t, m, c):
+        ans = ~self.topoos & (self.p1 >= t) & (self.p1 - self.p2 >= m)
+        cl = ~ans & ~self.topoos & (self.p1 >= c)
+        I, O = S & ~self.isoos, S & self.isoos
+        mean = lambda a, B: float(a[B].mean()) if B.any() else np.nan
+        return {"acc_in": mean(self.ok, I),
+                "answered_correct": mean(ans & self.ok, I), "answered_wrong": mean(ans & ~self.ok, I),
+                "clarify": mean(cl, I), "clarify_hit": mean(cl & self.hit3, I),
+                "miss": mean(~ans & ~cl, I), "oos_reject": mean(~ans, O),
+                "oos_clarify": mean(cl, O)}
+
+
+def select(outs, S):
+    """Busca (keys, threshold, margin) con responde mal ≤ 5 % y rechazo ≥ 85 % que maximice responde bien;
+    luego el clarify que maximiza (aciertos − fallos) entre las preguntas que caen en "¿Te refieres a…?"."""
+    best = None
+    for hk, O in outs.items():
+        for t in T_GRID:
+            for m in M_GRID:
+                r = O.rates(S, t, m, 1.0)
+                if r["answered_wrong"] > MAX_WRONG or r["oos_reject"] < MIN_REJECT:
+                    continue
+                key = (r["answered_correct"], -r["answered_wrong"], t)
+                if best is None or key > best[0]:
+                    best = (key, hk, float(t), float(m))
+    if best is None:
+        return None
+    _, hk, t, m = best
+    O, bc, bv = outs[hk], t, -np.inf
+    for c in C_GRID[C_GRID <= t + 1e-9][::-1]:
+        r = O.rates(S, t, m, c)
+        v = 2 * r["clarify_hit"] - r["clarify"]
+        if v > bv + 1e-9:
+            bv, bc = v, float(c)
+    return {"mode": hk[0], "w": hk[1], "threshold": t, "margin": m, "clarify": bc}
+
+
+def per_fold(O, fold, nf, rows, prm, lang="all"):
+    L = np.array([r["lang"] for r in rows])
+    res = []
+    for f in range(nf):
+        S = (fold == f) & ((L == lang) if lang != "all" else True)
+        res.append(O.rates(S, prm["threshold"], prm["margin"], prm["clarify"]))
+    return res
+
+
+def ms(vals):
+    v = np.array([x for x in vals if not np.isnan(x)], dtype=float)
+    return (v.mean(), v.std()) if len(v) else (np.nan, np.nan)
+
+
+def evaluate_stage(P, y, kidx, fold, nf, rows, oos, hybrids):
+    outs = {hk: Outcomes(apply_keys(P, kidx, *hk), y, oos) for hk in hybrids}
+    prm = select(outs, np.ones(len(y), bool))
+    res = {"params": prm, "outs": outs}
+    if prm:
+        O = outs[(prm["mode"], prm["w"])]
+        res["folds"] = {lang: per_fold(O, fold, nf, rows, prm, lang) for lang in ("all", "es", "en")}
+    # estimación anidada: parámetros elegidos con los otros 4 pliegues, medidos en el que queda fuera
+    nested = []
+    for f in range(nf):
+        p = select(outs, fold != f)
+        if p:
+            nested.append(outs[(p["mode"], p["w"])].rates(fold == f, p["threshold"], p["margin"], p["clarify"]))
+    res["nested"] = nested
+    return res
 
 
 # ───────────────────────── exportación ─────────────────────────
@@ -268,6 +339,23 @@ def quantized_predict(Q, X, T):
     return softmax((a @ Q["W2"] + Q["b2"]) / T), sigmoid(a @ Q["Wh"] + Q["bh"][0])
 
 
+def write_config(prm):
+    """Escribe threshold, margin, clarify, keyMode y keyWeight en DATA.elia (content.js, CRLF)."""
+    s = CONTENT.read_bytes().decode("utf-8")
+    a = s.index('  "elia": {')
+    head, body = s[:a], s[a:]
+    vals = {"threshold": prm["threshold"], "margin": prm["margin"], "clarify": prm["clarify"],
+            "keyMode": json.dumps(prm["mode"]), "keyWeight": prm["w"]}
+    for k, v in vals.items():
+        pat = re.compile(r'(\n    "' + k + r'": )([^,\r\n]+)(,)')
+        if pat.search(body):
+            body = pat.sub(lambda m: m.group(1) + str(v) + m.group(3), body, count=1)
+        else:   # campo nuevo: va después de clarify
+            i = body.index('\n', body.index('\n    "clarify": '))
+            body = body[:i + 1] + f'    "{k}": {v},\r\n' + body[i + 1:]
+    CONTENT.write_bytes((head + body).encode("utf-8"))
+
+
 # ───────────────────────── principal ─────────────────────────
 def main():
     ap = argparse.ArgumentParser()
@@ -277,6 +365,8 @@ def main():
     ap.add_argument("--dropout", type=float, default=0.3)
     ap.add_argument("--how-weight", type=float, default=0.5)
     ap.add_argument("--aug", type=int, default=8, help="variantes por pregunta original")
+    ap.add_argument("--tpl", type=int, default=30, help="filas de plantillas por intención (0 = sin plantillas)")
+    ap.add_argument("--tpl-aug", type=int, default=1, help="variantes por fila de plantilla")
     ap.add_argument("--class-weight", choices=["inverse", "sqrt", "none"], default="inverse")
     ap.add_argument("--lr", type=float, default=3e-3)
     ap.add_argument("--l2", type=float, default=1e-4)
@@ -284,85 +374,89 @@ def main():
     ap.add_argument("--max-epochs", type=int, default=300)
     ap.add_argument("--patience", type=int, default=25)
     ap.add_argument("--no-export", action="store_true")
-    ap.add_argument("--curve", action="store_true", help="agrega la curva de aprendizaje (3, 5 y 10 pliegues)")
     ap.add_argument("--no-report", action="store_true", help="solo imprime métricas (para experimentos)")
     cfg = ap.parse_args()
     sys.stdout.reconfigure(encoding="utf-8")
 
     elia = load_elia()
-    cfg.threshold, cfg.margin = elia["threshold"], elia["margin"]
-    cfg.clarify, cfg.how_threshold = elia.get("clarify", 0.25), elia.get("howThreshold", 0.5)
-    ids = [i["id"] for i in elia["intents"]]
+    cfg.how_threshold = elia.get("howThreshold", 0.5)
+    intents = elia["intents"]
+    ids = [i["id"] for i in intents]
+    oos = ids.index(OOS)
+    keys = compile_keys(intents)
     rows = load_questions()
     y = np.array([ids.index(r["intent"]) for r in rows])
     h = np.array([r["how"] for r in rows])
     K = len(ids)
     feats = Feats()
     Xo = feats([r["text"] for r in rows])
-    print(f"{len(rows)} preguntas · {K} intenciones · features {DIM}")
+    kidx = np.array([ids.index(k) if (k := match_keys(r["text"], keys)) else -1 for r in rows])
+    print(f"{len(rows)} preguntas · {K} intenciones · {sum(len(k) for _, k in keys)} keys · "
+          f"con key único: {(kidx >= 0).mean():.0%} · features {DIM}")
 
-    # ── validación cruzada ──
-    def cross_validate(nf, verbose=True):
+    # plantillas (solo entrenamiento): se generan una vez a partir de content.js, no de las preguntas
+    extra = None
+    if cfg.tpl:
+        trng = random.Random(cfg.seed + 11)
+        T = templates.generate(intents, trng, cfg.tpl)
+        tx, ty, th = [], [], []
+        for r in T:
+            for t in [r["text"]] + variants(r["text"], cfg.tpl_aug, trng):
+                tx.append(t); ty.append(ids.index(r["intent"])); th.append(r["how"])
+        extra = (feats(tx), np.array(ty), np.array(th, dtype=float))
+        print(f"plantillas: {len(T)} filas + variantes = {len(tx)} filas de entrenamiento")
+
+    def run_cv(ex, tag):
         rng = random.Random(cfg.seed)
-        fold = stratified_folds(y, nf, rng)
-        per_fold, eps, Ts = [], [], []
-        conf = Counter()
-        how_cm = np.zeros((2, 2), dtype=int)
-        oos_detail = []
-        for f in range(nf):
+        fold = stratified_folds(y, cfg.folds, rng)
+        P, HP, eps, Ts = np.zeros((len(y), K)), np.zeros(len(y)), [], []
+        for f in range(cfg.folds):
             tr_all = [i for i in range(len(y)) if fold[i] != f]
             vi = [i for i in range(len(y)) if fold[i] == f]
             tr, iv = inner_split(tr_all, y, rng)
-            X, ys, hs, sw = build_train(rows, tr, y, h, feats, cfg, random.Random(cfg.seed * 100 + f), K)
-            P, ep = train(X, ys, hs, sw, Xo[iv], y[iv], h[iv].astype(float), K, cfg, cfg.seed + f)
-            _, _, _, lv, _ = forward(P, Xo[iv])
+            X, ys, hs, sw = build_train(rows, tr, y, h, feats, cfg, random.Random(cfg.seed * 100 + f), K, ex)
+            Pm, ep = train(X, ys, hs, sw, Xo[iv], y[iv], h[iv].astype(float), K, cfg, cfg.seed + f)
+            _, _, _, lv, _ = forward(Pm, Xo[iv])
             T = fit_temperature(lv, y[iv])
-            _, _, _, lo, hz = forward(P, Xo[vi])
-            probs, hp = softmax(lo / T), sigmoid(hz)
-            M = fold_metrics(rows, vi, y, h, probs, hp, ids, cfg)
-            per_fold.append(M); eps.append(ep); Ts.append(T)
-            for k, i in enumerate(vi):
-                pk = int(probs[k].argmax())
-                if pk != y[i]:
-                    conf[(ids[y[i]], ids[pk])] += 1
-                how_cm[h[i], int(hp[k] >= cfg.how_threshold)] += 1
-                if ids[y[i]] == OOS:
-                    o = np.argsort(-probs[k])
-                    oos_detail.append((rows[i]["text"], ids[o[0]], float(probs[k][o[0]]), decide(probs[k], ids, cfg)))
-            if verbose:
-                print(f"  pliegue {f + 1}: {len(tr)} orig. + variantes = {len(ys)} filas · época {ep} · T={T:.2f} · "
-                      f"acc_in={M['all']['acc_in']:.3f} · rechazo OOS={M['all']['oos_reject']:.3f}")
+            _, _, _, lo, hz = forward(Pm, Xo[vi])
+            P[vi], HP[vi] = softmax(lo / T), sigmoid(hz)
+            eps.append(ep); Ts.append(T)
+            print(f"  [{tag}] pliegue {f + 1}: {len(ys)} filas · época {ep} · T={T:.2f} · "
+                  f"acc_in={np.mean([P[i].argmax() == y[i] for i in vi if y[i] != oos]):.3f}")
+        return fold, P, HP, eps, Ts
 
-        def agg(lang, key):
-            v = np.array([m[lang][key] for m in per_fold], dtype=float)
-            v = v[~np.isnan(v)]
-            return (v.mean(), v.std()) if len(v) else (np.nan, np.nan)
+    fold, PA, HA, epsA, TsA = run_cv(None, "base")
+    stages = [("Base (solo red)", evaluate_stage(PA, y, kidx, fold, cfg.folds, rows, oos, [("none", 0.0)]), PA, HA, epsA, TsA),
+              ("+ keys", evaluate_stage(PA, y, kidx, fold, cfg.folds, rows, oos, HYBRIDS), PA, HA, epsA, TsA)]
+    if extra is not None:
+        _, PB, HB, epsB, TsB = run_cv(extra, "plantillas")
+        stages.append(("+ keys + plantillas", evaluate_stage(PB, y, kidx, fold, cfg.folds, rows, oos, HYBRIDS), PB, HB, epsB, TsB))
+    for name, st, *_ in stages:
+        p = st["params"]
+        if p:
+            a = ms([r["answered_correct"] for r in st["folds"]["all"]])
+            print(f"{name}: {p} → responde bien {a[0]:.3f}")
+        else:
+            print(f"{name}: ninguna combinación cumple responde mal ≤ 5 % y rechazo ≥ 85 %")
 
-        return per_fold, agg, eps, Ts, conf, how_cm, oos_detail
+    # se exporta la última etapa (la más completa) si tiene una regla válida
+    name, st, Pf, Hf, eps, Ts = stages[-1]
+    prm = st["params"]
+    how_cm = np.zeros((2, 2), dtype=int)
+    for i in range(len(y)):
+        how_cm[h[i], int(Hf[i] >= cfg.how_threshold)] += 1
+    how_acc = ms([float(((Hf >= cfg.how_threshold) == (h == 1))[fold == f].mean()) for f in range(cfg.folds)])
 
-    per_fold, agg, eps, Ts, conf, how_cm, oos_detail = cross_validate(cfg.folds)
-    curve = []
-    if cfg.curve:   # curva de aprendizaje: misma red, más o menos datos por pliegue
-        for nf in (3, cfg.folds, 10):
-            pf, ag, *_ = cross_validate(nf, verbose=False) if nf != cfg.folds else (per_fold, agg)
-            curve.append((nf, len(y) * (nf - 1) / nf / K, ag('all', 'acc_in'), ag('all', 'oos_reject')))
-            print(f'  curva: {nf} pliegues → acc_in={curve[-1][2][0]:.3f}')
-
-    # ── modelo final ──
     final_ep, final_T = int(np.median(eps)), float(np.median(Ts))
-    size_kb = None
-    quant_agree = None
-    if not cfg.no_export:
-        all_idx = list(range(len(y)))
-        X, ys, hs, sw = build_train(rows, all_idx, y, h, feats, cfg, random.Random(cfg.seed * 100 + 99), K)
+    size_kb = quant_agree = None
+    if not cfg.no_export and prm:
+        X, ys, hs, sw = build_train(rows, list(range(len(y))), y, h, feats, cfg,
+                                    random.Random(cfg.seed * 100 + 99), K, extra if len(stages) == 3 else None)
         P, _ = train(X, ys, hs, sw, None, None, None, K, cfg, cfg.seed + 99, epochs=final_ep)
         Q, out = {}, {}
         for k in ("W1", "W2", "Wh"):
             out[k], Q[k] = quant(P[k])
-        Q["b1"], Q["b2"], Q["bh"] = P["b1"], P["b2"], P["bh"]
         _, _, _, lf, _ = forward(P, Xo)
-        pq, _ = quantized_predict(Q, Xo, final_T)
-        quant_agree = float((softmax(lf / final_T).argmax(1) == pq.argmax(1)).mean())
         model = {
             "v": 1, "generated": date.today().isoformat(),
             "dataset": hashlib.sha256(QUESTIONS.read_bytes()).hexdigest()[:12],
@@ -373,138 +467,157 @@ def main():
             "Wh": out["Wh"], "bh": round(float(P["bh"][0]), 6),
         }
         # los sesgos se redondean al exportar: el modelo cuantizado de referencia usa los mismos valores
-        Q["b1"], Q["b2"] = np.array(model["b1"]), np.array(model["b2"])
-        Q["bh"] = np.array([model["bh"]])
+        Q["b1"], Q["b2"], Q["bh"] = np.array(model["b1"]), np.array(model["b2"]), np.array([model["bh"]])
+        pq, _ = quantized_predict(Q, Xo, final_T)
+        quant_agree = float((softmax(lf / final_T).argmax(1) == pq.argmax(1)).mean())
         OUT_JS.write_text("/* Generated by tools/elia/train.py. Do not edit: run python tools/elia/train.py */\n"
                           "window.ELIA_MODEL = " + json.dumps(model, separators=(",", ":")) + ";\n", encoding="utf-8")
         size_kb = OUT_JS.stat().st_size / 1024
-        # paridad: 30 originales + 20 variantes con typos y sin tildes
+        write_config(prm)
+        # paridad: 30 originales + 20 variantes (red sola) y 40 preguntas con keys (híbrido)
         prng = random.Random(cfg.seed + 5)
-        sample = prng.sample([r["text"] for r in rows], 30)
-        for t in prng.sample([r["text"] for r in rows], 40):
+        texts = [r["text"] for r in rows]
+        sample = prng.sample(texts, 30)
+        for t in prng.sample(texts, 40):
             sample += variants(t, 1, prng)
         sample = sample[:50]
+        with_key = [t for t in texts if key_hits(t, keys)]
+        hsample = prng.sample(with_key, 25)
+        for t in prng.sample(with_key, 30):
+            hsample += variants(t, 1, prng)
+        hsample = hsample[:40] + ["hola, qué es pulso", "phone ban paper", "el paper de parsimonya",
+                                  "codigo de ceteris en github", "sa-ccr y calypso"]
         pp, ph = quantized_predict(Q, feats(sample), final_T)
-        PARITY.write_text(json.dumps({"questions": sample, "probs": pp.round(10).tolist(), "how": ph.round(10).tolist()},
-                                     ensure_ascii=False), encoding="utf-8")
-        print(f"modelo final: {final_ep} épocas · T={final_T:.2f} · {OUT_JS.relative_to(ROOT)} = {size_kb:.1f} KB")
+        hq, _ = quantized_predict(Q, feats(hsample), final_T)
+        hk = np.array([ids.index(k) if (k := match_keys(t, keys)) else -1 for t in hsample])
+        hp = apply_keys(hq, hk, prm["mode"], prm["w"])
+        PARITY.write_text(json.dumps({
+            "questions": sample, "probs": pp.round(10).tolist(), "how": ph.round(10).tolist(),
+            "hybrid": {"mode": prm["mode"], "w": prm["w"], "questions": hsample,
+                       "key": [ids[k] if k >= 0 else None for k in hk], "probs": hp.round(10).tolist()}},
+            ensure_ascii=False), encoding="utf-8")
+        print(f"modelo final ({name}): {final_ep} épocas · T={final_T:.2f} · {OUT_JS.relative_to(ROOT)} = {size_kb:.1f} KB")
+        print(f"content.js ← {prm}")
 
-    print(f"acc_in={agg('all', 'acc_in')[0]:.3f} · rechazo={agg('all', 'oos_reject')[0]:.3f} · "
-          f"how_acc={agg('all', 'how_acc')[0]:.3f} · responde mal={agg('all', 'answered_wrong')[0]:.3f}")
     if cfg.no_report:
         return
-    write_report(cfg, rows, ids, per_fold, agg, conf, how_cm, oos_detail, eps, Ts, final_ep, final_T, size_kb, quant_agree, curve)
+    write_report(cfg, rows, ids, kidx, y, stages, how_cm, how_acc, final_ep, final_T, size_kb, quant_agree, oos)
     print(f"reporte: {REPORT.relative_to(ROOT)}")
 
 
-def write_report(cfg, rows, ids, per_fold, agg, conf, how_cm, oos_detail, eps, Ts, final_ep, final_T, size_kb, quant_agree, curve):
+def write_report(cfg, rows, ids, kidx, y, stages, how_cm, how_acc, final_ep, final_T, size_kb, quant_agree, oos):
     pct = lambda m: f"{100 * m[0]:.1f} ± {100 * m[1]:.1f} %"
     lang_n = Counter(r["lang"] for r in rows)
+    ins = y != oos
+    kin = kidx[ins]
     L = []
     L.append("# EL·IA — reporte del modelo\n")
     L.append(f"Generado por `python tools/elia/train.py` el {date.today().isoformat()}. "
              f"{len(rows)} preguntas originales ({lang_n['es']} ES · {lang_n['en']} EN), {len(ids)} intenciones.\n")
     L.append("## Configuración\n")
-    L.append(f"- Red: {DIM} → {cfg.hidden} (ReLU, dropout {cfg.dropout}) → {len(ids)} (softmax) + asks_how (sigmoide).")
-    L.append(f"- Pérdida: CE con pesos de clase `{cfg.class_weight}` + {cfg.how_weight} × BCE(asks_how) + L2 {cfg.l2}. "
+    L.append(f"- Red: {DIM} → {cfg.hidden} (ReLU, dropout {cfg.dropout}) → {len(ids)} (softmax) + asks_how (sigmoide). "
+             f"Pérdida: CE con pesos de clase `{cfg.class_weight}` + {cfg.how_weight} × BCE(asks_how) + L2 {cfg.l2}. "
              f"Adam lr {cfg.lr}, lote {cfg.batch}, {cfg.aug} variantes por pregunta.")
-    L.append(f"- Regla: responder si p1 ≥ {cfg.threshold} y p1 − p2 ≥ {cfg.margin}; \"¿Te refieres a…?\" si p1 ≥ {cfg.clarify}; "
-             f"si no, ofrecer el correo. `out_of_scope` como 1.ª opción nunca responde. asks_how ≥ {cfg.how_threshold}.")
-    L.append(f"- Validación cruzada estratificada de {cfg.folds} pliegues solo con preguntas originales; las variantes se "
-             f"generan dentro de cada pliegue a partir de su parte de entrenamiento. Early stopping y temperatura con una "
-             f"pregunta por clase separada del entrenamiento (nunca con el pliegue evaluado).")
-    L.append(f"- Épocas por pliegue: {eps} · temperatura por pliegue: {[round(t, 2) for t in Ts]}.\n")
+    L.append(f"- Keys: `keys` de cada intención en content.js. Coincidencia exacta, o a distancia de Levenshtein ≤ 1 "
+             f"si las dos palabras tienen ≥ 5 letras. Si coinciden keys de dos intenciones, decide la red. "
+             f"asks_how siempre sale de la red.")
+    L.append(f"- Plantillas: {len(templates.TEMPLATES)} plantillas × keys y títulos, {cfg.tpl} filas por intención "
+             f"(+{cfg.tpl_aug} variante cada una), solo en entrenamiento.")
+    L.append(f"- Validación cruzada estratificada de {cfg.folds} pliegues solo con preguntas originales (los mismos "
+             f"pliegues en todas las etapas). Early stopping y temperatura con una pregunta por clase separada del "
+             f"entrenamiento. Las variantes y las plantillas nunca están en el pliegue evaluado.")
+    L.append(f"- Regla: responder si la 1.ª no es `out_of_scope`, p1 ≥ threshold y p1 − p2 ≥ margin; "
+             f"\"¿Te refieres a…?\" (3 opciones) si p1 ≥ clarify; si no, correo. Grilla: threshold "
+             f"{T_GRID[0]}–{T_GRID[-1]}, margin {M_GRID[0]}–{M_GRID[-1]}, clarify {C_GRID[0]}–{C_GRID[-1]} (paso 0.05) y "
+             f"la mezcla con keys (`mix` w ∈ 0.3–0.9, `bonus` β ∈ 0.5–4). Se elige lo que maximiza \"responde bien\" con "
+             f"responde mal ≤ {MAX_WRONG:.0%} y rechazo de `out_of_scope` ≥ {MIN_REJECT:.0%}; luego el clarify que "
+             f"maximiza aciertos − fallos dentro de \"¿Te refieres a…?\".\n")
 
-    L.append("## Métricas (media ± desviación entre pliegues)\n")
-    L.append("| Métrica | Todas | ES | EN | Meta |")
-    L.append("|---|---|---|---|---|")
-    rowsM = [("Accuracy dentro del alcance (argmax)", "acc_in", "≥ 90 %"),
-             ("F1 macro (todas las clases)", "f1_macro", ""),
-             ("Rechazo fuera de alcance (no responde)", "oos_reject", "≥ 85 %"),
-             ("Dentro del alcance: responde bien", "answered_correct", ""),
-             ("Dentro del alcance: responde mal", "answered_wrong", ""),
-             ("Dentro del alcance: \"¿Te refieres a…?\"", "clarify", ""),
-             ("  … con la correcta entre las 3 opciones", "clarify_hit", ""),
-             ("Dentro del alcance: ofrece correo", "miss", ""),
-             ("Accuracy de asks_how", "how_acc", "")]
-    for name, key, goal in rowsM:
-        L.append(f"| {name} | {pct(agg('all', key))} | {pct(agg('es', key))} | {pct(agg('en', key))} | {goal} |")
+    L.append("## Capa de keys sola (sin red, todas las preguntas dentro del alcance)\n")
+    right = int(((kidx >= 0) & (kidx == y))[ins].sum()); wrong = int(((kidx >= 0) & (kidx != y))[ins].sum())
+    L.append(f"Con key único: {int((kin >= 0).sum())} de {int(ins.sum())} ({(kin >= 0).mean():.0%}); de esos, "
+             f"{right} con la intención correcta y {wrong} con otra. Las {int((kidx[~ins] >= 0).sum())} preguntas "
+             f"fuera de alcance con key quedan para la red y la regla.")
+    L.append("Los keys los escribí mirando content.js **y** el dataset, y los corregí una vez tras un diagnóstico "
+             "(quité `metro`, que a una letra coincide con \"petro\", y `website`, y agregué `agentes`/`github`). "
+             "Por eso esta capa está algo favorecida en la validación; la prueba real son preguntas nuevas.\n")
+
+    L.append("## Aporte de cada paso (media ± desviación entre pliegues, todas las preguntas)\n")
+    L.append("Cada etapa con su propia regla óptima de la grilla. \"Anidada\": la regla se elige con 4 pliegues y se mide "
+             "en el 5.º, que es la estimación honesta; la otra columna elige y mide en los mismos datos.\n")
+    L.append("| Etapa | Regla elegida | Accuracy (argmax) | Responde bien | Responde bien (anidada) | Responde mal | Responde mal (anidada) | \"¿Te refieres a…?\" | Correo | Rechazo OOS |")
+    L.append("|---|---|---|---|---|---|---|---|---|---|")
+    for name, st, *_ in stages:
+        p = st["params"]
+        nest = st["nested"]
+        nc, nw = ms([r["answered_correct"] for r in nest]), ms([r["answered_wrong"] for r in nest])
+        if not p:
+            L.append(f"| {name} | ninguna cumple | | | {pct(nc)} | | {pct(nw)} | | | |")
+            continue
+        F = st["folds"]["all"]
+        g = lambda k: pct(ms([r[k] for r in F]))
+        rule = (f"t {p['threshold']:.2f} · m {p['margin']:.2f} · c {p['clarify']:.2f}"
+                + ("" if p["mode"] == "none" else f" · {p['mode']} {p['w']}"))
+        L.append(f"| {name} | {rule} | {g('acc_in')} | {g('answered_correct')} | {pct(nc)} | {g('answered_wrong')} | "
+                 f"{pct(nw)} | {g('clarify')} | {g('miss')} | {g('oos_reject')} |")
     L.append("")
-    acc, rej = agg("all", "acc_in")[0], agg("all", "oos_reject")[0]
-    ok = acc >= 0.90 and rej >= 0.85
-    L.append(f"**Resultado:** accuracy {100 * acc:.1f} % (meta 90 %) · rechazo {100 * rej:.1f} % (meta 85 %) → "
-             + ("**se cumplen las dos metas.**\n" if ok else "**no se cumplen todas las metas** (ver propuestas abajo).\n"))
 
-    L.append("## asks_how — matriz de confusión (suma de los pliegues)\n")
+    name, st, *_ = stages[-1]
+    p = st["params"]
+    if p:
+        L.append(f"## Etapa final ({name}) por idioma\n")
+        L.append(f"Regla: threshold {p['threshold']}, margin {p['margin']}, clarify {p['clarify']}, keys `{p['mode']}` "
+                 f"{p['w']} (ya escritos en content.js).\n")
+        L.append("| Métrica | Todas | ES | EN | Meta |")
+        L.append("|---|---|---|---|---|")
+        for lbl, k, goal in [("Responde bien", "answered_correct", "≥ 80 %"), ("Responde mal", "answered_wrong", "≤ 5 %"),
+                             ("\"¿Te refieres a…?\"", "clarify", ""), ("  … con la correcta entre las 3 opciones", "clarify_hit", ""),
+                             ("Va a correo", "miss", ""), ("Accuracy (argmax, tras keys)", "acc_in", ""),
+                             ("Rechazo de out_of_scope", "oos_reject", "≥ 85 %"),
+                             ("out_of_scope que cae en \"¿Te refieres a…?\"", "oos_clarify", "")]:
+            L.append(f"| {lbl} | " + " | ".join(pct(ms([r[k] for r in st['folds'][lg]])) for lg in ("all", "es", "en"))
+                     + f" | {goal} |")
+        L.append("")
+        F = st["folds"]["all"]
+        good, bad, rej = (ms([r[k] for r in F])[0] for k in ("answered_correct", "answered_wrong", "oos_reject"))
+        nest = ms([r["answered_correct"] for r in st["nested"]])[0]
+        met = good >= 0.80 and bad <= MAX_WRONG and rej >= MIN_REJECT
+        L.append(f"**Resultado:** responde bien {100 * good:.1f} % (anidada {100 * nest:.1f} %; meta 80 %) · responde mal "
+                 f"{100 * bad:.1f} % (meta ≤ 5 %) · rechazo {100 * rej:.1f} % (meta 85 %) → "
+                 + ("**se cumplen las metas.**\n" if met else "**no se cumple la meta de respuestas correctas.**\n"))
+
+        O = st["outs"][(p["mode"], p["w"])]
+        ans = ~O.topoos & (O.p1 >= p["threshold"]) & (O.p1 - O.p2 >= p["margin"])
+        L.append("## Respuestas equivocadas en validación (etapa final)\n")
+        wr = [(rows[i]["text"], ids[y[i]], ids[O.top[i]], O.p1[i]) for i in range(len(y)) if ans[i] and not O.ok[i]]
+        if wr:
+            L.append("| Pregunta | Real | Respondió | p1 |")
+            L.append("|---|---|---|---|")
+            for t, a, b, q in sorted(wr, key=lambda d: -d[3]):
+                L.append(f"| {t} | `{a}` | `{b}` | {q:.2f} |")
+        else:
+            L.append("Ninguna.")
+        L.append("")
+        miss = Counter(ids[y[i]] for i in range(len(y)) if ins[i] and not ans[i])
+        L.append("## Intenciones que más se quedan sin responder (\"¿Te refieres a…?\" o correo)\n")
+        L.append(", ".join(f"`{k}` ({n})" for k, n in miss.most_common(15)) + "\n")
+
+    L.append("## asks_how (red de la etapa final, suma de los pliegues)\n")
+    L.append(f"Accuracy {pct(how_acc)}.\n")
     L.append("| | predice how=0 | predice how=1 |")
     L.append("|---|---|---|")
     L.append(f"| **real how=0** | {how_cm[0, 0]} | {how_cm[0, 1]} |")
     L.append(f"| **real how=1** | {how_cm[1, 0]} | {how_cm[1, 1]} |\n")
 
-    L.append("## Intenciones que más se confunden (argmax, suma de los pliegues)\n")
-    if conf:
-        L.append("| Real | Predicha | Veces |")
-        L.append("|---|---|---|")
-        for (a, b), n in conf.most_common(12):
-            L.append(f"| `{a}` | `{b}` | {n} |")
-    else:
-        L.append("Ninguna confusión en validación.")
-    L.append("")
-
-    L.append("## Preguntas fuera de alcance que se responderían\n")
-    bad = [d for d in oos_detail if d[3] == "answer"]
-    if bad:
-        L.append("| Pregunta | Intención elegida | p1 |")
-        L.append("|---|---|---|")
-        for t, i, p, _ in sorted(bad, key=lambda d: -d[2]):
-            L.append(f"| {t} | `{i}` | {p:.2f} |")
-    else:
-        L.append("Ninguna: todas quedan en \"¿Te refieres a…?\" o en el correo.")
-    L.append("")
-
     L.append("## Exportación\n")
     if size_kb is not None:
-        L.append(f"- Modelo final: 100 % de las preguntas, {final_ep} épocas (mediana de la validación cruzada), "
-                 f"T = {final_T:.3f} (mediana).")
-        L.append(f"- `assets/data/elia-model.js`: **{size_kb:.1f} KB** (meta ≤ 400 KB). Pesos int8 con escala por capa.")
-        L.append(f"- Cuantización: el int8 coincide con el modelo en float en el {100 * quant_agree:.1f} % de las "
-                 f"predicciones (argmax) sobre las preguntas originales.")
-        L.append("- Paridad Python ↔ JS: `node tools/elia/test_parity.mjs` (50 preguntas, tolerancia 1e-3).")
+        L.append(f"- Modelo final: 100 % de las preguntas{' y las plantillas' if cfg.tpl else ''}, {final_ep} épocas "
+                 f"(mediana de la validación cruzada), T = {final_T:.3f} (mediana).")
+        L.append(f"- `assets/data/elia-model.js`: **{size_kb:.1f} KB** (meta ≤ 400 KB). Pesos int8 con escala por capa; "
+                 f"coincide con el modelo en float en el {100 * quant_agree:.1f} % de las predicciones.")
+        L.append("- Paridad Python ↔ JS: `node tools/elia/test_parity.mjs` (50 preguntas solo red + 45 con keys, tolerancia 1e-3).")
     else:
-        L.append("- No se exportó (`--no-export`).")
-    L.append("")
-
-    if curve:
-        L.append("## Curva de aprendizaje\n")
-        L.append("Misma red y misma configuración; solo cambia cuántas preguntas originales hay en el entrenamiento de cada pliegue.\n")
-        L.append("| Pliegues | Preguntas originales por clase en entrenamiento | Accuracy dentro del alcance | Rechazo fuera de alcance |")
-        L.append("|---|---|---|---|")
-        for nf, per, acc, rej in curve:
-            L.append(f"| {nf} | {per:.1f} | {pct(acc)} | {pct(rej)} |")
-        L.append("")
-
-    weak = defaultdict(int)
-    for (a, _), n in conf.items():
-        weak[a] += n
-    L.append("## Propuestas\n")
-    if curve and len(curve) >= 2:
-        n = np.log2([c[1] for c in curve]); a = np.array([100 * c[2][0] for c in curve])
-        b, c0 = np.polyfit(n, a, 1)
-        if b > 0:
-            need = {t: 2 ** ((t - c0) / b) for t in (70, 80, 90)}
-            L.append(f"- La curva sube unos {b:.0f} puntos cada vez que se duplican las preguntas por clase. Extrapolando "
-                     f"(con solo {len(curve)} puntos, es una estimación gruesa): ~{need[70]:.0f} preguntas originales por clase "
-                     f"para 70 %, ~{need[80]:.0f} para 80 % y ~{need[90]:.0f} para 90 %. Con unas 6 por clase hoy, la meta "
-                     f"del 90 % pide escribir del orden de {max(0, need[90] - 6) * (len(ids) - 1):.0f} preguntas más.")
-    if weak:
-        top = ", ".join(f"`{k}` ({n})" for k, n in sorted(weak.items(), key=lambda kv: -kv[1])[:8])
-        L.append(f"- Clases con más errores en validación: {top}. Antes de tocar la arquitectura, agregar 3–4 preguntas "
-                 f"por clase con su palabra distintiva y con las formulaciones que fallaron.")
-    if bad:
-        L.append("- Para el rechazo: agregar a `out_of_scope` preguntas parecidas a las de la tabla de arriba "
-                 "(mismo vocabulario que el sitio, pero sin relación con Esteban).")
-    if not weak and not bad:
-        L.append("- Nada urgente.")
+        L.append("- No se exportó.")
     REPORT.write_text("\n".join(L) + "\n", encoding="utf-8")
 
 

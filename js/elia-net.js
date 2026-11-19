@@ -4,6 +4,7 @@
      normalizar → n-gramas (palabras 1–2, caracteres 3–5) → FNV-1a 32 bits mod 4096 → log(1+x) → L2.
    Red: x (4096) → oculta 64 ReLU → softmax(logits / T) sobre las intenciones,
         y de la misma capa oculta → sigmoide para asks_how.
+   Encima va la capa de palabras clave (keys de cada intención en content.js): ver ask().
    Los pesos llegan en window.ELIA_MODEL (assets/data/elia-model.js), cuantizados a int8 con una
    escala por capa: peso real = q × escala. */
 (function (root) {
@@ -81,6 +82,70 @@
     return {probs, how, ranked};
   }
 
+  /* ── Capa de palabras clave (la misma regla que tools/elia/common.py) ──
+     Un key coincide si sus palabras aparecen seguidas en la pregunta normalizada; cada palabra debe
+     ser igual o, si las dos tienen ≥ 5 letras, estar a distancia de Levenshtein ≤ 1.
+     Si coinciden keys de una sola intención, se devuelve esa; si de dos o más, null (decide la red). */
+  function near(a, b) {
+    if (a === b) return true;
+    if (a.length < 5 || b.length < 5 || Math.abs(a.length - b.length) > 1) return false;
+    if (a.length === b.length) { let d = 0; for (let i = 0; i < a.length; i++) if (a[i] !== b[i] && ++d > 1) return false; return d === 1; }
+    const s = a.length < b.length ? a : b, l = a.length < b.length ? b : a;
+    let i = 0;
+    while (i < s.length && s[i] === l[i]) i++;
+    return s.slice(i) === l.slice(i + 1);
+  }
+
+  /* intents: DATA.elia.intents → [[id, [[palabras del key], …]], …] */
+  function compileKeys(intents) {
+    const out = [];
+    for (const it of intents) {
+      const ks = (it.keys || []).map(k => normalize(k)).filter(Boolean).map(k => k.split(' '));
+      if (ks.length) out.push([it.id, ks]);
+    }
+    return out;
+  }
+
+  function keyHits(text, compiled) {
+    const q = normalize(text).split(' ').filter(Boolean), hits = [];
+    for (const [id, keys] of compiled) {
+      const hit = keys.some(kt => {
+        for (let s = 0; s + kt.length <= q.length; s++) if (kt.every((w, j) => near(w, q[s + j]))) return true;
+        return false;
+      });
+      if (hit) hits.push(id);
+    }
+    return hits;
+  }
+
+  function matchKeys(text, compiled) {
+    const h = keyHits(text, compiled);
+    return h.length === 1 ? h[0] : null;
+  }
+
+  /* Mezcla la salida de la red con la intención del key (cfg.keyMode / cfg.keyWeight de content.js):
+       mix    p = w · p_red + (1 − w) · [intención del key]
+       bonus  p ∝ p_red · e^w en la intención del key
+     asks_how no cambia: siempre sale de la red. */
+  function hybrid(M, r, keyId, cfg) {
+    const k = keyId ? M.intents.indexOf(keyId) : -1;
+    if (k < 0 || !cfg.keyMode || cfg.keyMode === 'none') return Object.assign({}, r, {key: null});
+    let probs;
+    if (cfg.keyMode === 'mix') probs = r.probs.map((p, j) => cfg.keyWeight * p + (j === k ? 1 - cfg.keyWeight : 0));
+    else {
+      probs = r.probs.map((p, j) => j === k ? p * Math.exp(cfg.keyWeight) : p);
+      const s = probs.reduce((a, b) => a + b, 0);
+      probs = probs.map(p => p / s);
+    }
+    const ranked = M.intents.map((id, j) => [id, probs[j]]).sort((p, q) => q[1] - p[1]);
+    return {probs, how: r.how, ranked, key: keyId};
+  }
+
+  /* Red + keys: lo que usa la app. compiled = compileKeys(DATA.elia.intents), cfg = DATA.elia. */
+  function ask(M, text, compiled, cfg) {
+    return hybrid(M, predict(M, text), matchKeys(text, compiled), cfg);
+  }
+
   /* Regla de decisión (la misma que usa tools/elia/train.py para el reporte):
        answer   la 1.ª no es out_of_scope, p1 ≥ threshold y p1 − p2 ≥ margin
        clarify  no se responde, la 1.ª no es out_of_scope y p1 ≥ clarify  → "¿Te refieres a…?"
@@ -92,7 +157,7 @@
     return 'miss';
   }
 
-  const api = {normalize, tokens, fnv1a, featurize, predict, decide};
+  const api = {normalize, tokens, fnv1a, featurize, predict, decide, near, compileKeys, keyHits, matchKeys, hybrid, ask};
   if (typeof module === 'object' && module.exports) module.exports = api;
   else root.EliaNet = api;
 })(typeof window !== 'undefined' ? window : globalThis);

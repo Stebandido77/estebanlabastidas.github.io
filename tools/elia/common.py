@@ -72,6 +72,58 @@ def featurize(text: str) -> np.ndarray:
     return v / n if n > 0 else v
 
 
+"""Capa de palabras clave (la misma regla en js/elia-net.js)
+  - Cada key se normaliza igual que la pregunta y se parte en palabras.
+  - Un key coincide si sus palabras aparecen seguidas en la pregunta. Cada palabra del key debe ser
+    igual a la de la pregunta o, si ambas tienen 5 letras o más, estar a distancia de Levenshtein ≤ 1.
+  - Si coinciden keys de una sola intención, esa es la intención del key. Si coinciden keys de dos o
+    más intenciones distintas (o de ninguna), no hay intención del key y decide la red.
+"""
+KEY_FUZZY_MIN = 5
+
+
+def near(a: str, b: str) -> bool:
+    """¿Distancia de Levenshtein ≤ 1? Solo se tolera si las dos palabras tienen ≥ 5 letras."""
+    if a == b:
+        return True
+    if len(a) < KEY_FUZZY_MIN or len(b) < KEY_FUZZY_MIN or abs(len(a) - len(b)) > 1:
+        return False
+    if len(a) == len(b):
+        return sum(x != y for x, y in zip(a, b)) == 1
+    s, l = (a, b) if len(a) < len(b) else (b, a)
+    i = 0
+    while i < len(s) and s[i] == l[i]:
+        i += 1
+    return s[i:] == l[i + 1:]
+
+
+def compile_keys(intents: list[dict]) -> list[tuple[str, list[list[str]]]]:
+    out = []
+    for it in intents:
+        ks = [normalize(k).split() for k in it.get("keys", [])]
+        ks = [k for k in ks if k]
+        if ks:
+            out.append((it["id"], ks))
+    return out
+
+
+def key_hits(text: str, compiled) -> list[str]:
+    q = normalize(text).split()
+    hits = []
+    for iid, keys in compiled:
+        for kt in keys:
+            n = len(kt)
+            if any(all(near(kt[j], q[s + j]) for j in range(n)) for s in range(len(q) - n + 1)):
+                hits.append(iid)
+                break
+    return hits
+
+
+def match_keys(text: str, compiled) -> str | None:
+    hits = key_hits(text, compiled)
+    return hits[0] if len(hits) == 1 else None
+
+
 def featurize_many(texts) -> np.ndarray:
     return np.stack([featurize(t) for t in texts]) if len(texts) else np.zeros((0, DIM))
 
