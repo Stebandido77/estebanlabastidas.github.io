@@ -14,12 +14,15 @@ EOS.register = (id, mod) => { EOS.apps[id] = mod; };
 /* EL·IA in testing: with DATA.elia.enabled === false it does not exist (Dock, phone home, Pages, Spotlight,
    Terminal, default window, model download) unless the URL has ?elia=1, which turns it on for the rest of the
    session (sessionStorage). enabled: true (or no flag) shows it to everyone. */
+EOS.eliaFresh = false;   /* true on the load that turns EL·IA on for this session: ignore its saved window rect */
 EOS.eliaOn = (() => {
   if (!D.elia) return false;
   if (D.elia.enabled !== false) return true;
   const ask = new URLSearchParams(location.search).get('elia') === '1';
-  try { if (ask) sessionStorage.setItem('eos.elia', '1'); return ask || sessionStorage.getItem('eos.elia') === '1'; }
-  catch (e) { return ask; }
+  try {
+    if (ask && sessionStorage.getItem('eos.elia') !== '1') { sessionStorage.setItem('eos.elia', '1'); EOS.eliaFresh = true; }
+    return ask || sessionStorage.getItem('eos.elia') === '1';
+  } catch (e) { EOS.eliaFresh = ask; return ask; }
 })();
 EOS.locked = !document.documentElement.classList.contains('unlocked') && !!document.getElementById('lock');   /* lock.js takes over */
 
@@ -410,13 +413,29 @@ document.addEventListener('click', e => {
     cycle: () => { const v = $$('.win').filter(w => !w.hidden).sort((a,b) => a.style.zIndex - b.style.zIndex); if (v.length > 1) focusWin(v[0]); }})[c.dataset.win]();
 });
 
-/* EL·IA in the right column: under Markets, same width, filling the height left above the Dock.
-   At least 300 px tall; if it does not fit, Markets shrinks, but never below the height its WATCH
-   panel needs; if it still does not fit, EL·IA stays closed. A position the visitor saved wins. */
-const ELIA_MIN_H = 300, COL_GAP = 12;
+/* EL·IA in the right column, when it is on (DATA.elia.enabled, or ?elia=1 for the session: EOS.eliaOn).
+   ≥ 1280 px: under Markets, same width, down to the Dock, at least ELIA_MIN_H tall; Markets may shrink, but never
+   below the height its WATCH panel needs. If that does not fit (short windows: a 1440×900 laptop leaves ~650 px
+   of work area), About on the left and EL·IA on the right, without Markets. 1024–1279 px: that same side layout,
+   if both fit at the minimum window size (360×260). Below 1024 px, or with EL·IA off: as before.
+   A position the visitor saved wins, except EL·IA's on the load that turns it on (EOS.eliaFresh). */
+const ELIA_MIN_W = 360, ELIA_MIN_H = 260, COL_GAP = 12;
+const eliaSaved = wa => (EOS.eliaFresh ? null : savedFor('elia', wa));
+/* height Markets needs for its title bar and WATCH panel, measured off-screen before opening it */
+function marketsMinH(mw){
+  const t = document.createElement('section'); t.className = 'win'; t.dataset.app = 'markets';
+  t.style.cssText = `visibility:hidden;position:absolute;left:-9999px;top:0;width:${mw}px;height:auto`;
+  t.innerHTML = `<div class="tb"><div class="ttl">Markets</div></div>${(EOS.apps.markets && EOS.apps.markets.render) ? EOS.apps.markets.render() : ''}`;
+  $('#wins').appendChild(t);
+  const side = $('.mkside', t), tb = $('.tb', t);
+  if (side) side.style.alignSelf = 'flex-start';
+  const h = Math.ceil((tb ? tb.offsetHeight : 0) + (side ? side.offsetHeight : 0));
+  t.remove();
+  return h;
+}
 function placeElia(m, wa){
-  if (!EOS.eliaOn) return;   /* EL·IA off (DATA.elia.enabled false, no ?elia=1): Markets stays as it is */
-  if (savedFor('elia', wa)) { openApp('elia'); return; }
+  const saved = eliaSaved(wa);
+  if (saved) { EOS.rect(openApp('elia'), saved); return; }
   const r = {...S.get(m)}, tb = $('.tb', m), side = $('.mkside', m);
   let sideH = 0;
   if (side) { side.style.alignSelf = 'flex-start'; sideH = side.offsetHeight; side.style.alignSelf = ''; }   /* its content height */
@@ -426,24 +445,35 @@ function placeElia(m, wa){
   if (eh < ELIA_MIN_H) {
     mh = Math.max(minM, bottom - COL_GAP - ELIA_MIN_H - r.y);
     eh = bottom - (r.y + mh + COL_GAP);
-    if (eh < ELIA_MIN_H) return;   /* no room: leave Markets as it was and do not open EL·IA */
+    if (eh < ELIA_MIN_H) return;   /* only with a saved Markets rect that leaves no room: EL·IA stays closed */
     EOS.rect(m, {...r, h: mh});
   }
   const e = openApp('elia');
   EOS.rect(e, {x: r.x, y: r.y + mh + COL_GAP, w: r.w, h: eh});
 }
+/* About on the left, EL·IA on the right (no Markets); false if they do not fit at the minimum size */
+function sideLayout(wa){
+  const ew = Math.round(Math.max(ELIA_MIN_W, Math.min(520, wa.w * .36))), aw = Math.min(860, wa.w - ew - 24);
+  if (aw < 360 || wa.h < ELIA_MIN_H) return false;
+  const e = openApp('elia'); EOS.rect(e, eliaSaved(wa) || {x: wa.x + wa.w - ew, y: wa.y, w: ew, h: Math.min(620, wa.h)});
+  const ah = Math.min(600, wa.h);
+  const a = openApp('about'); if (!savedFor('about', wa)) EOS.rect(a, {w: aw, h: ah, x: wa.x, y: wa.y + (wa.h - ah)/2});
+  return true;
+}
 
 /* ── entering the desktop (called directly, or by the login screen) ── */
 EOS.defaultWindows = () => {
-  const wa = workArea();
-  if (area().width >= 1280){   /* About on the left, in front; Markets top right (tall enough for its WATCH panel);
-                                  EL·IA under Markets, same width, down to the Dock */
+  const wa = workArea(), W = area().width, on = EOS.eliaOn;
+  if (W >= 1280){   /* About on the left, in front; Markets top right (tall enough for its WATCH panel);
+                       EL·IA under Markets, same width, down to the Dock */
     const mw = Math.min(620, wa.w*.40), mh = Math.min(420, wa.h*.66);
+    const room = !on || !!eliaSaved(wa) || savedFor('markets', wa) || marketsMinH(mw) + COL_GAP + ELIA_MIN_H <= wa.h;
+    if (!room && sideLayout(wa)) return;
     const m = openApp('markets'); if (!savedFor('markets', wa)) EOS.rect(m, {w:mw, h:mh, x:wa.x + wa.w - mw, y:wa.y});
-    placeElia(m, wa);
+    if (on) placeElia(m, wa);
     const aw = Math.min(860, wa.w - mw - 24), ah = Math.min(600, wa.h);
     const a = openApp('about'); if (!savedFor('about', wa)) EOS.rect(a, {w:aw, h:ah, x:wa.x, y:wa.y + (wa.h - ah)/2});
-  } else openApp('about');
+  } else if (!(W >= 1024 && on && sideLayout(wa))) openApp('about');
 };
 EOS.enter = () => { if (!phone()) EOS.defaultWindows(); };
 document.addEventListener('DOMContentLoaded', () => { if (!EOS.locked) EOS.enter(); });
