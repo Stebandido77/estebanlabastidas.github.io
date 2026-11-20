@@ -58,7 +58,7 @@ DEV = HERE / "data" / "dev_holdout.csv"
 DEV2 = HERE / "data" / "dev_holdout2.csv"
 GOAL_CORRECT, GOAL_USEFUL, GOAL_WRONG = 0.65, 0.85, 0.05   # puerta: correctas, correctas + opción válida, equivocadas
 WARN_WRONG_ES = 0.06   # aviso (no bloquea) si las equivocadas en español pasan de esto
-OUTCOMES = ("correcta", "equivocada", "¿Te refieres a…?", "correo")
+OUTCOMES = ("correcta", "equivocada", "¿Te refieres a…?", "menú", "correo")
 
 
 def load_model(path=MODEL):
@@ -93,7 +93,7 @@ def main():
     elia = load_elia()
     for kv in args.set:
         k, v = kv.split("=", 1)
-        elia[k] = float(v)
+        elia[k] = None if v in ("none", "null") else float(v)
     M, W = load_model(args.model)
     ids = M["intents"]
     for r in rows:
@@ -121,18 +121,19 @@ def main():
         inside = cos_dist(a, pr) <= ra
     else:
         inside = None
-    Oc = Outcomes(P, np.zeros(len(rows), int), oos, (sk >= 0) | (so >= 0), inside)
+    menu = [ids.index(ch["id"]) for ch in elia.get("menu", {}).get("chips", []) if ch["id"] in ids]
+    Oc = Outcomes(P, np.zeros(len(rows), int), oos, (sk >= 0) | (so >= 0), inside, menu, elia.get("menuBelow"))
     res = []
     for i, r in enumerate(rows):
         dec, opt_idx, blocked = Oc.row(i, t, m, c)
         top, p1 = int(Oc.top[i]), float(Oc.p1[i])
         options = [ids[k] for k in opt_idx]
-        answered, clarify = dec == "answer", dec == "clarify"
+        answered, clarify = dec == "answer", dec in ("clarify", "menu")
         valid = set(r["valid"])
         if answered:
             out = "correcta" if ids[top] in valid else "equivocada"
         elif clarify:
-            out = "¿Te refieres a…?"
+            out = "menú" if dec == "menu" else "¿Te refieres a…?"
         else:
             out = "correcta" if OOS in valid else "correo"
         src = ("social / guardia dura" if so[i] >= 0 else "key fuerte" if sk[i] >= 0
@@ -141,10 +142,10 @@ def main():
             src += ", bloqueada por el detector"
         res.append({"i": i, "out": out, "top": ids[top], "p1": p1, "src": src, "options": options, "blocked": blocked,
                     "hit": clarify and bool(valid & set(options)), "decision": "responde" if answered
-                    else "¿Te refieres a…?" if clarify else "correo"})
+                    else "menú" if dec == "menu" else "¿Te refieres a…?" if clarify else "correo"})
 
     print(f"{len(rows)} preguntas de {args.file.name} · modelo {M['generated']} (dataset {M['dataset']}) · threshold {t} · "
-          f"margin {m} · clarify {c} · keyWeight {elia['keyWeight']} · weakBonus {elia['weakBonus']} · detector "
+          f"margin {m} · clarify {c} · menuBelow {elia.get('menuBelow')} · keyWeight {elia['keyWeight']} · weakBonus {elia['weakBonus']} · detector "
           f"{'p' + str(ood['pct']) if ood else 'no'}\n")
 
     def table(sel, label):
@@ -176,7 +177,7 @@ def main():
 
     show("Respuestas equivocadas", [i for i in allr if res[i]["out"] == "equivocada"])
     show("No respondidas (\"¿Te refieres a…?\" o correo, sin ser correctas)",
-         [i for i in allr if res[i]["out"] in ("¿Te refieres a…?", "correo")])
+         [i for i in allr if res[i]["out"] in ("¿Te refieres a…?", "menú", "correo") and not res[i]["hit"]])
 
     n = len(rows)
     good = sum(x["out"] == "correcta" for x in res) / n
@@ -199,7 +200,7 @@ def main():
         else:
             print(f"  equivocadas en ES {100 * bad_es:.1f} % (aviso si > {WARN_WRONG_ES:.0%})")
     print(f"  con {n} preguntas, cada una mueve {100 / n:.1f} puntos.")
-    fails = [x for x in res if x["out"] == "equivocada" or (x["out"] in ("¿Te refieres a…?", "correo") and not x["hit"])]
+    fails = [x for x in res if x["out"] == "equivocada" or (x["out"] in ("¿Te refieres a…?", "menú", "correo") and not x["hit"])]
     top1 = Counter(x["top"] for x in fails)
     print(f"  1.ª intención en los fallos (equivocadas o sin opción válida, {len(fails)}): "
           + ", ".join(f"{k} {v}" for k, v in top1.most_common(8))

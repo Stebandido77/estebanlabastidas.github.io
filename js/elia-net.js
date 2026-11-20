@@ -239,6 +239,8 @@
                 cae dentro del radio de la 1.ª, o la decide un key fuerte o una regla forzada
        clarify  se iba a responder pero el detector la bloqueó y otra intención la contiene, o no se
                 responde, la 1.ª no es out_of_scope y p1 ≥ clarify  → "¿Te refieres a…?"
+       menu     sería "¿Te refieres a…?" normal pero p1 < cfg.menuBelow: la red no tiene idea → menú de temas fijo
+                (DATA.elia.menu.chips) en vez de 3 intenciones
        miss     todo lo demás → ofrecer escribirle a Esteban
      Marca r.blocked si el detector impidió responder (options() pone primero las intenciones que la contienen). */
   function decide(r, cfg) {
@@ -247,19 +249,24 @@
     r.blocked = !!(base && r.inside && r.kind !== 'strong' && !r.forced && !r.inside.includes(id));
     if (base && !r.blocked) return 'answer';
     if (r.blocked) return r.inside.some(k => k !== id) ? 'clarify' : 'miss';
-    if (id !== 'out_of_scope' && p1 >= cfg.clarify) return 'clarify';
+    if (id !== 'out_of_scope' && p1 >= cfg.clarify) return cfg.menuBelow != null && p1 < cfg.menuBelow ? 'menu' : 'clarify';
     return 'miss';
   }
 
   /* Las 3 opciones de "¿Te refieres a…?": por probabilidad, sin out_of_scope; si el detector bloqueó la
      respuesta, primero las intenciones cuyo radio contiene la pregunta (la 1.ª bloqueada ya no está entre ellas). */
+  /* chips del menú de temas que existen como intención en el modelo */
+  function menuOptions(M, cfg) {
+    return ((cfg.menu || {}).chips || []).map(c => c.id).filter(id => M.intents.includes(id));
+  }
+
   function options(r, n = 3) {
     const ids = r.ranked.map(([id]) => id);
     const first = r.blocked ? ids.filter(id => id !== ids[0] && r.inside.includes(id)) : [];
     return first.concat(ids.filter(id => !first.includes(id))).filter(id => id !== 'out_of_scope').slice(0, n);
   }
 
-  const api = {normalize, tokens, fnv1a, featurize, predict, decide, options, oodDistances, near, compileKeys, keyHits, keyIntent, socialIntent, forcedIntent, hybrid, ask};
+  const api = {normalize, tokens, fnv1a, featurize, predict, decide, options, menuOptions, oodDistances, near, compileKeys, keyHits, keyIntent, socialIntent, forcedIntent, hybrid, ask};
   if (typeof module === 'object' && module.exports) module.exports = api;
   else root.EliaNet = api;
 })(typeof window !== 'undefined' ? window : globalThis);

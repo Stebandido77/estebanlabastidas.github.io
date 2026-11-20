@@ -138,6 +138,24 @@ EOS.register('elia', {
       }
     }
 
+    /* menú de temas (DATA.elia.menu): cuando la red no tiene idea, o tras "Ninguna de estas" */
+    function topicMenu(q, wantHow) {
+      const m = say(`<p>${esc(U('menu'))}</p><div class="acts"></div>`);
+      const acts = $('.acts', m);
+      for (const c of E.menu.chips) {
+        const it = byId[c.id];
+        if (!it) continue;
+        const b = document.createElement('button');
+        b.type = 'button'; b.className = 'btn'; b.textContent = c[lang];
+        b.onclick = () => { add('me', `<p>${esc(c[lang])}</p>`); answer(it, wantHow); };
+        acts.appendChild(b);
+      }
+      const w = document.createElement('button');
+      w.type = 'button'; w.className = 'btn pri'; w.textContent = U('writeEsteban');
+      w.onclick = () => EOS.openApp('mail', mailDraft(q));
+      acts.appendChild(w);
+    }
+
     /* formulario opcional (Formspree / Web3Forms): ver tools/elia/README.md */
     function sendForm(m, q) {
       const f = document.createElement('form');
@@ -176,6 +194,7 @@ EOS.register('elia', {
       const {r, d} = res, top = r.ranked[0][0];
       const wantHow = r.how >= E.howThreshold;
       if (d === 'answer') return answer(byId[top], wantHow);
+      if (d === 'menu') { logMiss(q, top); return topicMenu(q, wantHow); }
       if (d === 'clarify') {
         const opts = NET().options(r);
         const m = say(`<p>${esc(U('clarify'))}</p><div class="acts"></div>`);
@@ -188,7 +207,7 @@ EOS.register('elia', {
         }
         const none = document.createElement('button');
         none.type = 'button'; none.className = 'btn'; none.textContent = U('none');
-        none.onclick = () => { logMiss(q, top); offerMail(q, false); };
+        none.onclick = () => { logMiss(q, top); topicMenu(q, wantHow); };
         acts.appendChild(none);
         return;
       }

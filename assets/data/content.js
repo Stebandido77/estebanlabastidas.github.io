@@ -463,11 +463,21 @@ window.DATA = {
     /* enabled: false → EL·IA no aparece (Dock, inicio del celular, Spotlight, Terminal), no se abre por defecto y no
        descarga el modelo, salvo con ?elia=1 en la URL (queda activa en esa sesión). true → activa para todos. */
     "enabled": false,
+    /* menú de temas: chips fijos cuando la red no tiene idea (p1 < menuBelow) o tras "Ninguna de estas" */
+    "menu": {"chips": [
+      {"id": "who", "es": "Experiencia", "en": "Experience"},
+      {"id": "list_projects", "es": "Proyectos", "en": "Projects"},
+      {"id": "list_papers", "es": "Papers", "en": "Papers"},
+      {"id": "skills_overview", "es": "Habilidades", "en": "Skills"},
+      {"id": "ai_work", "es": "Trabajo con IA", "en": "Work with AI"},
+      {"id": "latest", "es": "Lo más reciente", "en": "What's new"},
+      {"id": "contact", "es": "Contacto", "en": "Contact"}]},
     "threshold": 0.85,
     "margin": 0.5,
     "howThreshold": 0.5,
     "keyWeight": 0.3,
     "weakBonus": 1.0,
+    "menuBelow": null,        // "¿Te refieres a…?" con p1 < menuBelow → menú de temas (lo elige train.py; null = apagado)
     "clarify": 0.4,           // debajo de esto no hay "¿Te refieres a…?": se ofrece escribirle a Esteban
     "formEndpoint": null,      // URL de Formspree o Web3Forms para enviar desde EL·IA; null = solo Mail
     /* noPromote: keys débiles que el criterio de datos (≥ 3 activaciones, precisión ≥ 0,95) nunca sube a fuerte */
@@ -489,6 +499,7 @@ window.DATA = {
         "overview": "Ver resumen",
         "open": "Abrir",
         "clarify": "No lo tengo claro. ¿Te refieres a…?",
+        "menu": "No lo tengo claro. ¿Sobre qué tema quieres saber?",
         "none": "Ninguna de estas",
         "miss": "Eso no lo sé responder todavía. ¿Quieres preguntárselo a Esteban directamente?",
         "oos": "Eso no lo sé: solo respondo sobre el trabajo de Esteban. Si es algo personal o para él, pregúntaselo directo.",
@@ -512,6 +523,7 @@ window.DATA = {
         "overview": "Overview",
         "open": "Open",
         "clarify": "I'm not sure. Did you mean…?",
+        "menu": "I'm not sure. Which topic do you want to know about?",
         "none": "None of these",
         "miss": "I can't answer that yet. Do you want to ask Esteban directly?",
         "oos": "I can't answer that: I only cover Esteban's work. If it's something personal or for him, ask him directly.",
