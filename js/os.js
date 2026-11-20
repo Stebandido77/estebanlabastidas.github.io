@@ -11,6 +11,16 @@ const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':
 Object.assign(EOS, {D, RM, $, $$, phone, esc, apps: {}});
 if ((navigator.hardwareConcurrency || 8) <= 4 || matchMedia('(pointer:coarse)').matches) document.documentElement.classList.add('lowblur');
 EOS.register = (id, mod) => { EOS.apps[id] = mod; };
+/* EL·IA in testing: with DATA.elia.enabled === false it does not exist (Dock, phone home, Pages, Spotlight,
+   Terminal, default window, model download) unless the URL has ?elia=1, which turns it on for the rest of the
+   session (sessionStorage). enabled: true (or no flag) shows it to everyone. */
+EOS.eliaOn = (() => {
+  if (!D.elia) return false;
+  if (D.elia.enabled !== false) return true;
+  const ask = new URLSearchParams(location.search).get('elia') === '1';
+  try { if (ask) sessionStorage.setItem('eos.elia', '1'); return ask || sessionStorage.getItem('eos.elia') === '1'; }
+  catch (e) { return ask; }
+})();
 EOS.locked = !document.documentElement.classList.contains('unlocked') && !!document.getElementById('lock');   /* lock.js takes over */
 
 /* ── clock ── */
@@ -59,7 +69,7 @@ const APPS = [
   {id:'elia',    name:'EL·IA',         short:'EL·IA',    nav:'Ask EL·IA',cls:'i-elia',  w:520, h:620, navless:true},
   {id:'mail',    name:'Mail',          short:'Mail',     nav:'Contact',  cls:'i-mail',   w:600, h:520},
   {id:'term',    name:'Terminal',      short:'Terminal', nav:'Terminal', cls:'i-term',   w:620, h:400},
-];
+].filter(a => a.id !== 'elia' || EOS.eliaOn);
 const appById = Object.fromEntries(APPS.map(a => [a.id, a]));
 const icon = (a, size) => `<span class="ic ${a.cls}" aria-hidden="true" ${size?`style="width:${size}px;height:${size}px"`:''}>${G[a.id]}</span>`;
 Object.assign(EOS, {APPS, appById, icon, G});
@@ -405,6 +415,7 @@ document.addEventListener('click', e => {
    panel needs; if it still does not fit, EL·IA stays closed. A position the visitor saved wins. */
 const ELIA_MIN_H = 300, COL_GAP = 12;
 function placeElia(m, wa){
+  if (!EOS.eliaOn) return;   /* EL·IA off (DATA.elia.enabled false, no ?elia=1): Markets stays as it is */
   if (savedFor('elia', wa)) { openApp('elia'); return; }
   const r = {...S.get(m)}, tb = $('.tb', m), side = $('.mkside', m);
   let sideH = 0;

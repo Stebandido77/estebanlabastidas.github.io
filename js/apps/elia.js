@@ -5,6 +5,7 @@
    Las preguntas sin respuesta se guardan en este navegador (Terminal: elia misses). */
 (() => {
 const EOS = window.EOS, {D, $, esc} = EOS;
+if (!EOS.eliaOn) return;   /* apagada (DATA.elia.enabled: false, sin ?elia=1): no se registra la app, ni la Terminal, ni el modelo */
 const E = D.elia, NET = () => window.EliaNet;
 const byId = Object.fromEntries(E.intents.map(i => [i.id, i]));
 const MISS_KEY = 'eos.elia.misses', MISS_MAX = 50;

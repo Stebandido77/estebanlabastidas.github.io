@@ -10,6 +10,8 @@
 // --axe     accessibility audit (axe-core) of the login, desktop and each app
 // --shot=name [--size=WxH] [--open=a,b] [--wait=ms]  screenshot after entering (side-by-side QA with the reference)
 // --gpu     use the GPU (closer to a real device; without it canvas raster is software)
+// --query=elia=1  append a query string to the URL (with --file, the smoke test also reports EL·IA's state and
+//                 whether it stays on after reloading without the query: sessionStorage)
 import { spawn } from 'node:child_process';
 import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -20,7 +22,9 @@ const args = process.argv.slice(2);
 const flag = n => args.find(a => a.startsWith('--' + n));
 const MOBILE = !!flag('mobile'), FILE = !!flag('file');
 const CPU = Number((flag('cpu') || '--cpu=1').split('=')[1]);
-const URL_ = FILE ? pathToFileURL(resolve('index.html')).href : (args.find(a => !a.startsWith('--')) || 'http://localhost:8765/');
+const BASE_URL = FILE ? pathToFileURL(resolve('index.html')).href : (args.find(a => !a.startsWith('--')) || 'http://localhost:8765/');
+const QUERY = (flag('query') || '').slice(8);
+const URL_ = QUERY ? BASE_URL + (BASE_URL.includes('?') ? '&' : '?') + QUERY : BASE_URL;
 const CHROME = process.env.CHROME || 'C:/Program Files/Google/Chrome/Application/chrome.exe';
 const PORT = 9333 + Math.floor(Math.random() * 500);
 const SIZE = (flag('size') || '').split('=')[1];   /* --size=1280x720 */
@@ -126,8 +130,21 @@ try {
     console.log(JSON.stringify(await evaluate(`({ errors: window.__errs || null, lock: !!document.getElementById('lock'), wins: Object.keys(EOS.wins),
       portraitDrawn: (() => { const c = document.querySelector('[data-portrait]'); if (!c) return null; try { const d = c.getContext('2d').getImageData(c.width/2|0, c.height/3|0, 1, 1).data; return d[0]+d[1]+d[2] > 60; } catch (e) { return 'photo drawn (canvas tainted under file://)'; } })(),
       wallpaper: document.getElementById('wallimg')?.classList.contains('on') })`)));
+    const ELIA = `({on: EOS.eliaOn, enabled: DATA.elia.enabled, dock: !!document.querySelector('#dock [data-open=elia]'),
+      phoneHome: !!document.querySelector('#happs [data-open=elia]'), pages: !!document.querySelector('#gomenu [data-open=elia]'),
+      spotlightApp: EOS.APPS.some(a => a.id === 'elia'), registered: !!EOS.apps.elia, terminal: ['ask', 'elia'].filter(k => k in (EOS.termCommands || {})),
+      window: !!(EOS.wins && EOS.wins.elia && !EOS.wins.elia.hidden), modelScript: !!document.querySelector('script[src*="elia-model"]'),
+      modelFetched: performance.getEntriesByType('resource').some(e => e.name.includes('elia-model')), session: sessionStorage.getItem('eos.elia')})`;
+    console.log('EL·IA:', JSON.stringify(await evaluate(ELIA)));
     const ex = events.filter(e => e.method === 'Runtime.exceptionThrown').map(e => e.params.exceptionDetails.exception?.description);
     console.log('exceptions:', ex.length ? ex : 'none');
+    if (QUERY) {   /* same session, URL without the query: does EL·IA stay on? */
+      await send('Page.navigate', { url: BASE_URL }); await sleep(1500); await key('Enter', 'Enter', 13); await sleep(3000);
+      console.log('EL·IA after reload without the query:', JSON.stringify(await evaluate(ELIA)));
+      const ask = await evaluate(`new Promise(r => { EOS.openApp('elia'); const w = EOS.wins.elia; const f = w.querySelector('form'), i = w.querySelector('input');
+        i.value = 'qué es pulso'; f.requestSubmit(); setTimeout(() => r({modelLoaded: !!window.ELIA_MODEL, lastBot: [...w.querySelectorAll('.msg.bot')].pop()?.textContent.slice(0, 80)}), 2500); })`);
+      console.log('EL·IA answers:', JSON.stringify(ask));
+    }
   } else {
     await measure('login contours (2 s)', () => sleep(2000));
     await key('Enter', 'Enter', 13); await sleep(300);

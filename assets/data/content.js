@@ -460,6 +460,9 @@ window.DATA = {
        python tools/elia/train.py
      Lo marcado con TODO(esteban) es un borrador inferido: revísalo antes de publicar. */
   "elia": {
+    /* enabled: false → EL·IA no aparece (Dock, inicio del celular, Spotlight, Terminal), no se abre por defecto y no
+       descarga el modelo, salvo con ?elia=1 en la URL (queda activa en esa sesión). true → activa para todos. */
+    "enabled": false,
     "threshold": 0.85,
     "margin": 0.5,
     "howThreshold": 0.5,
