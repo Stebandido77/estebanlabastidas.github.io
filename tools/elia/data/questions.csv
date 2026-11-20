@@ -651,3 +651,31 @@ are you a morning person,out_of_scope,en,0
 what do you think about remote work,out_of_scope,en,0
 mountains or beach,out_of_scope,en,0
 what's your favorite color,out_of_scope,en,0
+armas modelos en excel,stack,es,0
+automatizas procesos con vba,stack,es,0
+escribes consultas sql,stack,es,0
+haces tableros en power bi,stack,es,0
+trabajas con la terminal de bloomberg,stack,es,0
+conectas apis en tus proyectos,stack,es,0
+qué motores de bases de datos conoces,stack,es,0
+aplicas machine learning en tu trabajo,stack,es,0
+qué tanto programas en tu día a día,stack,es,0
+do you build models in excel,stack,en,0
+do you automate things with vba,stack,en,0
+do you write sql queries,stack,en,0
+do you make power bi reports,stack,en,0
+are you familiar with bloomberg,stack,en,0
+which apis have you used,stack,en,0
+what database systems do you know,stack,en,0
+do you use machine learning at work,stack,en,0
+how much do you program day to day,stack,en,0
+de qué trata tu app,proj_patrion,es,0
+qué hace la aplicación que estás desarrollando,proj_patrion,es,0
+cómo está hecho el backend de patrion,proj_patrion,es,1
+tu app va a tener versión móvil,proj_patrion,es,0
+en qué va tu app de finanzas personales,proj_patrion,es,0
+what does your app do,proj_patrion,en,0
+tell me about the app you're building,proj_patrion,en,0
+what powers the server side of your app,proj_patrion,en,1
+will your app have a mobile version,proj_patrion,en,0
+the personal finance tool you're working on,proj_patrion,en,0

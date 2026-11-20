@@ -460,12 +460,12 @@ window.DATA = {
        python tools/elia/train.py
      Lo marcado con TODO(esteban) es un borrador inferido: revísalo antes de publicar. */
   "elia": {
-    "threshold": 0.85,
+    "threshold": 0.8,
     "margin": 0.5,
     "howThreshold": 0.5,
     "keyWeight": 0.3,
-    "weakBonus": 1.0,
-    "clarify": 0.4,           // debajo de esto no hay "¿Te refieres a…?": se ofrece escribirle a Esteban
+    "weakBonus": 0.25,
+    "clarify": 0.25,           // debajo de esto no hay "¿Te refieres a…?": se ofrece escribirle a Esteban
     "formEndpoint": null,      // URL de Formspree o Web3Forms para enviar desde EL·IA; null = solo Mail
     /* noPromote: keys débiles que el criterio de datos (≥ 3 activaciones, precisión ≥ 0,95) nunca sube a fuerte */
     "noPromote": ["github", "repo", "codigo", "code"],
@@ -537,7 +537,8 @@ window.DATA = {
        oosCues.soft: se anulan los keys y decide solo la red. */
     "oosCues": {
       "hard": ["clima", "chiste", "traduce", "escribeme", "redacta", "hazme", "weather", "joke", "translate", "write my", "do my"],
-      "soft": ["opinas", "que piensas de", "el mejor", "la mejor", "recomiendame", "precio de", "what do you think", "best", "recommend"]
+      "soft": ["opinas", "que piensas de", "el mejor", "la mejor", "recomiendame", "precio de", "what do you think", "best", "recommend",
+               "consejo", "logro", "debilidad", "favorito", "prefieres", "=advice", "proud", "weakness", "favorite", "prefer"]
     },
     /* social: si el mensaje tiene ≤ 4 palabras y solo contiene frases de UNA de estas listas (más palabras
        de relleno), la respuesta es directa, sin red. */
@@ -604,7 +605,7 @@ window.DATA = {
        "open": [["projects", "07"]],
        "links": [["GitHub", "https://github.com/Stebandido77/pulso"], ["PyPI", "https://pypi.org/project/pulso-co/"]]},
       {"id": "proj_patrion", "t": {"es": "Patrion — gestión patrimonial", "en": "Patrion — wealth management"},
-       "keys": ["patrion"], "weak": ["wealth management", "gestion patrimonial", "patrimonio", "personal finance", "finanzas personales"],
+       "keys": ["patrion"], "weak": ["wealth management", "gestion patrimonial", "patrimonio", "personal finance", "finanzas personales", "app", "aplicacion", "backend", "=movil", "=mobile", "mobile app"],
        "a": {"es": "Patrion es una app de gestión patrimonial personal, en desarrollo. Quiere dar a inversionistas minoristas y a hogares de alto patrimonio una vista estructurada de activos, pasivos, flujos de caja y exposiciones de riesgo, entre las apps de gastos y la analítica institucional de portafolios.",
              "en": "Patrion is a personal wealth management app in development. It aims to give retail investors and high-net-worth households a structured view of assets, liabilities, cash flows and risk exposures, bridging consumer expense trackers and institutional portfolio analytics."},
        // TODO(esteban): stack y decisiones de Patrion (no hay nada público todavía).
@@ -779,7 +780,7 @@ window.DATA = {
              "en": "CMSA® (Capital Markets & Securities Analyst) from the Corporate Finance Institute, certified; and FMVA® (Financial Modeling & Valuation Analyst), in progress."},
        "open": [["path"]]},
       {"id": "stack", "t": {"es": "Stack técnico", "en": "Tech stack"},
-       "keys": ["lenguajes de programacion", "programming languages"], "weak": ["stack", "tecnologias", "technologies", "herramientas", "tools", "programa en", "code in"],
+       "keys": ["lenguajes de programacion", "programming languages", "excel", "vba", "macros", "sql", "bloomberg", "api", "apis"], "weak": ["stack", "tecnologias", "technologies", "herramientas", "tools", "programa en", "code in", "power bi", "bases de datos", "databases", "database", "machine learning", "aprendizaje automatico", "=programas", "programming"],
        "a": {"es": "Python, R, SQL, VBA y LaTeX en el día a día: pipelines, motores de valoración y automatizaciones. TypeScript para herramientas web como WHOOP Lab. También Power BI, Calypso (Nasdaq) y econometría bayesiana. Este sitio está hecho en HTML, CSS y JavaScript sin frameworks.",
              "en": "Python, R, SQL, VBA and LaTeX day to day: pipelines, valuation engines and automations. TypeScript for web tools such as WHOOP Lab. Also Power BI, Calypso (Nasdaq) and Bayesian econometrics. This site is plain HTML, CSS and JavaScript, no frameworks."},
        "open": [["path"]]},
