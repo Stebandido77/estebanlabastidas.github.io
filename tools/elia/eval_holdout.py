@@ -6,11 +6,13 @@
   python tools/elia/eval_holdout.py --dev --model otro-modelo.js --set weakBonus=0 --set threshold=0.7
       (para comparar variantes sin tocar content.js ni el modelo publicado)
 
-holdout.csv (columnas text,intent,lang y alt opcional) lo escribe Esteban. NUNCA entra al
+holdout.csv (columnas text,intent,lang y alt y how opcionales) lo escribe Esteban. NUNCA entra al
 entrenamiento ni se usa para ajustar keys, plantillas o umbrales. dev_holdout.csv es el holdout
 anterior: ya se usó para decidir cambios, así que solo sirve de referencia.
 
   alt: otras intenciones también válidas, separadas por "|" (puede incluir out_of_scope).
+  how: 1 si la pregunta pide el "¿cómo lo hizo?", 0 si no. Solo informativo: se reporta la
+       accuracy de asks_how (≥ howThreshold) en las filas que EL·IA respondió bien; no entra a la puerta.
 
 Usa el modelo exportado (assets/data/elia-model.js, pesos int8) y la configuración de content.js
 (keys, oosCues, social, keyWeight, weakBonus, threshold, margin, clarify), con la misma regla de
@@ -100,6 +102,7 @@ def main():
     X = np.stack([featurize(t) for t in texts])
     a = np.maximum(X @ W["W1"] + W["b1"], 0)
     P = softmax((a @ W["W2"] + W["b2"]) / M["T"])
+    HP = sigmoid(a @ W["Wh"] + float(np.ravel(W["bh"])[0]))   # asks_how: siempre sale de la red
     sk, wk, so = rule_indices(texts, ids, compile_keys(elia, M.get("promoted")), elia.get("social", {}))
     P = apply_keys(P, sk, wk, so, elia["keyWeight"], elia["weakBonus"])
     t, m, c = elia["threshold"], elia["margin"], elia["clarify"]
@@ -180,6 +183,24 @@ def main():
         else:
             print(f"  equivocadas en ES {100 * bad_es:.1f} % (aviso si > {WARN_WRONG_ES:.0%})")
     print(f"  con {n} preguntas, cada una mueve {100 / n:.1f} puntos.")
+    # asks_how, informativo: solo filas respondidas y correctas, con la columna how presente
+    ht = elia.get("howThreshold", 0.5)
+    hs = [i for i in allr if res[i]["out"] == "correcta" and res[i]["decision"] == "responde"
+          and (rows[i].get("how") or "").strip() in ("0", "1")]
+    if hs:
+        print(f"\nasks_how (informativo, no entra a la puerta) · howThreshold {ht} · filas respondidas bien con how:")
+        for lab, sel in (("Todas", hs), ("  ES", [i for i in hs if L[i] == "es"]), ("  EN", [i for i in hs if L[i] == "en"])):
+            if not sel:
+                continue
+            y = [rows[i]["how"].strip() == "1" for i in sel]
+            yhat = [bool(HP[i] >= ht) for i in sel]
+            acc = sum(a == b for a, b in zip(y, yhat)) / len(sel)
+            tp = sum(a and b for a, b in zip(y, yhat))
+            print(f"  {lab:<6} n={len(sel):>2}  accuracy {100 * acc:5.1f} %  · how=1: {sum(y)} (detectadas {tp}) · "
+                  f"falsos positivos {sum(b and not a for a, b in zip(y, yhat))}")
+        miss = [i for i in hs if (rows[i]["how"].strip() == "1") != (HP[i] >= ht)]
+        for i in miss:
+            print(f"    ✗ {rows[i]['text']}  (how {rows[i]['how'].strip()}, asks_how {HP[i]:.2f})")
     sys.exit(0 if ok or args.dev else 1)
 
 
