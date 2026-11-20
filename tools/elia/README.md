@@ -18,8 +18,9 @@ de `assets/data/elia-model.js`, y todo el contenido vive en `assets/data/content
 
 Los keys se comparan con el texto normalizado (minúsculas, sin tildes, solo letras y números), así
 que escríbelos así: `"sa ccr"`, `"bre b"`, `"codigo fuente"`. Cada palabra coincide si es igual, si
-está a una letra de distancia (palabras de 5+ letras) o como prefijo cuando la palabra del key tiene
-6+ letras ("contactar" reconoce "contactarte").
+está a una letra de distancia (palabras de 5+ letras; dos letras vecinas traspuestas cuentan como una:
+"ahbilidad" → "habilidad") o como prefijo cuando la palabra del key tiene 6+ letras ("contactar" reconoce
+"contactarte").
 
 - **Fuertes** (`keys`): alias que solo pueden ser de esa intención (`uncoli`, `pulso`, `calypso`).
   Si aparecen los de una sola intención, deciden casi solos.
@@ -29,13 +30,35 @@ está a una letra de distancia (palabras de 5+ letras) o como prefijo cuando la 
   `elia-model.js`). Los de `noPromote` (`github`, `repo`, `codigo`, `code`) nunca suben.
 - **Combinaciones** (`combo`): una palabra de cada grupo, en cualquier orden ("ceteris" + "github").
   probabilidad; nunca bastan sin la red.
-- Si aparecen keys de dos intenciones, decide solo la red.
+- Si aparecen keys de dos intenciones, decide solo la red, salvo que todas menos una sean
+  **generales** (`"general": true`: `ai_work`, `skills_overview`, `who`): entonces gana la específica
+  ("tu perfil de github" → `contact`, no `who`; "qué es EL·IA" → `elia`, no `ai_work`). Un key fuerte
+  general sí gana sobre cualquier débil.
 - `oosCues.soft` ("qué opinas de", "el mejor", "recommend"…): se anulan los keys y decide la red.
-  Sirve para "cuál es el mejor celular", pero deja pasar "cuál es tu mejor proyecto".
+  Sirve para "cuál es el mejor celular", pero deja pasar "cuál es tu mejor proyecto". No aplica si la
+  pregunta habla de Esteban (`esteban`, `tu`, `tus`, `your`, `his`): "la mejor habilidad de Esteban" sí
+  usa los keys.
 - `oosCues.hard` ("chiste", "clima", "traduce", "redacta", "write my"…): EL·IA nunca responde; la
   pregunta se trata como fuera de alcance y se ofrece escribirle a Esteban.
 
-## Detector de novedad
+## Menú de temas
+
+Si la decisión es "¿Te refieres a…?" pero la primera opción tiene probabilidad por debajo de `menuBelow`
+(content.js, lo elige `train.py` en la grilla; `null` lo apaga), la red no tiene idea y mostrar 3
+intenciones sería adivinar. En su lugar EL·IA dice "No lo tengo claro. ¿Sobre qué tema quieres saber?"
+con chips fijos (`elia.menu.chips`: Experiencia, Proyectos, Papers, Habilidades, Trabajo con IA, Lo más
+reciente, Contacto) y el botón "Escribir a Esteban". "Ninguna de estas", en el "¿Te refieres a…?" normal,
+también lleva a este menú. En la evaluación, el menú cuenta como útil solo si la intención válida es uno
+de los chips. La misma regla está en `train.py` (`Outcomes`), `eval_holdout.py` y `js/elia-net.js`
+(`decide`, `menuOptions`), con paridad.
+
+## Detector de novedad (probado y descartado)
+
+**Está apagado.** En la ronda 7 (pasos 1 a 4) la validación cruzada anidada no lo eligió en ningún pliegue
+de ningún paso: al umbral que pedía equivocadas ≤ 3 % ya casi no quedaban respuestas que bloquear, y
+desde el paso 3 la frontera con y sin detector es la misma (p. ej. 1,2 % equivocadas con correctas ≥ 65 %
+en los dos casos). Solo en el paso 1 bajaba las equivocadas 0,4–0,7 puntos, a cambio de 8–11 puntos de
+útiles. Queda en el código; `train.py --ood` lo vuelve a la grilla.
 
 La red puede estar muy segura de preguntas que no se parecen a nada de lo que vio. Por eso el modelo
 guarda, en la capa oculta (64 dimensiones), un **prototipo** por intención (la media de sus preguntas de
@@ -43,8 +66,8 @@ entrenamiento y sus variantes) y un **radio** (un percentil de sus distancias co
 EL·IA iba a responder y la pregunta queda fuera del radio de la intención ganadora, no responde: muestra
 "¿Te refieres a…?" con las intenciones cuyo radio sí la contiene (primero esas) o, si ninguna la
 contiene, ofrece el correo. Un key fuerte o una regla forzada siguen ganando. El percentil lo elige
-`train.py` en la validación cruzada anidada (`ood.pct` en `elia-model.js`; `--ood-grid` cambia la grilla,
-`--no-ood` lo apaga). La misma regla está en `train.py` (`Outcomes`), `eval_holdout.py` y
+`train.py` en la validación cruzada anidada (`ood.pct` en `elia-model.js`; con `--ood`, y `--ood-grid` cambia la
+grilla). La misma regla está en `train.py` (`Outcomes`), `eval_holdout.py` y
 `js/elia-net.js` (`decide`, `options`); `test_parity.mjs` compara distancias, decisiones y opciones.
 
 ## Corpus externo de out_of_scope (solo entrenamiento)
@@ -116,13 +139,14 @@ Archivos:
 | `data/questions.csv` | Preguntas escritas a mano (`text,intent,lang,how`). `how=1` si preguntan cómo se hizo algo |
 | `data/holdout.csv` | Tus preguntas de prueba (`text,intent,lang,alt`). Nunca entran al entrenamiento ni sirven para ajustar keys. Es la puerta |
 | `data/dev_holdout.csv` | El holdout anterior, ya usado para decidir cambios: solo referencia (`eval_holdout.py --dev`) |
+| `data/live_tests.csv` | Preguntas reales hechas en el sitio que salieron mal (`text,intent,lang,alt`). Regresión: nunca entran al entrenamiento (`eval_holdout.py --live`) |
 | `data/dev_holdout2.csv` | El holdout del 2026-11-19 (100 preguntas, columnas `text,intent,lang,alt,how`); no pasó la puerta y ya se vio: solo desarrollo (`eval_holdout.py --dev2`) |
 | `data/oos_external.csv` | 300 preguntas fuera de alcance de CLINC150 (EN y traducidas al ES), solo entrenamiento (ver arriba) |
 | `build_oos.py` | Genera `oos_external.csv` (descarga CLINC150 y traduce con opus-mt-en-es) |
 | `data/draft_batch*.csv` | Borradores de preguntas nuevas para revisar antes de pasarlas a `questions.csv` |
 | `common.py` | Normalización, features (hashing FNV-1a), keys y reglas sociales. Debe coincidir con `js/elia-net.js` |
-| `augment.py` | Variantes con typos, sin tildes y sinónimos (solo entrenamiento) |
-| `templates.py` | Plantillas "qué es {X}" × keys (solo entrenamiento) |
+| `augment.py` | Variantes con typos (teclado, letras omitidas, repetidas o traspuestas, y un typo agresivo en palabras largas con probabilidad `--typo-p`), sin tildes y sinónimos (solo entrenamiento) |
+| `templates.py` | Plantillas "qué es {X}", con el nombre al inicio ("esteban sabe {X}?") e imperativas ("dame {X} de Esteban") × keys (solo entrenamiento) |
 | `train.py` | Entrenamiento, grilla de la regla, exportación y reporte |
 | `embed.py` | Embeddings del profesor (e5-base) para la destilación; caché en `.cache/` (ignorada) |
 | `test_parity.mjs` | Paridad Python ↔ JS |

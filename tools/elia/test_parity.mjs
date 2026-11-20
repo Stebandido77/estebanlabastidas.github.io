@@ -77,6 +77,20 @@ else {
     else { fails++; console.log(`✗ decisión: ${q}  (JS ${d} ${!!r.blocked} ${opts} · Python ${O.decision[i]} ${O.blocked[i]} ${O.options[i]})`); }
   });
   if (dw > TOL) { fails++; console.log(`✗ detector: distancia máxima ${dw.toExponential(2)} > ${TOL}`); }
+  // el menú, con menuBelow fijo (aunque la regla exportada lo tenga apagado)
+  const MP = O.menuProbe;
+  if (!MP) { fails++; console.log('✗ parity.json no trae "menuProbe": reentrena'); }
+  else {
+    const c2 = {...cfg, menuBelow: MP.menuBelow};
+    let ok2 = 0;
+    O.questions.forEach((q, i) => {
+      const r = net.ask(M, q, K, c2), d = net.decide(r, c2);
+      const opts = d === 'menu' ? net.menuOptions(M, c2) : net.options(r);
+      if (d === MP.decision[i] && (!['clarify', 'menu'].includes(d) || JSON.stringify(opts) === JSON.stringify(MP.options[i]))) ok2++;
+      else { fails++; console.log(`✗ menú (menuBelow ${MP.menuBelow}): ${q}  (JS ${d} ${opts} · Python ${MP.decision[i]} ${MP.options[i]})`); }
+    });
+    console.log(`menú con menuBelow ${MP.menuBelow}: misma decisión y opciones ${ok2}/${O.questions.length} · menu ${MP.decision.filter(x => x === 'menu').length}`);
+  }
   const cnt = k => O.decision.filter(x => x === k).length;
   console.log(`decisión y menú (menuBelow ${O.menuBelow}${M.ood ? ', detector p' + M.ood.pct : ', sin detector'}): ${O.questions.length} preguntas · ` +
     `misma decisión y opciones: ${decOk}/${O.questions.length} · answer ${cnt('answer')} · clarify ${cnt('clarify')} · menu ${cnt('menu')} · miss ${cnt('miss')}`);

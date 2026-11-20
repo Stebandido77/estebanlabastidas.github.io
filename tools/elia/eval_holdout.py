@@ -3,6 +3,7 @@
   python tools/elia/eval_holdout.py          holdout definitivo (data/holdout.csv): la puerta
   python tools/elia/eval_holdout.py --dev    set de desarrollo (data/dev_holdout.csv): solo referencia
   python tools/elia/eval_holdout.py --dev2   segundo set de desarrollo (data/dev_holdout2.csv): solo referencia
+  python tools/elia/eval_holdout.py --live   preguntas reales del sitio (data/live_tests.csv): regresión
   python tools/elia/eval_holdout.py --file otra.csv
   python tools/elia/eval_holdout.py --dev --model otro-modelo.js --set weakBonus=0 --set threshold=0.7
       (para comparar variantes sin tocar content.js ni el modelo publicado)
@@ -56,6 +57,7 @@ MODEL = ROOT / "assets" / "data" / "elia-model.js"
 HOLDOUT = HERE / "data" / "holdout.csv"
 DEV = HERE / "data" / "dev_holdout.csv"
 DEV2 = HERE / "data" / "dev_holdout2.csv"
+LIVE = HERE / "data" / "live_tests.csv"   # preguntas reales del sitio: regresión, nunca entrenamiento
 GOAL_CORRECT, GOAL_USEFUL, GOAL_WRONG = 0.65, 0.85, 0.05   # puerta: correctas, correctas + opción válida, equivocadas
 WARN_WRONG_ES = 0.06   # aviso (no bloquea) si las equivocadas en español pasan de esto
 OUTCOMES = ("correcta", "equivocada", "¿Te refieres a…?", "menú", "correo")
@@ -75,12 +77,13 @@ def main():
     ap.add_argument("--file", type=Path)
     ap.add_argument("--dev", action="store_true", help="evalúa data/dev_holdout.csv (solo referencia)")
     ap.add_argument("--dev2", action="store_true", help="evalúa data/dev_holdout2.csv (solo referencia)")
+    ap.add_argument("--live", action="store_true", help="evalúa data/live_tests.csv (preguntas reales del sitio)")
     ap.add_argument("--model", type=Path, default=MODEL, help="otro elia-model.js (para comparar variantes)")
     ap.add_argument("--no-ood", action="store_true", help="ignora el detector de novedad del modelo")
     ap.add_argument("--set", action="append", default=[], metavar="CLAVE=VALOR",
                     help="cambia un valor de DATA.elia solo para esta evaluación (p. ej. weakBonus=0)")
     args = ap.parse_args()
-    args.file = args.file or (DEV if args.dev else DEV2 if args.dev2 else HOLDOUT)
+    args.file = args.file or (DEV if args.dev else DEV2 if args.dev2 else LIVE if args.live else HOLDOUT)
     args.dev = args.dev or args.dev2 or (args.file is not None and args.file.resolve() != HOLDOUT.resolve())
     sys.stdout.reconfigure(encoding="utf-8")
 

@@ -109,7 +109,8 @@
        (EL·IA nunca responde). En los dos casos no se usa la red para decidir.
      keyIntent: con una frase de oosCues (soft o hard) → nada; si una "combo" (una palabra de cada grupo) coincide
        para una sola intención → [id, 'strong']; si no, keys fuertes de una sola intención → [id, 'strong'];
-       si no hay fuertes, débiles de una sola → [id, 'weak']; dos o más intenciones → nada (decide la red).
+       si no hay fuertes, débiles de una sola → [id, 'weak']; dos o más intenciones → la específica si las demás son
+       generales ("general": true), si no nada (decide la red).
      socialIntent: ≤ 4 palabras cubiertas solo por frases de UNA lista social (la más larga primero,
        coincidencia exacta) y palabras de relleno → greeting | goodbye | thanks. */
   /* a = palabra del key, b = palabra de la pregunta */
@@ -117,7 +118,10 @@
     if (a === b) return true;
     if (a.length >= 6 && b.startsWith(a)) return true;   /* contactar → contactarte, contratar → contratarlo */
     if (a.length < 5 || b.length < 5 || Math.abs(a.length - b.length) > 1) return false;
-    if (a.length === b.length) { let d = 0; for (let i = 0; i < a.length; i++) if (a[i] !== b[i] && ++d > 1) return false; return d === 1; }
+    if (a.length === b.length) {   /* una letra distinta, o dos vecinas traspuestas ("ahbilidad" → "habilidad") */
+      const d = []; for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) d.push(i);
+      return d.length === 1 || (d.length === 2 && d[1] === d[0] + 1 && a[d[0]] === b[d[1]] && a[d[1]] === b[d[0]]);
+    }
     const s = a.length < b.length ? a : b, l = a.length < b.length ? b : a;
     let i = 0;
     while (i < s.length && s[i] === l[i]) i++;
@@ -142,7 +146,8 @@
      intención y actúan como fuertes (tools/elia/common.py → promote_keys). */
   function compileKeys(elia, promoted) {
     const cues = elia.oosCues || {};
-    const K = {strong: [], weak: [], combo: [], hard: phrases(cues.hard), soft: phrases(cues.soft), social: null};
+    const K = {strong: [], weak: [], combo: [], hard: phrases(cues.hard), soft: phrases(cues.soft), social: null,
+               general: new Set(elia.intents.filter(it => it.general).map(it => it.id))};
     for (const it of elia.intents) {
       if (it.combo) K.combo.push([it.id, it.combo.map(keyPhrases)]);
       const up = new Set((promoted || {})[it.id] || []);
@@ -163,14 +168,17 @@
     return list.filter(([, keys]) => keys.some(k => contains(q, k.w, k.exact))).map(([id]) => id);
   }
 
+  const SELF_WORDS = new Set(['esteban', 'tu', 'tus', 'your', 'his']);   /* la pregunta es sobre Esteban: oosCues.soft no aplica */
   function keyIntent(text, K) {
     const q = words(text);
-    if (K.hard.concat(K.soft).some(c => contains(q, c))) return [null, null];
+    const soft = !q.some(w => SELF_WORDS.has(w));
+    if (K.hard.concat(soft ? K.soft : []).some(c => contains(q, c))) return [null, null];
     /* combo: una palabra de CADA grupo, en cualquier orden; si pasa para una sola intención, gana */
     const combo = K.combo.filter(([, gs]) => gs.every(g => g.some(k => contains(q, k.w, k.exact)))).map(([id]) => id);
     if (combo.length === 1) return [combo[0], 'strong'];
     for (const kind of ['strong', 'weak']) {
-      const h = keyHits(text, K[kind]);
+      let h = keyHits(text, K[kind]);
+      if (h.length > 1) { const s = h.filter(id => !K.general.has(id)); if (s.length) h = s; }   /* la específica gana a las generales */
       if (h.length === 1) return [h[0], kind];
       if (h.length) return [null, null];
     }

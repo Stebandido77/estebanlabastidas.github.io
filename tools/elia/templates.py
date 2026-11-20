@@ -56,9 +56,24 @@ PAIRS = [
     ("en", 1, "what did Esteban use for {X}", "what did you use for {X}"),
 ]
 
-TEMPLATES = NEUTRAL + [(lg, how, t) for lg, how, third, second in PAIRS for t in (third, second)]
+# Con el nombre al inicio e imperativas, con y sin "de Esteban": así escriben de verdad en el sitio
+# ("esteban qué hace con…", "dame el…"). Valen también para who, latest y las listas.
+NAMED = [
+    ("es", 0, "esteban qué hace con {X}"), ("es", 0, "esteban sabe {X}?"), ("es", 0, "esteban tiene {X}?"),
+    ("es", 0, "esteban y {X}"), ("es", 0, "esteban qué sabe de {X}"),
+    ("es", 0, "dame {X}"), ("es", 0, "dame {X} de Esteban"), ("es", 0, "cuéntame {X}"), ("es", 0, "cuéntame {X} de Esteban"),
+    ("es", 0, "muéstrame {X}"), ("es", 0, "muéstrame {X} de Esteban"), ("es", 0, "explícame {X} de Esteban"),
+    ("en", 0, "Esteban's {X}"), ("en", 0, "esteban what does he do with {X}"), ("en", 0, "esteban knows {X}?"),
+    ("en", 0, "esteban has {X}?"), ("en", 0, "give me {X}"), ("en", 0, "give me Esteban's {X}"),
+    ("en", 0, "show me {X}"), ("en", 0, "show me Esteban's {X}"), ("en", 0, "tell me {X}"),
+    ("en", 0, "tell me Esteban's {X}"),
+]
 
-# Intenciones donde "qué es {X}" no tiene sentido (personales, listas, conversación): sin plantillas.
+TEMPLATES = NEUTRAL + [(lg, how, t) for lg, how, third, second in PAIRS for t in (third, second)] + NAMED
+
+# Intenciones donde "qué es {X}" no tiene sentido (personales, listas): solo las plantillas NAMED.
+# Conversación y fuera de alcance: ninguna.
+NO_TEMPLATES = {"greeting", "goodbye", "thanks", "out_of_scope"}
 SKIP = {"who", "job_current", "contact", "location", "languages", "latest", "list_papers", "list_projects",
         "hire", "interests", "education", "cv", "greeting", "goodbye", "thanks", "out_of_scope"}
 
@@ -68,13 +83,13 @@ def generate(intents: list[dict], rng: random.Random, per_intent: int = 30) -> l
     Las plantillas de "cómo" solo se usan en intenciones que tienen respuesta `how`."""
     rows = []
     for it in intents:
-        if it["id"] in SKIP:
+        if it["id"] in NO_TEMPLATES:
             continue
         keys = [k.lstrip("=") for k in list(it.get("keys", [])) + list(it.get("weak", []))]   # "=" marca keys exactos
         xs = list(dict.fromkeys(keys + [it["t"]["es"], it["t"]["en"]]))
         if not xs:
             continue
-        tpl = [t for t in TEMPLATES if t[1] == 0 or "how" in it]
+        tpl = NAMED if it["id"] in SKIP else [t for t in TEMPLATES if t[1] == 0 or "how" in it]
         for n in range(per_intent):
             lang = "es" if n % 2 == 0 else "en"
             _, how, t = rng.choice([t for t in tpl if t[0] == lang])

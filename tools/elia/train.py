@@ -326,6 +326,14 @@ OOD_GRID = (None,)                          # None = sin detector
 # Menú de temas: si la decisión es "¿Te refieres a…?" y p1 < menuBelow, en vez de 3 intenciones se muestran los
 # chips fijos de DATA.elia.menu (cuenta como útil solo si la intención válida es uno de esos chips). None = apagado.
 MB_GRID = (None, 0.3, 0.4, 0.5, 0.6, 0.7)
+MB_PROBE = 0.75   # paridad: el menú se comprueba con este menuBelow aunque la regla exportada lo tenga apagado
+
+
+def menu_probe(P, oos, lock, inside, menu, prm, ids):
+    """Decisiones y opciones con menuBelow = MB_PROBE (para test_parity.mjs)."""
+    O = Outcomes(P, np.zeros(len(P), int), oos, lock, inside, menu, MB_PROBE)
+    rws = [O.row(i, prm["threshold"], prm["margin"], prm["clarify"]) for i in range(len(P))]
+    return {"menuBelow": MB_PROBE, "decision": [r[0] for r in rws], "options": [[ids[k] for k in r[1]] for r in rws]}
 
 
 # ───────────────────────── detector de novedad (OOD) ─────────────────────────
@@ -759,6 +767,7 @@ def main():
     ap.add_argument("--dropout", type=float, default=0.3)
     ap.add_argument("--how-weight", type=float, default=0.5)
     ap.add_argument("--aug", type=int, default=8, help="variantes por pregunta original")
+    ap.add_argument("--typo-p", type=float, default=0.3, help="probabilidad del typo agresivo extra por variante (augment.py)")
     ap.add_argument("--tpl", type=int, default=40, help="filas de plantillas por intención (0 = sin plantillas)")
     ap.add_argument("--tpl-aug", type=int, default=1, help="variantes por fila de plantilla")
     ap.add_argument("--distill", type=float, default=0.5, help="λ de la destilación (0 = sin destilación)")
@@ -789,6 +798,8 @@ def main():
     ap.add_argument("--dump", type=Path, help="guarda las probabilidades fuera de pliegue (.npz) para análisis")
     cfg = ap.parse_args()
     sys.stdout.reconfigure(encoding="utf-8")
+    import augment
+    augment.TYPO_P = cfg.typo_p
     global OOD_GRID, MB_GRID
     if cfg.ood:
         OOD_GRID = (None,) + OOD_PCTS
@@ -1019,12 +1030,17 @@ def main():
             "tienes experiencia en M&A?", "what is your m & a experience", "I'm a recruiter at a bank",
             "dónde le escribo", "cómo te escribo", "qué escribe Esteban", "puedo ver el código de ceteris",
             "qué es ceteris paribus", "is the source of ceteris public", "which roles interest you",
-            "cuál es tu mejor proyecto", "what paper do you recommend"]
+            "cuál es tu mejor proyecto", "what paper do you recommend",
+            "esteban que hace con ia", "tu perfil de github", "eres una inteligencia artificial", "el paper de LLMs en pronóstico macro",
+            "sistemas multiagente", "is he good at excel", "dame el resumen de esteban", "en qué es bueno esteban", "qué es EL·IA",
+            "cual es la mejor ahbilidad de esteban", "what is your best paper", "cuál es el mejor celular", "best phone for students"]
         pp, ph = quantized_predict(Q, feats(sample), final_T)
         hq, _ = quantized_predict(Q, feats(hsample), final_T)
         hs_, hw_, ho_ = rule_indices(hsample, ids, KC, social)
         hp = apply_keys(hq, hs_, hw_, ho_, prm["keyWeight"], prm["weakBonus"])
         name_of = lambda a: [ids[k] if k >= 0 else None for k in a]
+        norm_cases = ["M&A", "experiencia en m & a?", "M &A deals", "hm&a", "m&ax", "I'm a recruiter",
+                      "¿Qué es EL·IA?", "Ñandú, pingüino y CAFÉ", "sa-ccr / bre-b", "  espacios   raros  "]
         # decisión completa (answer / clarify / menu / miss y opciones) con la regla exportada, en las mismas
         # preguntas más algunas de baja confianza (para que el menú y el correo también se comprueben)
         oq = sample + hsample + ["hmm", "qué más", "tell me something", "y eso", "what else can you do", "cuéntame algo",
@@ -1041,7 +1057,8 @@ def main():
         ood_par = {"questions": oq, "dist": None if o_d is None else o_d.round(10).tolist(),
                    "decision": [r[0] for r in rws], "options": [[ids[k] for k in r[1]] for r in rws],
                    "blocked": [r[2] for r in rws], "threshold": prm["threshold"], "margin": prm["margin"],
-                   "clarify": prm["clarify"], "menuBelow": prm.get("menuBelow")}
+                   "clarify": prm["clarify"], "menuBelow": prm.get("menuBelow"),
+                   "menuProbe": menu_probe(o_p, oos, (o_s >= 0) | (o_o >= 0), inside, menu, prm, ids)}
         PARITY.write_text(json.dumps({
             "normalize": [[t, normalize(t)] for t in norm_cases],
             "questions": sample, "probs": pp.round(10).tolist(), "how": ph.round(10).tolist(),
