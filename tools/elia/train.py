@@ -313,9 +313,11 @@ B_GRID = (0.0, 0.25, 0.5, 0.75, 1.0)   # bonus débil acotado: ≤ e^1, la red t
 T_GRID = np.round(np.arange(0.30, 0.951, 0.05), 2)
 M_GRID = np.round(np.arange(0.00, 0.501, 0.05), 2)
 C_GRID = np.round(np.arange(0.10, 0.601, 0.05), 2)
-# Regla elegida con la definición del holdout sobre TODAS las preguntas: equivocadas ≤ 3 % (en todas y en ES)
-# y rechazo de out_of_scope ≥ 85 %; maximiza 2 · correctas + "¿Te refieres a…?" con la opción válida.
-MAX_WRONG, MIN_REJECT = 0.03, 0.85
+# Regla: con la definición del holdout sobre TODAS las preguntas, restricciones correctas ≥ 65 %, útiles ≥ 85 %,
+# rechazo de out_of_scope ≥ 85 % y rechazo en el set de calibración ≥ 85 %; objetivo: minimizar las equivocadas
+# (desempate: las equivocadas en ES). El detector y su percentil están en la misma grilla.
+GOAL_CORRECT, GOAL_USEFUL, MIN_REJECT = 0.65, 0.85, 0.85
+FRONTIER = (0.50, 0.55, 0.60, 0.65, 0.70, 0.75)   # correctas objetivo para la frontera correctas ↔ equivocadas
 OOD_GRID = (None, 80, 85, 90, 95, 98, 99, 100)   # percentil del radio de novedad (None = sin detector)
 
 
@@ -428,55 +430,79 @@ class Outcomes:
                 "correct_all": mean(corr, S), "useful_all": mean(corr | (hit & ~self.isoos), S),
                 "wrong_all": mean(ans & ~self.ok, S)}
 
-    def grid(self, S):
-        """Las mismas cuentas que rates(), vectorizadas sobre T_GRID × M_GRID (× C_GRID)."""
-        ix = np.where(S)[0]
+    def counts(self, ix):
+        """Las mismas cuentas que rates() (sumas, no medias) sobre las filas ix, vectorizadas sobre
+        T_GRID × M_GRID (× C_GRID)."""
         p1, gap, nt = self.p1[ix], (self.p1 - self.p2)[ix], ~self.topoos[ix]
         iso, ok = self.isoos[ix], self.ok[ix]
         base = nt[:, None, None] & (p1[:, None, None] >= T_GRID[None, :, None]) & (gap[:, None, None] >= M_GRID[None, None, :])
         blk = base & self.cand[ix][:, None, None]
         ans = base & ~blk
-        wrong = (ans & ~ok[:, None, None]).mean(0)
-        rej = (~ans[iso]).mean(0) if iso.any() else np.ones(wrong.shape)
         low = nt[:, None] & (p1[:, None] >= C_GRID[None, :])
         cl = ((~base)[..., None] & low[:, None, None, :]) | (blk & self.other_in[ix][:, None, None])[..., None]
         hsel = np.where(blk, self.hit3_ood[ix][:, None, None], self.hit3[ix][:, None, None])
         hit = cl & hsel[..., None] & ~iso[:, None, None, None]
         mail = ~ans[..., None] & ~cl
         corr = (ans & ok[:, None, None] & ~iso[:, None, None])[..., None] | (mail & iso[:, None, None, None])
-        return wrong, rej, corr.mean(0), hit.mean(0)
+        return {"n": len(ix), "n_oos": int(iso.sum()), "wrong": (ans & ~ok[:, None, None]).sum(0),
+                "ans_oos": ans[iso].sum(0), "corr": corr.sum(0), "hit": hit.sum(0)}
 
 
 CMASK = C_GRID[None, None, :] <= T_GRID[:, None, None] + 1e-9   # clarify ≤ threshold
+CKEYS = ("n", "n_oos", "wrong", "ans_oos", "corr", "hit")
 
 
-def select(outs, S, ES, Sc=None):
-    """Busca (w, β, percentil OOD, threshold, margin, clarify) con equivocadas ≤ MAX_WRONG sobre todas las
-    preguntas (en todas y en ES), rechazo de out_of_scope ≥ 85 % (y, si hay set de calibración Sc, rechazo
-    ≥ 85 % también ahí), que maximice 2 · correctas + "¿Te
-    refieres a…?" con la opción válida (correctas y útiles como en eval_holdout.py). Empates: menos
-    equivocadas, threshold más alto, sin detector antes que con detector."""
-    best = None
+def fold_tables(outs, fold, real, ES, calm, nf):
+    """Para cada regla (w, β, percentil) y pliegue: cuentas sobre sus preguntas, las de ES y la calibración."""
+    T = {}
     for key, O in outs.items():
-        wrong, rej, corr, hit = O.grid(S)
-        wes = O.grid(S & ES)[0]
-        okm = (wrong <= MAX_WRONG + 1e-12) & (wes <= MAX_WRONG + 1e-12) & (rej >= MIN_REJECT)
-        if Sc is not None and Sc.any():
-            okm &= O.grid(Sc)[1] >= MIN_REJECT
-        valid = okm[..., None] & CMASK
+        T[key] = []
+        for f in range(nf):
+            m = (fold == f) & real
+            T[key].append((O.counts(np.where(m)[0]), O.counts(np.where(m & ES)[0]),
+                           O.counts(np.where((fold == f) & calm)[0]) if calm is not None else None))
+    return T
+
+
+def select(T, folds, min_correct=GOAL_CORRECT, min_useful=GOAL_USEFUL, min_reject=MIN_REJECT, use_cal=True,
+           keys=None):
+    """Regla (w, β, percentil, threshold, margin, clarify) elegida con las preguntas de los pliegues `folds`:
+    cumple correctas ≥ min_correct, útiles ≥ min_useful, rechazo de out_of_scope ≥ min_reject y (con use_cal)
+    rechazo en la calibración ≥ min_reject; minimiza las equivocadas. Desempates: equivocadas en ES, más
+    correctas, más útiles, sin detector, threshold más alto. → params (con "fit": tasas en esos pliegues) o None."""
+    best = None
+    tot = lambda parts, k: sum(parts[f][k] for f in folds)
+    for key, parts in T.items():
+        if keys is not None and key not in keys:
+            continue
+        A = [x[0] for x in parts]
+        E = [x[1] for x in parts]
+        n, no = max(tot(A, "n"), 1), tot(A, "n_oos")
+        wrong, corr = tot(A, "wrong") / n, tot(A, "corr") / n
+        useful = (tot(A, "corr") + tot(A, "hit")) / n
+        rej = 1 - tot(A, "ans_oos") / no if no else np.ones(wrong.shape)
+        wes = tot(E, "wrong") / max(tot(E, "n"), 1)
+        valid = CMASK & (corr >= min_correct - 1e-9) & (useful >= min_useful - 1e-9) & (rej >= min_reject - 1e-9)[..., None]
+        if use_cal and parts[0][2] is not None:
+            C = [x[2] for x in parts]
+            nc = tot(C, "n_oos")
+            if nc:
+                valid &= (1 - tot(C, "ans_oos") / nc >= min_reject - 1e-9)[..., None]
         if not valid.any():
             continue
-        score = np.round(2 * corr + hit, 9)
         ti, mi, ci = np.where(valid)
-        sv, wv = score[ti, mi, ci], wrong[ti, mi]
-        j = np.lexsort((-ci, mi, ti, -wv, sv))[-1]
-        cand = (sv[j], -wv[j], T_GRID[ti[j]])
+        r9 = lambda a: np.round(a, 9)
+        w_, we_, c_, u_ = r9(wrong[ti, mi]), r9(wes[ti, mi]), r9(corr[ti, mi, ci]), r9(useful[ti, mi, ci])
+        j = np.lexsort((T_GRID[ti], u_, c_, -we_, -w_))[-1]
+        cand = (-w_[j], -we_[j], c_[j], u_[j], key[2] is None, T_GRID[ti[j]])
         if best is None or cand > best[0]:
-            best = (cand, key, float(T_GRID[ti[j]]), float(M_GRID[mi[j]]), float(C_GRID[ci[j]]))
+            best = (cand, key, float(T_GRID[ti[j]]), float(M_GRID[mi[j]]), float(C_GRID[ci[j]]),
+                    {"wrong_all": float(wrong[ti[j], mi[j]]), "correct_all": float(corr[ti[j], mi[j], ci[j]]),
+                     "useful_all": float(useful[ti[j], mi[j], ci[j]])})
     if best is None:
         return None
-    _, (w, b, pct), t, m, c = best
-    return {"keyWeight": w, "weakBonus": b, "threshold": t, "margin": m, "clarify": c, "oodPct": pct}
+    _, (w, b, pct), t, m, c, fit = best
+    return {"keyWeight": w, "weakBonus": b, "threshold": t, "margin": m, "clarify": c, "oodPct": pct, "fit": fit}
 
 
 def okey(p):
@@ -532,7 +558,9 @@ def evaluate_stage(P, y, sk, wk, so, fold, nf, L, oos, hybrids, ood=None, cal=No
             inside = None if pct is None else ood[0] <= ood[1][pct]
             outs[(hk[0], hk[1], pct)] = Outcomes(Ph, y, oos, lock, inside)
     ES = L == "es"
-    prm = select(outs, real, ES, calm)
+    T = fold_tables(outs, fold, real, ES, calm, nf)
+    allf = list(range(nf))
+    prm = select(T, allf)
     res = {"params": prm, "outs": outs}
     if prm:
         O = outs[okey(prm)]
@@ -545,7 +573,7 @@ def evaluate_stage(P, y, sk, wk, so, fold, nf, L, oos, hybrids, ood=None, cal=No
     nested = {"all": [], "es": [], "en": []}
     res["nested_params"] = []
     for f in range(nf):
-        p = select(outs, (fold != f) & real, ES, None if calm is None else (fold != f) & calm)
+        p = select(T, [g for g in allf if g != f])
         res["nested_params"].append(p)
         if p:
             O = outs[okey(p)]
@@ -556,6 +584,21 @@ def evaluate_stage(P, y, sk, wk, so, fold, nf, L, oos, hybrids, ood=None, cal=No
                     r.update(cal_rates(O, (fold == f) & calm, p))
                 nested[lang].append(r)
     res["nested"] = nested
+    # frontera: para cada correctas objetivo, el mínimo de equivocadas (solo esa restricción), en anidada,
+    # sin detector y con detector (en la grilla con detector, "sin detector" también es una opción)
+    res["frontier"] = {}
+    variants = {"sin detector": [k for k in outs if k[2] is None]}
+    if ood is not None:
+        variants["con detector"] = list(outs)
+    for vname, keys in variants.items():
+        for goal in FRONTIER:
+            got = []
+            for f in range(nf):
+                p = select(T, [g for g in allf if g != f], goal, 0.0, 0.0, False, keys)
+                if p:
+                    r = outs[okey(p)].rates((fold == f) & real, p["threshold"], p["margin"], p["clarify"])
+                    got.append((r["wrong_all"], r["correct_all"], r["useful_all"], p["oodPct"]))
+            res["frontier"][(vname, goal)] = got
     return res
 
 
@@ -600,6 +643,90 @@ def rule_indices(texts, ids, K, social):
     return np.array(sk), np.array(wk), np.array(so)
 
 
+def summarize(stages, fold, y, ids, oos):
+    """Imprime, por etapa, la regla elegida, la estimación anidada, la calibración y la frontera; y la 1.ª
+    intención en los fallos de la última etapa."""
+    for name, st, *_ in stages:
+        p = st["params"]
+        nest = lambda k: 100 * ms([r[k] for r in st["nested"]["all"]])[0]
+        nest_es = 100 * ms([r["wrong_all"] for r in st["nested"]["es"]])[0]
+        if p is None:
+            print(f"{name}: NINGUNA regla cumple correctas ≥ {GOAL_CORRECT:.0%}, útiles ≥ {GOAL_USEFUL:.0%}, "
+                  f"rechazo OOS ≥ {MIN_REJECT:.0%} y rechazo en calibración ≥ {MIN_REJECT:.0%} con todos los pliegues")
+        else:
+            print(f"{name}: {dict((k, v) for k, v in p.items() if k != 'fit')} (en la elección: "
+                  + ", ".join(f"{k} {100 * v:.1f} %" for k, v in p["fit"].items()) + ")")
+        nok = sum(q is not None for q in st["nested_params"])
+        print(f"    anidada ({nok}/{len(st['nested_params'])} pliegues con regla válida), todas las preguntas: "
+              f"correctas {nest('correct_all'):.1f} % · útiles {nest('useful_all'):.1f} % · equivocadas "
+              f"{nest('wrong_all'):.1f} % (ES {nest_es:.1f} %) · bloqueadas por el detector {nest('ood_blocked'):.1f} % · "
+              f"percentil por pliegue {[q and q['oodPct'] for q in st['nested_params']]}"
+              + (f" · calibración rechazada {nest('cal_reject'):.1f} % (al correo {nest('cal_mail'):.1f} %)"
+                 if st["nested"]["all"] and "cal_reject" in st["nested"]["all"][0] else ""))
+        if st.get("cal_by_pct"):
+            print("    calibración rechazada por percentil (resto de la regla final fija): "
+                  + " · ".join(f"{'sin detector' if k is None else 'p' + format(k, 'g')} {100 * v[0]:.1f} %"
+                               for k, v in st["cal_by_pct"].items()))
+    st = stages[-1][1]
+    if st.get("frontier"):
+        print("Frontera (anidada; solo la restricción correctas ≥ objetivo; media de los pliegues con regla):")
+        for (vname, goal), got in st["frontier"].items():
+            if got:
+                a = np.array([g[:3] for g in got])
+                pc = Counter(g[3] for g in got)
+                print(f"  {vname:<13} correctas ≥ {100 * goal:.0f} %: equivocadas {100 * a[:, 0].mean():.1f} % · "
+                      f"correctas logradas {100 * a[:, 1].mean():.1f} % · útiles {100 * a[:, 2].mean():.1f} % · "
+                      f"{len(got)}/5 pliegues · percentiles {dict(pc)}")
+            else:
+                print(f"  {vname:<13} correctas ≥ {100 * goal:.0f} %: ninguna regla en ningún pliegue")
+    # 1.ª intención en los fallos (equivocadas, o sin responder sin la opción correcta), regla anidada
+    wrong_top, miss_top = Counter(), Counter()
+    for f, p in enumerate(st["nested_params"]):
+        if not p:
+            continue
+        O = st["outs"][okey(p)]
+        ans, cl, hit, _ = O.decisions(p["threshold"], p["margin"], p["clarify"])
+        for i in np.where(fold == f)[0]:
+            if ans[i] and not O.ok[i]:
+                wrong_top[ids[O.top[i]]] += 1
+            elif not ans[i] and y[i] != oos and not hit[i]:
+                miss_top[ids[O.top[i]]] += 1
+    fmt = lambda c: ", ".join(f"{k} {v}" for k, v in c.most_common(8))
+    print(f"1.ª intención en las equivocadas ({sum(wrong_top.values())}): {fmt(wrong_top)}")
+    print(f"1.ª intención en las no útiles dentro del alcance ({sum(miss_top.values())}): {fmt(miss_top)}")
+    for k in ("list_papers", "interests", "skills_finance"):
+        print(f"  {k}: 1.ª en {wrong_top[k]} equivocadas y {miss_top[k]} no útiles")
+
+
+def save_cv(path, P, sk, wk, so, fold, y, L, od, ca, ids):
+    z = {"P": P, "sk": sk, "wk": wk, "so": so, "fold": fold, "y": y, "L": L, "ids": np.array(ids), "D": od[0]}
+    z.update({f"R{p:g}": v for p, v in od[1].items()})
+    if ca is not None:
+        z.update({"cP": ca["P"], "cD": ca["D"], "cfold": ca["fold"], "csk": ca["sk"], "cwk": ca["wk"], "cso": ca["so"]})
+        z.update({f"cR{p:g}": v for p, v in ca["R"].items()})
+    np.savez_compressed(path, **z)
+    print(f"validación cruzada guardada en {path}")
+
+
+def from_cv(path, cfg):
+    """Repite la selección (etapas finales, sin y con detector) con las probabilidades fuera de pliegue ya
+    guardadas por --save-cv. No reentrena ni exporta."""
+    z = np.load(path)
+    ids = z["ids"].tolist()
+    oos = ids.index(OOS)
+    pcts = [p for p in OOD_GRID if p is not None]
+    od = (z["D"], {p: z[f"R{p:g}"] for p in pcts})
+    ca = None
+    if "cP" in z:
+        ca = {"P": z["cP"], "D": z["cD"], "fold": z["cfold"], "sk": z["csk"], "wk": z["cwk"], "so": z["cso"],
+              "R": {p: z[f"cR{p:g}"] for p in pcts}}
+    fold, y, L = z["fold"], z["y"], z["L"]
+    hybrids = [(w, b) for w in W_GRID for b in B_GRID]
+    ev = lambda o: evaluate_stage(z["P"], y, z["sk"], z["wk"], z["so"], fold, cfg.folds, L, oos, hybrids, o, ca)
+    stages = [("sin detector", ev(None)), ("con detector", ev(od))]
+    summarize(stages, fold, y, ids, oos)
+
+
 # ───────────────────────── principal ─────────────────────────
 def main():
     ap = argparse.ArgumentParser()
@@ -629,6 +756,9 @@ def main():
     ap.add_argument("--oos-calib", default=str(HERE / "data" / "oos_calib.csv"),
                     help="set de calibración out_of_scope (nunca se entrena con él; '' = sin él)")
     ap.add_argument("--no-ood", action="store_true", help="sin detector de novedad")
+    ap.add_argument("--questions", type=Path, default=QUESTIONS, help="otro questions.csv (para repetir un paso anterior)")
+    ap.add_argument("--save-cv", type=Path, help="guarda las probabilidades fuera de pliegue de la etapa final (.npz)")
+    ap.add_argument("--from-cv", type=Path, help="solo repite la selección con un .npz de --save-cv (no entrena)")
     ap.add_argument("--ood-grid", help="percentiles a probar, p. ej. 90,95 (por defecto OOD_GRID; 'none' = sin detector)")
     ap.add_argument("--no-export", action="store_true")
     ap.add_argument("--no-report", action="store_true", help="solo imprime métricas (para experimentos)")
@@ -638,6 +768,8 @@ def main():
     if cfg.ood_grid:
         global OOD_GRID
         OOD_GRID = tuple(None if x == "none" else float(x) for x in cfg.ood_grid.split(","))
+    if cfg.from_cv:
+        return from_cv(cfg.from_cv, cfg)
 
     elia = load_elia()
     cfg.how_threshold = elia.get("howThreshold", 0.5)
@@ -646,7 +778,7 @@ def main():
     oos = ids.index(OOS)
     KC = compile_keys(elia)
     social = elia.get("social", {})
-    rows = load_questions()
+    rows = load_questions(cfg.questions)
     texts = [r["text"] for r in rows]
     L = np.array([r["lang"] for r in rows])
     y = np.array([ids.index(r["intent"]) for r in rows])
@@ -791,38 +923,9 @@ def main():
         np.savez(cfg.dump, fold=fold, y=y, sk=sk, wk=wk, so=so, L=L, HB=HB, h=h, D=odB[0],
                  **{f"R{p}": v for p, v in odB[1].items()},
                  **{k: v for k, v in (("PA", PA), ("PB", PB), ("PD", PD)) if v is not None})
-    for name, st, *_ in stages:
-        p = st["params"]
-        nest = lambda k: 100 * ms([r[k] for r in st["nested"]["all"]])[0]
-        nest_es = 100 * ms([r["wrong_all"] for r in st["nested"]["es"]])[0]
-        print(f"{name}: {p}\n    anidada, todas las preguntas: correctas {nest('correct_all'):.1f} % · útiles "
-              f"{nest('useful_all'):.1f} % · equivocadas {nest('wrong_all'):.1f} % (ES {nest_es:.1f} %) · "
-              f"bloqueadas por el detector {nest('ood_blocked'):.1f} % · percentil por pliegue "
-              f"{[q and q['oodPct'] for q in st['nested_params']]}"
-              + (f" · calibración rechazada {nest('cal_reject'):.1f} % (al correo {nest('cal_mail'):.1f} %)"
-                 if st["nested"]["all"] and "cal_reject" in st["nested"]["all"][0] else ""))
-        if st.get("cal_by_pct"):
-            print("    calibración rechazada por percentil (resto de la regla final fija): "
-                  + " · ".join(f"{'sin detector' if k is None else 'p' + format(k, 'g')} {100 * v[0]:.1f} %"
-                               for k, v in st["cal_by_pct"].items()))
-    # 1.ª intención en los fallos (equivocadas, o sin responder sin la opción correcta), regla anidada
-    name, st, *_ = stages[-1]
-    wrong_top, miss_top = Counter(), Counter()
-    for f, p in enumerate(st["nested_params"]):
-        if not p:
-            continue
-        O = st["outs"][okey(p)]
-        ans, cl, hit, _ = O.decisions(p["threshold"], p["margin"], p["clarify"])
-        for i in np.where(fold == f)[0]:
-            if ans[i] and not O.ok[i]:
-                wrong_top[ids[O.top[i]]] += 1
-            elif not ans[i] and y[i] != oos and not hit[i]:
-                miss_top[ids[O.top[i]]] += 1
-    fmt = lambda c: ", ".join(f"{k} {v}" for k, v in c.most_common(8))
-    print(f"1.ª intención en las equivocadas ({sum(wrong_top.values())}): {fmt(wrong_top)}")
-    print(f"1.ª intención en las no útiles dentro del alcance ({sum(miss_top.values())}): {fmt(miss_top)}")
-    for k in ("list_papers", "interests", "skills_finance"):
-        print(f"  {k}: 1.ª en {wrong_top[k]} equivocadas y {miss_top[k]} no útiles")
+    if cfg.save_cv:   # lo necesario para repetir la selección sin reentrenar (--from-cv)
+        save_cv(cfg.save_cv, PB, sk, wk, so, fold, y, L, odB, caB, ids)
+    summarize(stages, fold, y, ids, oos)
 
     # se exporta la última etapa (la más completa) si tiene una regla válida
     name, st, Pf, Hf, eps, Ts, use_tpl = stages[-1]
@@ -845,7 +948,7 @@ def main():
         _, _, _, lf, _ = forward(P, Xo)
         model = {
             "v": 1, "generated": date.today().isoformat(),
-            "dataset": hashlib.sha256(QUESTIONS.read_bytes()).hexdigest()[:12],
+            "dataset": hashlib.sha256(cfg.questions.read_bytes()).hexdigest()[:12],
             "dim": DIM, "charN": list(CHAR_N), "hash": "fnv1a32", "hidden": cfg.hidden,
             "intents": ids, "T": round(final_T, 6),
             "W1": out["W1"], "b1": [round(float(x), 6) for x in P["b1"]],
@@ -977,8 +1080,9 @@ def write_report(cfg, rows, ids, sk, wk, so, y, Lg, stages, how_cm, how_acc, fin
              f"{T_GRID[0]}–{T_GRID[-1]}, margin {M_GRID[0]}–{M_GRID[-1]}, clarify {C_GRID[0]}–{C_GRID[-1]} (paso 0.05), "
              f"w ∈ {list(W_GRID)}, β ∈ {list(B_GRID)}, percentil del detector ∈ {list(OOD_GRID)}. Las métricas "
              f"\"todas las preguntas\" se cuentan como en `eval_holdout.py` (out_of_scope al correo = correcta). Se elige "
-             f"lo que maximiza 2 · correctas + \"¿Te refieres a…?\" con la opción correcta, con equivocadas "
-             f"≤ {MAX_WRONG:.0%} en todas **y en ES**, y rechazo de `out_of_scope` ≥ {MIN_REJECT:.0%}.")
+             f"la regla con **menos equivocadas** (desempate: equivocadas en ES) entre las que cumplen correctas "
+             f"≥ {GOAL_CORRECT:.0%}, útiles ≥ {GOAL_USEFUL:.0%}, rechazo de `out_of_scope` ≥ {MIN_REJECT:.0%} y rechazo en "
+             f"el set de calibración (`oos_calib.csv`) ≥ {MIN_REJECT:.0%}; el detector y su percentil entran en la misma grilla.")
     L.append("- Detector de novedad: en la capa oculta (64), un prototipo (media) por intención y un radio (percentil de "
              "las distancias coseno de sus preguntas de entrenamiento y variantes al prototipo). Si la regla iba a "
              "responder y la pregunta queda fuera del radio de la ganadora, pasa a \"¿Te refieres a…?\" (primero las "
@@ -1035,6 +1139,21 @@ def write_report(cfg, rows, ids, sk, wk, so, y, Lg, stages, how_cm, how_acc, fin
     L.append("")
 
     name, st, *_ = stages[-1]
+    if st.get("frontier"):
+        L.append("## Frontera correctas ↔ equivocadas (anidada)\n")
+        L.append("Para cada meta de correctas (todas las preguntas), la regla con menos equivocadas que la cumple en los 4 "
+                 "pliegues de elección, medida en el 5.º. Solo esa restricción (sin útiles ni rechazo). \"Con detector\" "
+                 "incluye la opción de no usarlo.\n")
+        L.append("| Variante | Correctas ≥ | Equivocadas | Correctas logradas | Útiles | Pliegues con regla | Percentil elegido |")
+        L.append("|---|---|---|---|---|---|---|")
+        for (vname, goal), got in st["frontier"].items():
+            if got:
+                a = np.array([g[:3] for g in got])
+                L.append(f"| {vname} | {100 * goal:.0f} % | {100 * a[:, 0].mean():.1f} % | {100 * a[:, 1].mean():.1f} % | "
+                         f"{100 * a[:, 2].mean():.1f} % | {len(got)}/5 | {dict(Counter(g[3] for g in got))} |")
+            else:
+                L.append(f"| {vname} | {100 * goal:.0f} % | — | — | — | 0/5 | |")
+        L.append("")
     p = st["params"]
     if p:
         L.append(f"## Etapa final por idioma\n")

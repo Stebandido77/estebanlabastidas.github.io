@@ -35,6 +35,46 @@ está a una letra de distancia (palabras de 5+ letras) o como prefijo cuando la 
 - `oosCues.hard` ("chiste", "clima", "traduce", "redacta", "write my"…): EL·IA nunca responde; la
   pregunta se trata como fuera de alcance y se ofrece escribirle a Esteban.
 
+## Detector de novedad
+
+La red puede estar muy segura de preguntas que no se parecen a nada de lo que vio. Por eso el modelo
+guarda, en la capa oculta (64 dimensiones), un **prototipo** por intención (la media de sus preguntas de
+entrenamiento y sus variantes) y un **radio** (un percentil de sus distancias coseno al prototipo). Si
+EL·IA iba a responder y la pregunta queda fuera del radio de la intención ganadora, no responde: muestra
+"¿Te refieres a…?" con las intenciones cuyo radio sí la contiene (primero esas) o, si ninguna la
+contiene, ofrece el correo. Un key fuerte o una regla forzada siguen ganando. El percentil lo elige
+`train.py` en la validación cruzada anidada (`ood.pct` en `elia-model.js`; `--ood-grid` cambia la grilla,
+`--no-ood` lo apaga). La misma regla está en `train.py` (`Outcomes`), `eval_holdout.py` y
+`js/elia-net.js` (`decide`, `options`); `test_parity.mjs` compara distancias, decisiones y opciones.
+
+## Corpus externo de out_of_scope (solo entrenamiento)
+
+`data/oos_external.csv` tiene 300 preguntas fuera de alcance (150 EN + 150 ES) que se suman a cada
+pliegue de entrenamiento y al modelo final, pero **nunca** a la validación, al profesor de la destilación
+ni a los prototipos del detector. Lo genera `py -3.12 tools/elia/build_oos.py` (semilla fija):
+
+- **Fuente:** el split `oos` de **CLINC150** — Larson et al. (2019), *An Evaluation Dataset for Intent
+  Classification and Out-of-Scope Prediction*, EMNLP-IJCNLP. https://github.com/clinc/oos-eval.
+  **Licencia: Creative Commons Attribution 3.0 Unported (CC BY 3.0)**, verificada en el archivo `LICENSE`
+  del repositorio el 2026-11-19. Permite copiar, adaptar y redistribuir, incluso con fines comerciales,
+  siempre que se cite la fuente e indiquen los cambios. Cambios hechos aquí: muestra de 300 frases,
+  filtradas (sin keys de EL·IA ni reglas sociales, ≥ 3 palabras) y la mitad traducida al español.
+- **Traducción:** `Helsinki-NLP/opus-mt-en-es` (MarianMT, licencia Apache-2.0), corre local con
+  `transformers`; la columna `source` dice de qué frase de CLINC150 sale cada fila. Se descartan las
+  traducciones que activan un key de EL·IA y las que perdieron la forma de pregunta (empiezan por "lo
+  que", "lo poco", "lo cual", "lo mucho" o "lo bien", o dejaron sueltas *what/how/is/are*); se reponen
+  con las frases siguientes del pool, así que siempre quedan 150 ES.
+- `train.py --ext-oos ''` entrena sin el corpus; `--ext-aug` fija las variantes por frase (1).
+
+`data/oos_calib.csv` (100 frases: 50 EN + 50 ES, con el mismo filtro) es un **set de calibración**:
+viene de la misma fuente pero de frases que no están en `oos_external.csv` (`build_oos.py` lo
+verifica), y nunca entra al entrenamiento, al profesor ni a los prototipos. `train.py` lo predice con el
+modelo de cada pliegue, exige ≥ 85 % de rechazo también ahí al elegir la regla, y reporta el % rechazado
+y el % al correo, por percentil del detector. `eval_holdout.py --file tools/elia/data/oos_calib.csv` lo
+mide en el modelo exportado. **Ojo:** el español de la calibración también sale de traducciones; la
+medida limpia en español es `dev_holdout.csv` más las preguntas personales escritas a mano en
+`questions.csv`.
+
 ## Reentrenar
 
 Requisitos: Python 3 con NumPy y Node (para leer `content.js`). Para la destilación, además, un
@@ -76,6 +116,9 @@ Archivos:
 | `data/questions.csv` | Preguntas escritas a mano (`text,intent,lang,how`). `how=1` si preguntan cómo se hizo algo |
 | `data/holdout.csv` | Tus preguntas de prueba (`text,intent,lang,alt`). Nunca entran al entrenamiento ni sirven para ajustar keys. Es la puerta |
 | `data/dev_holdout.csv` | El holdout anterior, ya usado para decidir cambios: solo referencia (`eval_holdout.py --dev`) |
+| `data/dev_holdout2.csv` | El holdout del 2026-11-19 (100 preguntas, columnas `text,intent,lang,alt,how`); no pasó la puerta y ya se vio: solo desarrollo (`eval_holdout.py --dev2`) |
+| `data/oos_external.csv` | 300 preguntas fuera de alcance de CLINC150 (EN y traducidas al ES), solo entrenamiento (ver arriba) |
+| `build_oos.py` | Genera `oos_external.csv` (descarga CLINC150 y traduce con opus-mt-en-es) |
 | `data/draft_batch*.csv` | Borradores de preguntas nuevas para revisar antes de pasarlas a `questions.csv` |
 | `common.py` | Normalización, features (hashing FNV-1a), keys y reglas sociales. Debe coincidir con `js/elia-net.js` |
 | `augment.py` | Variantes con typos, sin tildes y sinónimos (solo entrenamiento) |

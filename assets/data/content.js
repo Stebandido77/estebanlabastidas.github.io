@@ -460,12 +460,12 @@ window.DATA = {
        python tools/elia/train.py
      Lo marcado con TODO(esteban) es un borrador inferido: revísalo antes de publicar. */
   "elia": {
-    "threshold": 0.95,
+    "threshold": 0.85,
     "margin": 0.5,
     "howThreshold": 0.5,
     "keyWeight": 0.3,
     "weakBonus": 1.0,
-    "clarify": 0.25,           // debajo de esto no hay "¿Te refieres a…?": se ofrece escribirle a Esteban
+    "clarify": 0.4,           // debajo de esto no hay "¿Te refieres a…?": se ofrece escribirle a Esteban
     "formEndpoint": null,      // URL de Formspree o Web3Forms para enviar desde EL·IA; null = solo Mail
     /* noPromote: keys débiles que el criterio de datos (≥ 3 activaciones, precisión ≥ 0,95) nunca sube a fuerte */
     "noPromote": ["github", "repo", "codigo", "code"],
