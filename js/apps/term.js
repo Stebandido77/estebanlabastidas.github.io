@@ -1,7 +1,7 @@
 /* Terminal: help, whoami, open <app>, apps, papers, projects, cv, contact, clear. */
 (() => {
 const EOS = window.EOS, {D, $, esc} = EOS;
-EOS.termCommands = {};   /* other modules can add commands (e.g. music) */
+EOS.termCommands = {};   /* other modules can add commands (e.g. music, elia): fn(arg, rest) */
 EOS.register('term', {
   render: () => `<div class="term" data-term></div>`,
   init(w){
@@ -20,10 +20,10 @@ EOS.register('term', {
     const prompt = () => { const d=document.createElement('div'); d.className='in'; d.innerHTML=`<span class="p">esteban@bogota ~ %</span><input aria-label="Command" spellcheck="false" autocomplete="off">`; t.appendChild(d);
       const i=$('input',d); i.focus({preventScroll:true});
       i.onkeydown = e => { if(e.key!=='Enter') return; const v=i.value.trim(); d.innerHTML=`<span class="p">esteban@bogota ~ %</span> ${esc(v)}`;
-        const [c,arg]=v.toLowerCase().split(/\s+/); let out;
+        const [c,arg]=v.toLowerCase().split(/\s+/), rest=v.replace(/^\S+\s*/,''); let out;
         const ext = EOS.termCommands[c];
         if(c==='open'){ if(EOS.appById[arg]){ EOS.openApp(arg); out=`opening ${EOS.appById[arg].name}…`; } else out=`<span class="m">no such app. try</span> apps`; }
-        else if(!c) out=null; else out = CMD[c] ? CMD[c]() : ext ? ext(arg) : `<span class="m">zsh: command not found: ${esc(c)} — try</span> help`;
+        else if(!c) out=null; else out = CMD[c] ? CMD[c]() : ext ? ext(arg, rest) : `<span class="m">zsh: command not found: ${esc(c)} — try</span> help`;
         if(out!=null) line(out); prompt(); t.scrollTop=t.scrollHeight; }; };
     line(`<span class="m">Last login: ${new Date().toDateString()} · type</span> <span class="k">help</span>`); prompt();
     t.addEventListener('click', () => { const i=$('input',t); i&&i.focus(); });

@@ -1,3 +1,8 @@
 # Handoff package (local reference only, not published)
 handoff/
 estebanos-handoff.zip
+__pycache__/
+tools/elia/.cache/
+
+# EL·IA: pendientes de Esteban, solo en la copia local
+ELIA_TODO.md

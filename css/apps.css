@@ -161,6 +161,37 @@
 .mail .foot{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;padding:12px 18px;border-top:1px solid var(--line)}
 .mail .foot small{color:var(--text-2);max-width:46ch}
 
+/* EL·IA */
+.elia{flex:1;min-height:0;display:flex;flex-direction:column;container-type:size}
+.elia-log{flex:1;padding:16px 18px 8px;display:flex;flex-direction:column;gap:10px}
+.elia .msg{max-width:88%;padding:9px 13px;border-radius:14px;line-height:1.55;animation:elia-in .18s ease-out}
+.elia .msg p{margin:0} .elia .msg p+p,.elia .msg ul{margin:6px 0 0} .elia .msg ul{padding-left:18px}
+.elia .msg a{color:var(--amber-hi)}
+.elia .msg.bot{align-self:flex-start;background:rgba(255,255,255,.07);border:1px solid var(--line);border-bottom-left-radius:5px}
+.elia .msg.me{align-self:flex-end;background:var(--amber);color:var(--ink);border-bottom-right-radius:5px}
+.elia .acts{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}
+.elia .acts .btn{text-decoration:none}
+.elia .dots{color:var(--text-2)}
+.elia .err{color:#f0a0a8;margin-top:6px}
+.elia-chips{display:flex;gap:6px;padding:6px 18px;overflow-x:auto;scrollbar-width:none;
+  -webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 28px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 28px),transparent)}
+.elia-chips::-webkit-scrollbar{display:none}
+.elia .chip{all:unset;flex:none;padding:5px 11px;border-radius:999px;border:1px solid rgba(199,154,94,.45);color:var(--amber-hi);font-size:12px;cursor:default}
+.elia .chip:hover{background:rgba(199,154,94,.14)}
+.elia .chip:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+.elia-in{display:flex;gap:8px;padding:10px 18px;border-top:1px solid var(--line)}
+.elia-in input{all:unset;flex:1;min-width:0;padding:7px 12px;border-radius:9px;background:rgba(255,255,255,.06);border:1px solid var(--line);color:var(--text)}
+.elia-in input:focus-visible{outline:2px solid var(--amber);outline-offset:1px}
+.elia-in input::placeholder{color:var(--text-3)}
+.elia-note{margin:0;padding:0 18px 10px;font-size:11px;color:var(--text-2)}
+.elia-form{display:grid;gap:8px;margin-top:10px}
+.elia-form label{display:grid;gap:4px;font-size:12px;color:var(--text-2)}
+.elia-form textarea,.elia-form input{all:unset;padding:7px 10px;border-radius:8px;background:rgba(0,0,0,.25);border:1px solid var(--line);color:var(--text);font-size:13px;white-space:pre-wrap}
+.elia-form textarea:focus-visible,.elia-form input:focus-visible{outline:2px solid var(--amber);outline-offset:1px}
+@keyframes elia-in{from{opacity:0;transform:translateY(4px)}}
+@container (max-height:380px){ .elia-note{display:none} .elia-log{padding-top:10px} }
+@media (max-width:899px){ .elia-in input{font-size:16px} .elia-note{padding-bottom:calc(10px + env(safe-area-inset-bottom,0px))} }   /* iOS: < 16 px hace zoom al enfocar */
+
 /* terminal */
 .term{flex:1;background:#0d0c0a;font:12.5px/1.6 var(--mono);padding:12px 14px;color:#d8d0c0;overflow:auto}
 .term .p{color:var(--amber)} .term .k{color:var(--amber-hi)} .term .m{color:var(--text-2)}

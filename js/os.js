@@ -11,6 +11,16 @@ const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':
 Object.assign(EOS, {D, RM, $, $$, phone, esc, apps: {}});
 if ((navigator.hardwareConcurrency || 8) <= 4 || matchMedia('(pointer:coarse)').matches) document.documentElement.classList.add('lowblur');
 EOS.register = (id, mod) => { EOS.apps[id] = mod; };
+/* EL·IA in testing: with DATA.elia.enabled === false it does not exist (Dock, phone home, Pages, Spotlight,
+   Terminal, default window, model download) unless the URL has ?elia=1, which turns it on for the rest of the
+   session (sessionStorage). enabled: true (or no flag) shows it to everyone. */
+EOS.eliaOn = (() => {
+  if (!D.elia) return false;
+  if (D.elia.enabled !== false) return true;
+  const ask = new URLSearchParams(location.search).get('elia') === '1';
+  try { if (ask) sessionStorage.setItem('eos.elia', '1'); return ask || sessionStorage.getItem('eos.elia') === '1'; }
+  catch (e) { return ask; }
+})();
 EOS.locked = !document.documentElement.classList.contains('unlocked') && !!document.getElementById('lock');   /* lock.js takes over */
 
 /* ── clock ── */
@@ -41,6 +51,7 @@ const G = {
   mail: `<svg viewBox="0 0 32 32"><rect x="4" y="8" width="24" height="17" rx="2.5" fill="#fff"/><path d="M5 10l11 8 11-8" fill="none" stroke="#5a8fe0" stroke-width="1.6"/></svg>`,
   markets: `<svg viewBox="0 0 32 32"><path d="M5 22l6-6 4 3 7-9 5 4" fill="none" stroke="#f2a24a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 26h22" stroke="rgba(242,162,74,.4)" stroke-width="1.2"/></svg>`,
   music: `<svg viewBox="0 0 32 32"><path d="M13 22.5V9.5l11-2.5v12.5" fill="none" stroke="#fff6e8" stroke-width="2" stroke-linejoin="round"/><ellipse cx="10.5" cy="22.5" rx="3" ry="2.4" fill="#fff6e8"/><ellipse cx="21.5" cy="19.5" rx="3" ry="2.4" fill="#fff6e8"/></svg>`,
+  elia: `<svg viewBox="0 0 32 32"><path d="M6 9.5A3.5 3.5 0 0 1 9.5 6h13A3.5 3.5 0 0 1 26 9.5v8a3.5 3.5 0 0 1-3.5 3.5H14l-5 4.5V21h0A3 3 0 0 1 6 18z" fill="#fff6e8"/><path d="M11 16.5l3.5-5 3.5 3 3-4.5" fill="none" stroke="#9a6a2e" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="11" cy="16.5" r="1.5" fill="#b04a56"/><circle cx="14.5" cy="11.5" r="1.5" fill="#b04a56"/><circle cx="18" cy="14.5" r="1.5" fill="#b04a56"/><circle cx="21" cy="10" r="1.5" fill="#b04a56"/></svg>`,
   term: `<svg viewBox="0 0 32 32"><path d="M8 11l5 5-5 5" fill="none" stroke="#e8c288" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M15 22h9" stroke="#ece5d6" stroke-width="2.2" stroke-linecap="round"/></svg>`
 };
 /* nav: label in the menubar page list (navless apps live in the Dock, Pages ▾ and Spotlight) */
@@ -55,9 +66,10 @@ const APPS = [
   {id:'music',   name:'Music',         short:'Music',    nav:'Music',    cls:'i-music',  w:400, h:540, navless:true},
   {id:'activity',name:'Activity',      short:'Activity', nav:'Activity', cls:'i-act',    w:640, h:600},
   {id:'safari',  name:'Safari',        short:'Safari',   nav:'Links',    cls:'i-safari', w:820, h:540},
+  {id:'elia',    name:'EL·IA',         short:'EL·IA',    nav:'Ask EL·IA',cls:'i-elia',  w:520, h:620, navless:true},
   {id:'mail',    name:'Mail',          short:'Mail',     nav:'Contact',  cls:'i-mail',   w:600, h:520},
   {id:'term',    name:'Terminal',      short:'Terminal', nav:'Terminal', cls:'i-term',   w:620, h:400},
-];
+].filter(a => a.id !== 'elia' || EOS.eliaOn);
 const appById = Object.fromEntries(APPS.map(a => [a.id, a]));
 const icon = (a, size) => `<span class="ic ${a.cls}" aria-hidden="true" ${size?`style="width:${size}px;height:${size}px"`:''}>${G[a.id]}</span>`;
 Object.assign(EOS, {APPS, appById, icon, G});
@@ -273,7 +285,7 @@ document.addEventListener('pointerdown', e => { if (!e.target.closest('[data-men
 let IDX = null;
 const buildIndex = () => [
   ...APPS.map(a => ({g:a.name, s:'Application', a:a.id, k:a.name+' '+a.short+' '+a.nav})),
-  ...['research','projects','path','photos','notes'].flatMap(id => (EOS.apps[id] && EOS.apps[id].search) ? EOS.apps[id].search() : []),
+  ...['research','projects','path','photos','notes','elia'].flatMap(id => (EOS.apps[id] && EOS.apps[id].search) ? EOS.apps[id].search() : []),
 ];
 let spotSel = 0, spotRes = [], spotPrev = null;
 function openSpot(){ IDX = IDX || buildIndex(); spotPrev = document.activeElement; $('#spot').classList.add('on'); $('#spotq').value=''; renderSpot(); setTimeout(()=>$('#spotq').focus(),20); }
@@ -398,12 +410,37 @@ document.addEventListener('click', e => {
     cycle: () => { const v = $$('.win').filter(w => !w.hidden).sort((a,b) => a.style.zIndex - b.style.zIndex); if (v.length > 1) focusWin(v[0]); }})[c.dataset.win]();
 });
 
+/* EL·IA in the right column: under Markets, same width, filling the height left above the Dock.
+   At least 300 px tall; if it does not fit, Markets shrinks, but never below the height its WATCH
+   panel needs; if it still does not fit, EL·IA stays closed. A position the visitor saved wins. */
+const ELIA_MIN_H = 300, COL_GAP = 12;
+function placeElia(m, wa){
+  if (!EOS.eliaOn) return;   /* EL·IA off (DATA.elia.enabled false, no ?elia=1): Markets stays as it is */
+  if (savedFor('elia', wa)) { openApp('elia'); return; }
+  const r = {...S.get(m)}, tb = $('.tb', m), side = $('.mkside', m);
+  let sideH = 0;
+  if (side) { side.style.alignSelf = 'flex-start'; sideH = side.offsetHeight; side.style.alignSelf = ''; }   /* its content height */
+  const minM = Math.ceil((tb ? tb.offsetHeight : 0) + sideH);
+  const bottom = wa.y + wa.h;
+  let mh = r.h, eh = bottom - (r.y + mh + COL_GAP);
+  if (eh < ELIA_MIN_H) {
+    mh = Math.max(minM, bottom - COL_GAP - ELIA_MIN_H - r.y);
+    eh = bottom - (r.y + mh + COL_GAP);
+    if (eh < ELIA_MIN_H) return;   /* no room: leave Markets as it was and do not open EL·IA */
+    EOS.rect(m, {...r, h: mh});
+  }
+  const e = openApp('elia');
+  EOS.rect(e, {x: r.x, y: r.y + mh + COL_GAP, w: r.w, h: eh});
+}
+
 /* ── entering the desktop (called directly, or by the login screen) ── */
 EOS.defaultWindows = () => {
   const wa = workArea();
-  if (area().width >= 1280){   /* About on the left, in front; Markets top right (tall enough for its WATCH panel) */
+  if (area().width >= 1280){   /* About on the left, in front; Markets top right (tall enough for its WATCH panel);
+                                  EL·IA under Markets, same width, down to the Dock */
     const mw = Math.min(620, wa.w*.40), mh = Math.min(420, wa.h*.66);
     const m = openApp('markets'); if (!savedFor('markets', wa)) EOS.rect(m, {w:mw, h:mh, x:wa.x + wa.w - mw, y:wa.y});
+    placeElia(m, wa);
     const aw = Math.min(860, wa.w - mw - 24), ah = Math.min(600, wa.h);
     const a = openApp('about'); if (!savedFor('about', wa)) EOS.rect(a, {w:aw, h:ah, x:wa.x, y:wa.y + (wa.h - ah)/2});
   } else openApp('about');

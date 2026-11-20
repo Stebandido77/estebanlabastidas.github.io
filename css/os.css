@@ -160,6 +160,7 @@ html:not(.unlocked) :is(.menubar,.dock,.home,.hint,.wcap){display:none}
 .i-act{background:linear-gradient(160deg,#c45a63,#7d2a34)}
 .i-safari{background:linear-gradient(160deg,#e9eef7,#bfcbe0)}
 .i-mail{background:linear-gradient(160deg,#5aa0ff,#1f5fd6)}
+.i-elia{background:linear-gradient(160deg,#d8a866,#7a4a1c)}
 .i-term{background:linear-gradient(160deg,#2a2a2a,#0e0e0e)}
 .i-mkt{background:linear-gradient(160deg,#1d1a16,#000)}
 .i-music{background:linear-gradient(160deg,#b04a56,#c79a5e)}
