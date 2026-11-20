@@ -460,12 +460,12 @@ window.DATA = {
        python tools/elia/train.py
      Lo marcado con TODO(esteban) es un borrador inferido: revísalo antes de publicar. */
   "elia": {
-    "threshold": 0.8,
+    "threshold": 0.85,
     "margin": 0.5,
     "howThreshold": 0.5,
     "keyWeight": 0.3,
-    "weakBonus": 0.25,
-    "clarify": 0.25,           // debajo de esto no hay "¿Te refieres a…?": se ofrece escribirle a Esteban
+    "weakBonus": 1.0,
+    "clarify": 0.4,           // debajo de esto no hay "¿Te refieres a…?": se ofrece escribirle a Esteban
     "formEndpoint": null,      // URL de Formspree o Web3Forms para enviar desde EL·IA; null = solo Mail
     /* noPromote: keys débiles que el criterio de datos (≥ 3 activaciones, precisión ≥ 0,95) nunca sube a fuerte */
     "noPromote": ["github", "repo", "codigo", "code"],
@@ -765,7 +765,7 @@ window.DATA = {
              "en": "From August 2023 to December 2025, Esteban led the Sekia Research Group at Pontificia Universidad Javeriana, coordinating applied research in econometrics, data analysis, academic writing and presentations, and managing publications and outside collaborations such as the one with CINEP."},
        "open": [["path"]]},
       {"id": "skills_finance", "t": {"es": "Finanzas corporativas y valoración", "en": "Corporate finance and valuation"},
-       "keys": ["modelos financieros", "modelo financiero", "modelacion financiera", "financial modeling", "financial modelling", "financial models", "financial model", "valoracion de empresas", "valoracion corporativa", "corporate valuation", "company valuation", "banca de inversion", "investment banking", "dcf", "wacc", "costo de capital", "cost of capital", "comps", "fusiones y adquisiciones", "mergers and acquisitions", "mna"], "weak": ["comparables", "estructuracion", "structuring", "valoracion", "valuation", "finanzas corporativas", "corporate finance", "sector financiero", "financial sector", "finanzas", "finance", "deals"],
+       "keys": ["modelos financieros", "modelo financiero", "modelacion financiera", "financial modeling", "financial modelling", "financial models", "financial model", "valoracion de empresas", "valoracion corporativa", "corporate valuation", "company valuation", "banca de inversion", "investment banking", "dcf", "wacc", "costo de capital", "cost of capital", "comps", "fusiones y adquisiciones", "mergers and acquisitions", "mna"], "weak": ["comparables", "estructuracion", "structuring", "valoracion", "valuation", "finanzas corporativas", "corporate finance", "sector financiero", "financial sector", "deals"],
        "a": {"es": "Su experiencia es en M&A y valoración corporativa, no en un banco de inversión. En Grupo Aval evalúa operaciones de M&A y proyectos corporativos, hace valoraciones (DCF, comparables, costo de capital) y prepara materiales para la Junta Directiva e inversionistas. Antes, como consultor en Management Solutions, trabajó en mercados de capitales para bancos de primer nivel: valoró renta fija, renta variable y derivados, y construyó un motor de exposición SA-CCR. En JP Morgan Chase fue practicante de datos (dashboards de inversiones), no de banca de inversión. Tiene la certificación CMSA® y está cursando la FMVA® (modelación financiera y valoración).",
              "en": "His experience is in M&A and corporate valuation, not at an investment bank. At Grupo Aval he evaluates M&A and corporate projects, runs valuations (DCF, comparables, cost of capital) and prepares Board and investor materials. Before that, as a consultant at Management Solutions, he worked on capital markets for tier-1 banks: valuing fixed income, equity and derivatives, and building an SA-CCR exposure engine. At JP Morgan Chase he was a data intern (investment dashboards), not in investment banking. He holds the CMSA® and is working toward the FMVA® (financial modeling and valuation)."},
        "open": [["path"], ["projects"]]},
@@ -785,7 +785,7 @@ window.DATA = {
              "en": "Python, R, SQL, VBA and LaTeX day to day: pipelines, valuation engines and automations. TypeScript for web tools such as WHOOP Lab. Also Power BI, Calypso (Nasdaq) and Bayesian econometrics. This site is plain HTML, CSS and JavaScript, no frameworks."},
        "open": [["path"]]},
       {"id": "interests", "t": {"es": "Intereses de investigación", "en": "Research interests"},
-       "keys": [], "weak": ["intereses", "interests", "areas de investigacion", "research interests", "le interesa", "interested in"],
+       "keys": [], "weak": ["intereses", "interests", "areas de investigacion", "research interests"],
        "a": {"es": "Econometría de series de tiempo y bayesiana, pronóstico de inflación y política monetaria en mercados emergentes, microeconometría aplicada, decisiones financieras, teoría de juegos, educación, economía del desarrollo, M&A, valoración corporativa y mercados de capital privado.",
              "en": "Time series and Bayesian econometrics, inflation forecasting and monetary policy in emerging markets, applied microeconometrics, financial decision-making, game theory, education, development economics, M&A, corporate valuation and private capital markets."},
        "open": [["research"]]},

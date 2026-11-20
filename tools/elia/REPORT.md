@@ -25,7 +25,7 @@ Generado por `python tools/elia/train.py` el 2026-11-19. 680 preguntas originale
 | Regla | Preguntas dentro del alcance que la activan | Con la intención correcta | Fuera de alcance que la activan |
 |---|---|---|---|
 | Key fuerte | 234 de 562 | 227 | 0 |
-| Key débil (sin fuerte) | 162 de 562 | 155 | 6 |
+| Key débil (sin fuerte) | 160 de 562 | 153 | 6 |
 | Forzada (social u oosCues.hard) | 16 de 562 | 16 | 14 |
 
 Los keys los escribí mirando content.js **y** el dataset, así que esta capa sale algo favorecida en la validación. La prueba sin ese sesgo es `tools/elia/eval_holdout.py` con las preguntas de Esteban.
@@ -71,10 +71,10 @@ Cada etapa con su propia regla óptima de la grilla. "Anidada": la regla se elig
 | Base (solo red) | ninguna cumple | nan ± nan % | nan ± nan % | nan ± nan % | nan ± nan % | | | | | |
 | + keys fuertes/débiles + guardia OOS | ninguna cumple | nan ± nan % | nan ± nan % | nan ± nan % | nan ± nan % | | | | | |
 | + plantillas | ninguna cumple | nan ± nan % | nan ± nan % | nan ± nan % | nan ± nan % | | | | | |
-| + destilación | t 0.80 · m 0.50 · c 0.20 · w 0.3 · β 1.0 | 67.1 ± 4.6 % | 81.6 ± 1.6 % | 3.2 ± 2.1 % | 3.7 ± 3.5 % | 63.2 ± 4.9 % | 1.4 ± 1.4 % | 27.3 ± 7.3 % | 8.0 ± 3.0 % | 94.0 ± 3.5 % |
-| (c) destilación sin keys débiles (con reglas sociales y guardia dura) | t 0.80 · m 0.50 · c 0.25 · w 0.3 · β 0.0 | 66.8 ± 5.3 % | 81.6 ± 3.3 % | 2.5 ± 2.1 % | 3.3 ± 2.8 % | 62.3 ± 6.7 % | 1.4 ± 1.4 % | 26.4 ± 7.1 % | 9.8 ± 1.8 % | 98.3 ± 3.5 % |
-| + reglas sociales y guardia dura (sin detector) | t 0.80 · m 0.50 · c 0.25 · w 0.3 · β 0.25 | 67.0 ± 4.6 % | 84.7 ± 4.6 % | 1.5 ± 1.7 % | 1.7 ± 2.2 % | 63.0 ± 6.2 % | 1.4 ± 1.4 % | 26.6 ± 6.9 % | 8.9 ± 2.4 % | 98.3 ± 3.5 % |
-| + detector de novedad (final) | t 0.80 · m 0.50 · c 0.25 · w 0.3 · β 0.25 | 67.0 ± 4.6 % | 84.7 ± 4.6 % | 1.5 ± 1.7 % | 1.7 ± 2.2 % | 63.0 ± 6.2 % | 1.4 ± 1.4 % | 26.6 ± 6.9 % | 8.9 ± 2.4 % | 98.3 ± 3.5 % |
+| + destilación | ninguna cumple | 71.3 ± 0.0 % | 78.7 ± 0.0 % | 6.6 ± 0.0 % | 11.1 ± 0.0 % | | | | | |
+| (c) destilación sin keys débiles (con reglas sociales y guardia dura) | t 0.80 · m 0.50 · c 0.25 · w 0.3 · β 0.0 | 64.9 ± 6.1 % | 83.9 ± 3.0 % | 2.2 ± 2.3 % | 3.1 ± 4.0 % | 61.6 ± 7.0 % | 1.6 ± 1.7 % | 26.6 ± 7.8 % | 10.2 ± 3.1 % | 99.1 ± 1.7 % |
+| + reglas sociales y guardia dura (sin detector) | t 0.85 · m 0.50 · c 0.40 · w 0.3 · β 1.0 | 67.0 ± 6.2 % | 85.1 ± 2.8 % | 1.3 ± 1.6 % | 2.0 ± 2.7 % | 61.4 ± 7.3 % | 1.2 ± 1.3 % | 25.5 ± 6.7 % | 11.8 ± 3.0 % | 99.1 ± 1.7 % |
+| + detector de novedad (final) | t 0.85 · m 0.50 · c 0.40 · w 0.3 · β 1.0 | 67.0 ± 6.2 % | 85.1 ± 2.8 % | 1.3 ± 1.6 % | 2.0 ± 2.7 % | 61.4 ± 7.3 % | 1.2 ± 1.3 % | 25.5 ± 6.7 % | 11.8 ± 3.0 % | 99.1 ± 1.7 % |
 
 ## Frontera correctas ↔ equivocadas (anidada)
 
@@ -82,37 +82,37 @@ Para cada meta de correctas (todas las preguntas), la regla con menos equivocada
 
 | Variante | Correctas ≥ | Equivocadas | Correctas logradas | Útiles | Pliegues con regla | Percentil elegido |
 |---|---|---|---|---|---|---|
-| sin detector | 50 % | 1.0 % | 53.3 % | 77.0 % | 5/5 | {None: 5} |
-| sin detector | 55 % | 1.0 % | 55.5 % | 79.5 % | 5/5 | {None: 5} |
-| sin detector | 60 % | 1.2 % | 61.8 % | 79.2 % | 5/5 | {None: 5} |
-| sin detector | 65 % | 1.5 % | 68.2 % | 79.1 % | 5/5 | {None: 5} |
-| sin detector | 70 % | 1.9 % | 69.8 % | 78.6 % | 5/5 | {None: 5} |
-| sin detector | 75 % | 2.5 % | 74.5 % | 80.3 % | 5/5 | {None: 5} |
-| con detector | 50 % | 1.2 % | 55.4 % | 69.3 % | 5/5 | {85: 1, 80: 1, None: 3} |
-| con detector | 55 % | 1.3 % | 56.9 % | 62.6 % | 5/5 | {85: 1, 80: 3, None: 1} |
-| con detector | 60 % | 1.3 % | 62.2 % | 74.1 % | 5/5 | {99: 4, None: 1} |
-| con detector | 65 % | 2.1 % | 67.9 % | 75.3 % | 5/5 | {99: 2, None: 3} |
-| con detector | 70 % | 1.9 % | 69.8 % | 78.6 % | 5/5 | {None: 5} |
-| con detector | 75 % | 2.5 % | 74.5 % | 80.3 % | 5/5 | {None: 5} |
+| sin detector | 50 % | 0.9 % | 52.9 % | 77.8 % | 5/5 | {None: 5} |
+| sin detector | 55 % | 1.0 % | 59.7 % | 79.2 % | 5/5 | {None: 5} |
+| sin detector | 60 % | 1.2 % | 62.7 % | 80.5 % | 5/5 | {None: 5} |
+| sin detector | 65 % | 1.2 % | 67.1 % | 81.0 % | 5/5 | {None: 5} |
+| sin detector | 70 % | 2.3 % | 70.9 % | 80.3 % | 5/5 | {None: 5} |
+| sin detector | 75 % | 3.4 % | 74.9 % | 79.2 % | 5/5 | {None: 5} |
+| con detector | 50 % | 0.9 % | 52.9 % | 77.8 % | 5/5 | {None: 5} |
+| con detector | 55 % | 1.0 % | 59.7 % | 79.2 % | 5/5 | {None: 5} |
+| con detector | 60 % | 1.2 % | 62.7 % | 80.5 % | 5/5 | {None: 5} |
+| con detector | 65 % | 1.2 % | 67.1 % | 81.0 % | 5/5 | {None: 5} |
+| con detector | 70 % | 2.3 % | 70.9 % | 80.3 % | 5/5 | {None: 5} |
+| con detector | 75 % | 3.4 % | 74.9 % | 79.2 % | 5/5 | {None: 5} |
 
 ## Etapa final por idioma
 
-Regla: threshold 0.8, margin 0.5, clarify 0.25, keyWeight 0.3, weakBonus 0.25 (ya escritos en content.js). Columnas "anidada": la estimación honesta.
+Regla: threshold 0.85, margin 0.5, clarify 0.4, keyWeight 0.3, weakBonus 1.0 (ya escritos en content.js). Columnas "anidada": la estimación honesta.
 
 | Métrica | Todas | Todas (anidada) | ES | ES (anidada) | EN | EN (anidada) | Meta |
 |---|---|---|---|---|---|---|---|
-| **Correctas, todas las preguntas** (como el holdout) | 66.4 ± 4.5 % | 67.0 ± 4.6 % | 65.6 ± 2.0 % | 66.8 ± 2.6 % | 67.4 ± 8.7 % | 67.4 ± 8.7 % | ≥ 65 % |
-| **Útiles, todas las preguntas** | 85.9 ± 2.9 % | 84.7 ± 4.6 % | 83.9 ± 5.1 % | 83.0 ± 6.9 % | 88.0 ± 2.4 % | 86.5 ± 2.7 % | ≥ 88 % (interna) |
-| **Equivocadas, todas las preguntas** | 1.5 ± 1.7 % | 1.5 ± 1.7 % | 1.7 ± 2.2 % | 1.7 ± 2.2 % | 1.2 ± 1.2 % | 1.2 ± 1.2 % | ≤ 3 % (interna) |
+| **Correctas, todas las preguntas** (como el holdout) | 66.4 ± 5.6 % | 67.0 ± 6.2 % | 67.6 ± 3.0 % | 68.4 ± 3.8 % | 65.3 ± 9.2 % | 65.6 ± 9.6 % | ≥ 65 % |
+| **Útiles, todas las preguntas** | 85.4 ± 3.0 % | 85.1 ± 2.8 % | 84.7 ± 3.8 % | 84.5 ± 3.9 % | 86.1 ± 3.5 % | 85.9 ± 3.0 % | ≥ 88 % (interna) |
+| **Equivocadas, todas las preguntas** | 1.2 ± 1.4 % | 1.3 ± 1.6 % | 1.7 ± 2.2 % | 2.0 ± 2.7 % | 0.6 ± 0.7 % | 0.6 ± 0.7 % | ≤ 3 % (interna) |
 | Bloqueadas por el detector | 0.0 ± 0.0 % | 0.0 ± 0.0 % | 0.0 ± 0.0 % | 0.0 ± 0.0 % | 0.0 ± 0.0 % | 0.0 ± 0.0 % |  |
-| Responde bien (dentro del alcance) | 63.0 ± 6.2 % | 63.4 ± 6.5 % | 62.8 ± 4.3 % | 63.5 ± 5.3 % | 63.5 ± 9.5 % | 63.5 ± 9.5 % | ≥ 80 % (referencia) |
-| Responde mal (dentro del alcance) | 1.4 ± 1.4 % | 1.4 ± 1.4 % | 1.6 ± 2.0 % | 1.6 ± 2.0 % | 1.1 ± 0.9 % | 1.1 ± 0.9 % | ≤ 5 % |
-| "¿Te refieres a…?" | 26.6 ± 6.9 % | 23.9 ± 7.8 % | 25.8 ± 5.0 % | 22.8 ± 6.3 % | 27.3 ± 9.2 % | 24.8 ± 10.0 % |  |
-|   … con la correcta entre las 3 opciones | 23.6 ± 6.3 % | 21.4 ± 7.2 % | 22.1 ± 4.2 % | 19.5 ± 6.2 % | 24.7 ± 9.3 % | 23.0 ± 10.0 % |  |
-| Va a correo | 8.9 ± 2.4 % | 11.3 ± 5.7 % | 9.8 ± 3.4 % | 12.1 ± 7.7 % | 8.1 ± 2.1 % | 10.6 ± 4.3 % |  |
-| Accuracy (argmax, tras reglas) | 82.0 ± 2.7 % | 82.0 ± 2.7 % | 80.3 ± 4.3 % | 80.3 ± 4.3 % | 83.6 ± 2.7 % | 83.6 ± 2.7 % |  |
-| Rechazo de out_of_scope | 98.3 ± 3.5 % | 98.3 ± 3.5 % | 97.5 ± 5.0 % | 97.5 ± 5.0 % | 98.7 ± 2.7 % | 98.7 ± 2.7 % | ≥ 85 % |
-| out_of_scope que cae en "¿Te refieres a…?" | 16.0 ± 6.5 % | 14.3 ± 6.1 % | 20.4 ± 11.1 % | 17.2 ± 11.6 % | 12.7 ± 6.5 % | 12.7 ± 6.5 % |  |
+| Responde bien (dentro del alcance) | 61.4 ± 7.3 % | 62.3 ± 8.3 % | 63.4 ± 5.8 % | 64.4 ± 6.7 % | 59.4 ± 10.4 % | 60.2 ± 11.2 % | ≥ 80 % (referencia) |
+| Responde mal (dentro del alcance) | 1.2 ± 1.3 % | 1.4 ± 1.6 % | 1.6 ± 2.0 % | 1.9 ± 2.5 % | 0.8 ± 0.9 % | 0.8 ± 0.9 % | ≤ 5 % |
+| "¿Te refieres a…?" | 25.5 ± 6.7 % | 24.5 ± 7.9 % | 24.7 ± 4.2 % | 23.1 ± 6.0 % | 26.2 ± 9.8 % | 25.8 ± 10.4 % |  |
+|   … con la correcta entre las 3 opciones | 23.0 ± 6.3 % | 22.0 ± 7.2 % | 20.8 ± 3.9 % | 19.5 ± 5.2 % | 25.1 ± 8.6 % | 24.4 ± 9.3 % |  |
+| Va a correo | 11.8 ± 3.0 % | 11.8 ± 3.1 % | 10.3 ± 3.7 % | 10.6 ± 3.4 % | 13.6 ± 3.8 % | 13.2 ± 4.4 % |  |
+| Accuracy (argmax, tras reglas) | 82.7 ± 2.4 % | 82.5 ± 2.4 % | 81.7 ± 4.6 % | 81.4 ± 4.6 % | 83.5 ± 1.9 % | 83.5 ± 1.9 % |  |
+| Rechazo de out_of_scope | 99.1 ± 1.7 % | 99.1 ± 1.7 % | 97.5 ± 5.0 % | 97.5 ± 5.0 % | 100.0 ± 0.0 % | 100.0 ± 0.0 % | ≥ 85 % |
+| out_of_scope que cae en "¿Te refieres a…?" | 9.3 ± 3.0 % | 10.1 ± 4.2 % | 12.2 ± 6.8 % | 12.2 ± 6.8 % | 7.7 ± 4.6 % | 9.3 ± 5.9 % |  |
 
 **Referencia de la validación cruzada (anidada):** equivocadas ≤ 3 % ✓ · útiles ≥ 88 % ✗ · equivocadas en ES ≤ 3 % ✓ · rechazo OOS ✓ → no se cumplen todas las referencias. La puerta de publicación es el holdout (arriba).
 
@@ -120,33 +120,31 @@ Regla: threshold 0.8, margin 0.5, clarify 0.25, keyWeight 0.3, weakBonus 0.25 (y
 
 | Pregunta | Real | Respondió | p1 | Origen |
 |---|---|---|---|---|
-| cómo combinaste el LLM con los modelos econométricos en el paper | `ews` | `paper_llm` | 1.00 | fuerte |
 | el hilo de salario minimo e informalidad | `writing` | `desk_minwage` | 1.00 | débil |
+| cómo combinaste el LLM con los modelos econométricos en el paper | `ews` | `paper_llm` | 1.00 | fuerte |
+| desde dónde trabajas | `location` | `job_current` | 1.00 | débil |
 | hace consultorías de valoración | `hire` | `exp_ms` | 1.00 | fuerte |
 | who owns this website | `who` | `site` | 1.00 | red |
-| desde dónde trabajas | `location` | `job_current` | 0.98 | débil |
 | cómo funciona el sistema de agentes para invertir en acciones | `proj_equitydesk` | `ews` | 0.98 | fuerte |
-| are you available for consulting work | `hire` | `exp_ms` | 0.95 | fuerte |
-| what shows are you watching lately | `out_of_scope` | `latest` | 0.91 | red |
-| what do you think about inflation forecasting | `interests` | `proj_inflation` | 0.90 | red |
-| practicas algún deporte | `out_of_scope` | `desk_breb` | 0.86 | red |
+| are you available for consulting work | `hire` | `exp_ms` | 0.96 | fuerte |
+| qué piensas de la inflación este año | `out_of_scope` | `interests` | 0.88 | red |
 
 ## Intenciones que más se quedan sin responder ("¿Te refieres a…?" o correo)
 
-`who` (26), `interests` (15), `stack` (14), `list_papers` (14), `education` (13), `hire` (13), `contact` (12), `latest` (12), `job_current` (9), `location` (9), `skills_finance` (7), `cv` (5), `elia` (5), `list_projects` (5), `paper_spatial` (4)
+`who` (26), `stack` (16), `interests` (15), `list_papers` (15), `contact` (13), `hire` (13), `education` (12), `latest` (10), `job_current` (8), `location` (8), `elia` (7), `cv` (6), `list_projects` (6), `paper_spatial` (5), `skills_finance` (4)
 
 ## asks_how (red de la etapa final, suma de los pliegues)
 
-Accuracy 96.8 ± 0.6 %.
+Accuracy 96.6 ± 0.8 %.
 
 | | predice how=0 | predice how=1 |
 |---|---|---|
-| **real how=0** | 615 | 5 |
-| **real how=1** | 17 | 43 |
+| **real how=0** | 616 | 4 |
+| **real how=1** | 19 | 41 |
 
 ## Exportación
 
-- Modelo final: 100 % de las preguntas y las plantillas, 54 épocas (mediana de la validación cruzada), T = 0.687 (mediana).
+- Modelo final: 100 % de las preguntas y las plantillas, 24 épocas (mediana de la validación cruzada), T = 0.669 (mediana).
 - `assets/data/elia-model.js`: **348.0 KB** (meta ≤ 400 KB). Pesos int8 con escala por capa; coincide con el modelo en float en el 100.0 % de las predicciones.
 - Paridad Python ↔ JS: `node tools/elia/test_parity.mjs` (50 preguntas solo red + 60 con keys, guardia y reglas sociales; tolerancia 1e-3).
 - Holdout de Esteban: `python tools/elia/eval_holdout.py` (lee `tools/elia/data/holdout.csv`).
