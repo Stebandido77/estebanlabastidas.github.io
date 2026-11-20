@@ -658,7 +658,7 @@ haces tableros en power bi,stack,es,0
 trabajas con la terminal de bloomberg,stack,es,0
 conectas apis en tus proyectos,stack,es,0
 qué motores de bases de datos conoces,stack,es,0
-aplicas machine learning en tu trabajo,stack,es,0
+aplicas machine learning en tu trabajo,ai_work,es,0
 qué tanto programas en tu día a día,stack,es,0
 do you build models in excel,stack,en,0
 do you automate things with vba,stack,en,0
@@ -667,7 +667,7 @@ do you make power bi reports,stack,en,0
 are you familiar with bloomberg,stack,en,0
 which apis have you used,stack,en,0
 what database systems do you know,stack,en,0
-do you use machine learning at work,stack,en,0
+do you use machine learning at work,ai_work,en,0
 how much do you program day to day,stack,en,0
 de qué trata tu app,proj_patrion,es,0
 qué hace la aplicación que estás desarrollando,proj_patrion,es,0
@@ -679,3 +679,45 @@ tell me about the app you're building,proj_patrion,en,0
 what powers the server side of your app,proj_patrion,en,1
 will your app have a mobile version,proj_patrion,en,0
 the personal finance tool you're working on,proj_patrion,en,0
+qué ha hecho Esteban con inteligencia artificial,ai_work,es,0
+trabajas con IA?,ai_work,es,0
+tiene experiencia en machine learning,ai_work,es,0
+qué proyectos de IA tiene Esteban,ai_work,es,0
+usa agentes de IA en su trabajo,ai_work,es,0
+has entrenado redes neuronales,ai_work,es,0
+para qué usa Esteban los LLMs,ai_work,es,0
+en qué ha aplicado el aprendizaje automático,ai_work,es,0
+what has Esteban done with AI,ai_work,en,0
+do you work with artificial intelligence,ai_work,en,0
+does he have machine learning experience,ai_work,en,0
+what AI projects does Esteban have,ai_work,en,0
+has he built anything with LLMs,ai_work,en,0
+do you use AI agents,ai_work,en,0
+has he trained a neural network himself,ai_work,en,0
+how does Esteban use AI in his research,ai_work,en,0
+en qué es bueno Esteban,skills_overview,es,0
+cuáles son tus fortalezas,skills_overview,es,0
+qué habilidades tiene,skills_overview,es,0
+cuál es su mayor fortaleza,skills_overview,es,0
+qué es lo que mejor hace Esteban,skills_overview,es,0
+qué sabe hacer bien,skills_overview,es,0
+cuáles son sus puntos fuertes,skills_overview,es,0
+en qué destaca Esteban,skills_overview,es,0
+what is Esteban good at,skills_overview,en,0
+what are your strengths,skills_overview,en,0
+what skills does he have,skills_overview,en,0
+what's his strongest skill,skills_overview,en,0
+what does he do best,skills_overview,en,0
+what are his core skills,skills_overview,en,0
+where does Esteban stand out,skills_overview,en,0
+what are you really good at,skills_overview,en,0
+en qué está trabajando Esteban,latest,es,0
+qué proyecto tiene ahora,latest,es,0
+en qué anda Esteban,latest,es,0
+qué está haciendo Esteban últimamente,latest,es,0
+Esteban en qué está metido ahora,latest,es,0
+what is he working on,latest,en,0
+what's Esteban up to,latest,en,0
+what is Esteban busy with these days,latest,en,0
+what project is he on at the moment,latest,en,0
+what has Esteban been doing lately,latest,en,0

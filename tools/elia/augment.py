@@ -9,6 +9,9 @@ Transformaciones (cada variante aplica 1 o 2 al azar):
   - typo de teclado       una letra por una vecina en QWERTY ("pulso" → "pilso")
   - borrar una letra      "calypso"        → "calpso"
   - duplicar una letra    "andina"         → "anddina"
+  - trasponer dos letras  "trabajando"     → "trabjanado", "habilidad" → "ahbilidad"
+  - typo agresivo         con probabilidad TYPO_P (train.py --typo-p), además, una trasposición, letra omitida o
+                          repetida dentro de una palabra larga (≥ 6 letras)
   - sinónimo              de la lista SYN (por palabra completa)
 
 Uso:
@@ -92,6 +95,29 @@ def double(s: str, rng: random.Random) -> str:
     return s[:i] + s[i] + s[i:]
 
 
+def transpose(s: str, rng: random.Random) -> str:
+    """Intercambia dos letras vecinas de la misma palabra ("trabajando" → "trabajnado")."""
+    idx = [i for i in range(len(s) - 1) if s[i].isalpha() and s[i + 1].isalpha() and s[i] != s[i + 1]]
+    if not idx:
+        return s
+    i = rng.choice(idx)
+    return s[:i] + s[i + 1] + s[i] + s[i + 2:]
+
+
+TYPO_P = 0.3   # probabilidad del typo agresivo extra por variante (train.py --typo-p)
+
+
+def long_word_typo(s: str, rng: random.Random) -> str:
+    """Una trasposición, omisión o repetición dentro de una palabra de ≥ 6 letras."""
+    words = [m for m in re.finditer(r"[^\W\d_]{6,}", s)]
+    if not words:
+        return s
+    m = rng.choice(words)
+    w = m.group(0)
+    op = rng.choice((transpose, drop, double))
+    return s[:m.start()] + op(w, rng) + s[m.end():]
+
+
 def synonym(s: str, rng: random.Random) -> str:
     low = s.lower()
     cands = [(g, w) for g in SYN_GROUPS for w in g
@@ -103,7 +129,7 @@ def synonym(s: str, rng: random.Random) -> str:
     return re.sub(r"(?<!\w)" + re.escape(w) + r"(?!\w)", alt, low, count=1)
 
 
-OPS = [strip_accents, str.lower, typo, drop, double, synonym]
+OPS = [strip_accents, str.lower, typo, drop, double, transpose, synonym]
 
 
 def variants(text: str, n: int, rng: random.Random) -> list[str]:
@@ -114,7 +140,9 @@ def variants(text: str, n: int, rng: random.Random) -> list[str]:
             break
         v = text
         for op in rng.sample(OPS, rng.choice((1, 2))):
-            v = op(v, rng) if op in (typo, drop, double, synonym) else op(v)
+            v = op(v, rng) if op in (typo, drop, double, transpose, synonym) else op(v)
+        if rng.random() < TYPO_P:
+            v = long_word_typo(v, rng)
         if v not in seen and v.strip():
             seen.add(v)
             out.append(v)

@@ -87,14 +87,15 @@ def featurize(text: str) -> np.ndarray:
     2. si no, una frase de oosCues.hard → out_of_scope (EL·IA nunca responde: ofrece el correo).
 
   key_intent(text, K) → (intención, "strong" | "weak") o (None, None):
-    1. Si aparece alguna frase de oosCues (soft o hard) → (None, None): decide solo la red.
+    1. Si aparece alguna frase de oosCues.hard, o de oosCues.soft y la pregunta no menciona a Esteban
+       (esteban, tu, tus, your, his) → (None, None): decide solo la red.
     1b. Combinaciones ("combo": grupos de palabras): si la pregunta tiene una palabra de CADA grupo, en
        cualquier orden ("ceteris" + "codigo"), y eso pasa para exactamente una intención → (esa, "strong"),
        por encima de los demás keys fuertes.
-    2. Si hay keys fuertes ("keys") de exactamente una intención → (esa, "strong").
-       Si son de dos o más → (None, None).
-    3. Si no hay fuertes y hay débiles ("weak") de exactamente una intención → (esa, "weak").
-       Si son de dos o más → (None, None).
+    2. Si hay keys fuertes ("keys") de exactamente una intención → (esa, "strong"). Si son de dos o más y
+       todas menos una son generales ("general": true en content.js, p. ej. ai_work, skills_overview, who) →
+       gana la específica. Si no → (None, None). Un fuerte general gana sobre cualquier débil.
+    3. Si no hay fuertes, lo mismo con los débiles ("weak") → (esa, "weak") o (None, None).
 
   social_intent(text, social) → greeting | goodbye | thanks | None:
     el mensaje normalizado tiene ≤ 4 palabras y se puede cubrir de izquierda a derecha solo con frases
@@ -111,15 +112,17 @@ OOS_ID = "out_of_scope"
 def near(a: str, b: str) -> bool:
     """a = palabra del key, b = palabra de la pregunta. Coinciden si son iguales; si b empieza por a y a
     tiene ≥ 6 letras (conjugaciones y pronombres pegados: contactar → contactarte, contratar →
-    contratarlo); o si las dos tienen ≥ 5 letras y están a distancia de Levenshtein ≤ 1."""
+    contratarlo); o si las dos tienen ≥ 5 letras y están a distancia de Levenshtein ≤ 1, contando como
+    una sola edición dos letras vecinas traspuestas (Damerau: "ahbilidad" → "habilidad")."""
     if a == b:
         return True
     if len(a) >= KEY_PREFIX_MIN and b.startswith(a):
         return True
     if len(a) < KEY_FUZZY_MIN or len(b) < KEY_FUZZY_MIN or abs(len(a) - len(b)) > 1:
         return False
-    if len(a) == len(b):
-        return sum(x != y for x, y in zip(a, b)) == 1
+    if len(a) == len(b):   # una letra distinta, o dos vecinas traspuestas ("ahbilidad" → "habilidad")
+        d = [i for i in range(len(a)) if a[i] != b[i]]
+        return len(d) == 1 or (len(d) == 2 and d[1] == d[0] + 1 and a[d[0]] == b[d[1]] and a[d[1]] == b[d[0]])
     s, l = (a, b) if len(a) < len(b) else (b, a)
     i = 0
     while i < len(s) and s[i] == l[i]:
@@ -157,7 +160,8 @@ def compile_keys(elia: dict, promoted: dict | None = None) -> dict:
     promoted = {intención: [keys de "weak" que actúan como fuertes]} (ver promote_keys)."""
     cues = elia.get("oosCues", {})
     out = {"strong": [], "weak": [], "combo": [],
-           "hard": phrases(cues.get("hard", [])), "soft": phrases(cues.get("soft", []))}
+           "hard": phrases(cues.get("hard", [])), "soft": phrases(cues.get("soft", [])),
+           "general": {it["id"] for it in elia["intents"] if it.get("general")}}
     promoted = promoted or {}
     for it in elia["intents"]:
         if it.get("combo"):
@@ -197,16 +201,23 @@ def key_hits(text: str, compiled_list) -> list[str]:
     return [iid for iid, keys in compiled_list if any(contains(q, kt, ex) for kt, ex in keys)]
 
 
+SELF_WORDS = {"esteban", "tu", "tus", "your", "his"}   # la pregunta es sobre Esteban: oosCues.soft no aplica
+
+
 def key_intent(text: str, K: dict):
     q = normalize(text).split()
-    if any(contains(q, c) for c in K["hard"] + K["soft"]):
+    soft = not (SELF_WORDS & set(q))   # "la mejor habilidad de Esteban" no es "el mejor celular"
+    if any(contains(q, c) for c in K["hard"] + (K["soft"] if soft else [])):
         return None, None
     combo = [iid for iid, groups in K.get("combo", [])
              if all(any(contains(q, w, ex) for w, ex in g) for g in groups)]
     if len(combo) == 1:
         return combo[0], "strong"
+    general = K.get("general", set())
     for kind in ("strong", "weak"):
         hits = key_hits(text, K[kind])
+        if len(hits) > 1:   # keys de varias intenciones: la específica gana sobre las generales
+            hits = [h for h in hits if h not in general] or hits
         if len(hits) == 1:
             return hits[0], kind
         if hits:

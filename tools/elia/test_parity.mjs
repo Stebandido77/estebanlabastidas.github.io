@@ -56,23 +56,44 @@ H.questions.forEach((q, i) => {
 console.log(`híbrido (keyWeight ${H.keyWeight} · weakBonus ${H.weakBonus}): ${H.questions.length} preguntas · ` +
   `mismas reglas (fuerte/débil/forzada): ${ruleOk}/${H.questions.length} · diferencia máxima ${hw.toExponential(2)} · tolerancia ${TOL}`);
 
-// 2b. detector de novedad: distancias a los prototipos y decisión completa (answer / clarify / miss y opciones)
-const O = ref.ood;
-if (O && !M.ood) { fails++; console.log('✗ parity.json trae detector pero elia-model.js no tiene "ood"'); }
-if (!O && M.ood) { fails++; console.log('✗ elia-model.js tiene "ood" pero parity.json no: reentrena'); }
-if (O && M.ood) {
+// 2b. decisión completa (answer / clarify / menu / miss y opciones) con la regla exportada: menú de temas y,
+//     si el modelo trae detector, distancias a los prototipos
+const O = ref.decide;
+if (!O) { fails++; console.log('✗ parity.json no trae "decide": reentrena'); }
+else {
+  if (!!O.dist !== !!M.ood) { fails++; console.log('✗ el detector de elia-model.js y el de parity.json no coinciden: reentrena'); }
+  if (E.threshold !== O.threshold || E.margin !== O.margin || E.clarify !== O.clarify || (E.menuBelow ?? null) !== (O.menuBelow ?? null)) {
+    fails++; console.log('✗ content.js tiene otra regla que parity.json (threshold/margin/clarify/menuBelow)');
+  }
+  const cfg = {keyWeight: H.keyWeight, weakBonus: H.weakBonus, threshold: O.threshold, margin: O.margin, clarify: O.clarify,
+               menuBelow: O.menuBelow, menu: E.menu};
   let dw = 0, decOk = 0;
-  const cfg = {keyWeight: H.keyWeight, weakBonus: H.weakBonus, threshold: O.threshold, margin: O.margin, clarify: O.clarify};
   O.questions.forEach((q, i) => {
     const r = net.ask(M, q, K, cfg);
-    dw = Math.max(dw, maxDiff(r.dist, O.dist[i]));
-    const d = net.decide(r, cfg), opts = net.options(r);
-    if (d === O.decision[i] && r.blocked === O.blocked[i] && (d !== 'clarify' || JSON.stringify(opts) === JSON.stringify(O.options[i]))) decOk++;
-    else { fails++; console.log(`✗ detector: ${q}  (JS ${d} ${r.blocked} ${opts} · Python ${O.decision[i]} ${O.blocked[i]} ${O.options[i]})`); }
+    if (O.dist) dw = Math.max(dw, maxDiff(r.dist, O.dist[i]));
+    const d = net.decide(r, cfg);
+    const opts = d === 'menu' ? net.menuOptions(M, cfg) : net.options(r);
+    if (d === O.decision[i] && !!r.blocked === O.blocked[i] && (!['clarify', 'menu'].includes(d) || JSON.stringify(opts) === JSON.stringify(O.options[i]))) decOk++;
+    else { fails++; console.log(`✗ decisión: ${q}  (JS ${d} ${!!r.blocked} ${opts} · Python ${O.decision[i]} ${O.blocked[i]} ${O.options[i]})`); }
   });
   if (dw > TOL) { fails++; console.log(`✗ detector: distancia máxima ${dw.toExponential(2)} > ${TOL}`); }
-  console.log(`detector (p${M.ood.pct}): ${O.questions.length} preguntas · misma decisión y opciones: ${decOk}/${O.questions.length} · ` +
-    `bloqueadas ${O.blocked.filter(Boolean).length} · diferencia máxima de distancia ${dw.toExponential(2)}`);
+  // el menú, con menuBelow fijo (aunque la regla exportada lo tenga apagado)
+  const MP = O.menuProbe;
+  if (!MP) { fails++; console.log('✗ parity.json no trae "menuProbe": reentrena'); }
+  else {
+    const c2 = {...cfg, menuBelow: MP.menuBelow};
+    let ok2 = 0;
+    O.questions.forEach((q, i) => {
+      const r = net.ask(M, q, K, c2), d = net.decide(r, c2);
+      const opts = d === 'menu' ? net.menuOptions(M, c2) : net.options(r);
+      if (d === MP.decision[i] && (!['clarify', 'menu'].includes(d) || JSON.stringify(opts) === JSON.stringify(MP.options[i]))) ok2++;
+      else { fails++; console.log(`✗ menú (menuBelow ${MP.menuBelow}): ${q}  (JS ${d} ${opts} · Python ${MP.decision[i]} ${MP.options[i]})`); }
+    });
+    console.log(`menú con menuBelow ${MP.menuBelow}: misma decisión y opciones ${ok2}/${O.questions.length} · menu ${MP.decision.filter(x => x === 'menu').length}`);
+  }
+  const cnt = k => O.decision.filter(x => x === k).length;
+  console.log(`decisión y menú (menuBelow ${O.menuBelow}${M.ood ? ', detector p' + M.ood.pct : ', sin detector'}): ${O.questions.length} preguntas · ` +
+    `misma decisión y opciones: ${decOk}/${O.questions.length} · answer ${cnt('answer')} · clarify ${cnt('clarify')} · menu ${cnt('menu')} · miss ${cnt('miss')}`);
 }
 
 // 3. normalización (incluye "m&a" → mna)
