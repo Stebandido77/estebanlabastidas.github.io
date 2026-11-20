@@ -176,10 +176,10 @@ EOS.register('elia', {
       const wantHow = r.how >= E.howThreshold;
       if (d === 'answer') return answer(byId[top], wantHow);
       if (d === 'clarify') {
-        const opts = r.ranked.filter(([id]) => id !== 'out_of_scope').slice(0, 3);
+        const opts = NET().options(r);
         const m = say(`<p>${esc(U('clarify'))}</p><div class="acts"></div>`);
         const acts = $('.acts', m);
-        for (const [id] of opts) {
+        for (const id of opts) {
           const b = document.createElement('button');
           b.type = 'button'; b.className = 'btn'; b.textContent = byId[id].t[lang];
           b.onclick = () => { add('me', `<p>${esc(byId[id].t[lang])}</p>`); answer(byId[id], wantHow); };

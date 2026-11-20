@@ -56,6 +56,25 @@ H.questions.forEach((q, i) => {
 console.log(`híbrido (keyWeight ${H.keyWeight} · weakBonus ${H.weakBonus}): ${H.questions.length} preguntas · ` +
   `mismas reglas (fuerte/débil/forzada): ${ruleOk}/${H.questions.length} · diferencia máxima ${hw.toExponential(2)} · tolerancia ${TOL}`);
 
+// 2b. detector de novedad: distancias a los prototipos y decisión completa (answer / clarify / miss y opciones)
+const O = ref.ood;
+if (O && !M.ood) { fails++; console.log('✗ parity.json trae detector pero elia-model.js no tiene "ood"'); }
+if (!O && M.ood) { fails++; console.log('✗ elia-model.js tiene "ood" pero parity.json no: reentrena'); }
+if (O && M.ood) {
+  let dw = 0, decOk = 0;
+  const cfg = {keyWeight: H.keyWeight, weakBonus: H.weakBonus, threshold: O.threshold, margin: O.margin, clarify: O.clarify};
+  O.questions.forEach((q, i) => {
+    const r = net.ask(M, q, K, cfg);
+    dw = Math.max(dw, maxDiff(r.dist, O.dist[i]));
+    const d = net.decide(r, cfg), opts = net.options(r);
+    if (d === O.decision[i] && r.blocked === O.blocked[i] && (d !== 'clarify' || JSON.stringify(opts) === JSON.stringify(O.options[i]))) decOk++;
+    else { fails++; console.log(`✗ detector: ${q}  (JS ${d} ${r.blocked} ${opts} · Python ${O.decision[i]} ${O.blocked[i]} ${O.options[i]})`); }
+  });
+  if (dw > TOL) { fails++; console.log(`✗ detector: distancia máxima ${dw.toExponential(2)} > ${TOL}`); }
+  console.log(`detector (p${M.ood.pct}): ${O.questions.length} preguntas · misma decisión y opciones: ${decOk}/${O.questions.length} · ` +
+    `bloqueadas ${O.blocked.filter(Boolean).length} · diferencia máxima de distancia ${dw.toExponential(2)}`);
+}
+
 // 3. normalización (incluye "m&a" → mna)
 let nOk = 0;
 for (const [t, want] of ref.normalize || []) {

@@ -50,7 +50,7 @@ import numpy as np
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 from common import ROOT, compile_keys, featurize, load_elia  # noqa: E402
-from train import OOS, apply_keys, rule_indices, sigmoid, softmax  # noqa: E402
+from train import OOS, Outcomes, apply_keys, cos_dist, ood_arrays, rule_indices, sigmoid, softmax  # noqa: E402
 
 MODEL = ROOT / "assets" / "data" / "elia-model.js"
 HOLDOUT = HERE / "data" / "holdout.csv"
@@ -76,6 +76,7 @@ def main():
     ap.add_argument("--dev", action="store_true", help="evalúa data/dev_holdout.csv (solo referencia)")
     ap.add_argument("--dev2", action="store_true", help="evalúa data/dev_holdout2.csv (solo referencia)")
     ap.add_argument("--model", type=Path, default=MODEL, help="otro elia-model.js (para comparar variantes)")
+    ap.add_argument("--no-ood", action="store_true", help="ignora el detector de novedad del modelo")
     ap.add_argument("--set", action="append", default=[], metavar="CLAVE=VALOR",
                     help="cambia un valor de DATA.elia solo para esta evaluación (p. ej. weakBonus=0)")
     args = ap.parse_args()
@@ -96,6 +97,7 @@ def main():
     M, W = load_model(args.model)
     ids = M["intents"]
     for r in rows:
+        r["intent"] = (r.get("intent") or "").strip() or OOS   # oos_calib.csv no trae intent: todo es out_of_scope
         r["valid"] = [r["intent"].strip()] + [a.strip() for a in (r.get("alt") or "").split("|") if a.strip()]
     unknown = sorted({v for r in rows for v in r["valid"]} - set(ids))
     if unknown:
@@ -113,13 +115,19 @@ def main():
     t, m, c = elia["threshold"], elia["margin"], elia["clarify"]
     oos = ids.index(OOS)
 
+    ood = None if args.no_ood else M.get("ood")
+    if ood:
+        pr, ra = ood_arrays(ood, M["hidden"])
+        inside = cos_dist(a, pr) <= ra
+    else:
+        inside = None
+    Oc = Outcomes(P, np.zeros(len(rows), int), oos, (sk >= 0) | (so >= 0), inside)
     res = []
     for i, r in enumerate(rows):
-        o = np.argsort(-P[i], kind="stable")
-        top, p1, p2 = int(o[0]), float(P[i, o[0]]), float(P[i, o[1]])
-        options = [ids[k] for k in o if k != oos][:3]
-        answered = top != oos and p1 >= t and p1 - p2 >= m
-        clarify = not answered and top != oos and p1 >= c
+        dec, opt_idx, blocked = Oc.row(i, t, m, c)
+        top, p1 = int(Oc.top[i]), float(Oc.p1[i])
+        options = [ids[k] for k in opt_idx]
+        answered, clarify = dec == "answer", dec == "clarify"
         valid = set(r["valid"])
         if answered:
             out = "correcta" if ids[top] in valid else "equivocada"
@@ -129,12 +137,15 @@ def main():
             out = "correcta" if OOS in valid else "correo"
         src = ("social / guardia dura" if so[i] >= 0 else "key fuerte" if sk[i] >= 0
                else "key débil" if wk[i] >= 0 else "red")
-        res.append({"i": i, "out": out, "top": ids[top], "p1": p1, "src": src, "options": options,
+        if blocked:
+            src += ", bloqueada por el detector"
+        res.append({"i": i, "out": out, "top": ids[top], "p1": p1, "src": src, "options": options, "blocked": blocked,
                     "hit": clarify and bool(valid & set(options)), "decision": "responde" if answered
                     else "¿Te refieres a…?" if clarify else "correo"})
 
-    print(f"{len(rows)} preguntas del holdout · modelo {M['generated']} (dataset {M['dataset']}) · threshold {t} · "
-          f"margin {m} · clarify {c} · keyWeight {elia['keyWeight']} · weakBonus {elia['weakBonus']}\n")
+    print(f"{len(rows)} preguntas de {args.file.name} · modelo {M['generated']} (dataset {M['dataset']}) · threshold {t} · "
+          f"margin {m} · clarify {c} · keyWeight {elia['keyWeight']} · weakBonus {elia['weakBonus']} · detector "
+          f"{'p' + str(ood['pct']) if ood else 'no'}\n")
 
     def table(sel, label):
         n = len(sel)
@@ -188,6 +199,11 @@ def main():
         else:
             print(f"  equivocadas en ES {100 * bad_es:.1f} % (aviso si > {WARN_WRONG_ES:.0%})")
     print(f"  con {n} preguntas, cada una mueve {100 / n:.1f} puntos.")
+    fails = [x for x in res if x["out"] == "equivocada" or (x["out"] in ("¿Te refieres a…?", "correo") and not x["hit"])]
+    top1 = Counter(x["top"] for x in fails)
+    print(f"  1.ª intención en los fallos (equivocadas o sin opción válida, {len(fails)}): "
+          + ", ".join(f"{k} {v}" for k, v in top1.most_common(8))
+          + f" · bloqueadas por el detector: {sum(x['blocked'] for x in res)}")
     # asks_how, informativo: solo filas respondidas y correctas, con la columna how presente
     ht = elia.get("howThreshold", 0.5)
     hs = [i for i in allr if res[i]["out"] == "correcta" and res[i]["decision"] == "responde"

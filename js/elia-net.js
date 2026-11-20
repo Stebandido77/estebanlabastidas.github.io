@@ -60,7 +60,7 @@
     return net;
   }
 
-  /* → {probs: [K], how: 0..1, ranked: [[intentId, p], …] de mayor a menor} */
+  /* → {probs: [K], how: 0..1, ranked: [[intentId, p], …] de mayor a menor, hidden: capa oculta (H)} */
   function predict(M, text) {
     const net = load(M), {H, K} = net, x = featurize(text, M.dim, M.charN);
     const a = new Float64Array(H);
@@ -80,7 +80,25 @@
     for (let j = 0; j < H; j++) hz += a[j] * net.Wh[j];
     const how = 1 / (1 + Math.exp(-(M.bh + net.sh * hz)));
     const ranked = M.intents.map((id, k) => [id, probs[k]]).sort((p, q) => q[1] - p[1]);
-    return {probs, how, ranked};
+    return {probs, how, ranked, hidden: a};
+  }
+
+  /* Detector de novedad (M.ood, opcional): distancia coseno (1 − cos) de la capa oculta al prototipo de cada
+     intención; 1 si un vector es cero. Una intención "contiene" la pregunta si la distancia ≤ su radio.
+     out_of_scope no lleva prototipo ni radio (null): nunca la contiene, y lo que quede fuera de todos los
+     radios va al correo. Igual que tools/elia/train.py → cos_dist, fit_ood y ood_arrays. */
+  function oodDistances(M, a) {
+    const P = M.ood.proto;
+    let na = 0;
+    for (let j = 0; j < a.length; j++) na += a[j] * a[j];
+    na = Math.sqrt(na);
+    return P.map(mu => {
+      if (!mu) return 1;   /* out_of_scope no lleva prototipo */
+      let dot = 0, nm = 0;
+      for (let j = 0; j < mu.length; j++) { dot += a[j] * mu[j]; nm += mu[j] * mu[j]; }
+      const den = na * Math.sqrt(nm);
+      return den > 0 ? 1 - dot / den : 1;
+    });
   }
 
   /* ── Keys, guardia de fuera de alcance y reglas sociales (la misma especificación que tools/elia/common.py) ──
@@ -202,27 +220,46 @@
     }
     if (s >= 0) probs = probs.map((_, j) => (j === s ? 1 : 0));
     const ranked = M.intents.map((id, j) => [id, probs[j]]).sort((p, q) => q[1] - p[1]);
-    return {probs, how: r.how, ranked, key: rule.key, kind: rule.kind, forced: rule.forced};
+    return {probs, how: r.how, ranked, hidden: r.hidden, key: rule.key, kind: rule.kind, forced: rule.forced};
   }
 
   /* Lo que usa la app: K = compileKeys(DATA.elia, ELIA_MODEL.promoted), cfg = DATA.elia. */
   function ask(M, text, K, cfg) {
     const [key, kind] = keyIntent(text, K);
-    return hybrid(M, predict(M, text), {key, kind, forced: forcedIntent(text, K)}, cfg);
+    const r = hybrid(M, predict(M, text), {key, kind, forced: forcedIntent(text, K)}, cfg);
+    if (M.ood) {
+      r.dist = oodDistances(M, r.hidden);
+      r.inside = M.intents.filter((id, k) => M.ood.radius[k] != null && r.dist[k] <= M.ood.radius[k]);
+    }
+    return r;
   }
 
-  /* Regla de decisión (la misma que usa tools/elia/train.py para el reporte):
-       answer   la 1.ª no es out_of_scope, p1 ≥ threshold y p1 − p2 ≥ margin
-       clarify  no se responde, la 1.ª no es out_of_scope y p1 ≥ clarify  → "¿Te refieres a…?"
-       miss     todo lo demás → ofrecer escribirle a Esteban */
+  /* Regla de decisión (la misma que tools/elia/train.py → Outcomes.row):
+       answer   la 1.ª no es out_of_scope, p1 ≥ threshold y p1 − p2 ≥ margin, y (con detector) la pregunta
+                cae dentro del radio de la 1.ª, o la decide un key fuerte o una regla forzada
+       clarify  se iba a responder pero el detector la bloqueó y otra intención la contiene, o no se
+                responde, la 1.ª no es out_of_scope y p1 ≥ clarify  → "¿Te refieres a…?"
+       miss     todo lo demás → ofrecer escribirle a Esteban
+     Marca r.blocked si el detector impidió responder (options() pone primero las intenciones que la contienen). */
   function decide(r, cfg) {
     const [[id, p1], [, p2]] = r.ranked;
-    if (id !== 'out_of_scope' && p1 >= cfg.threshold && p1 - p2 >= cfg.margin) return 'answer';
+    const base = id !== 'out_of_scope' && p1 >= cfg.threshold && p1 - p2 >= cfg.margin;
+    r.blocked = !!(base && r.inside && r.kind !== 'strong' && !r.forced && !r.inside.includes(id));
+    if (base && !r.blocked) return 'answer';
+    if (r.blocked) return r.inside.some(k => k !== id) ? 'clarify' : 'miss';
     if (id !== 'out_of_scope' && p1 >= cfg.clarify) return 'clarify';
     return 'miss';
   }
 
-  const api = {normalize, tokens, fnv1a, featurize, predict, decide, near, compileKeys, keyHits, keyIntent, socialIntent, forcedIntent, hybrid, ask};
+  /* Las 3 opciones de "¿Te refieres a…?": por probabilidad, sin out_of_scope; si el detector bloqueó la
+     respuesta, primero las intenciones cuyo radio contiene la pregunta (la 1.ª bloqueada ya no está entre ellas). */
+  function options(r, n = 3) {
+    const ids = r.ranked.map(([id]) => id);
+    const first = r.blocked ? ids.filter(id => id !== ids[0] && r.inside.includes(id)) : [];
+    return first.concat(ids.filter(id => !first.includes(id))).filter(id => id !== 'out_of_scope').slice(0, n);
+  }
+
+  const api = {normalize, tokens, fnv1a, featurize, predict, decide, options, oodDistances, near, compileKeys, keyHits, keyIntent, socialIntent, forcedIntent, hybrid, ask};
   if (typeof module === 'object' && module.exports) module.exports = api;
   else root.EliaNet = api;
 })(typeof window !== 'undefined' ? window : globalThis);

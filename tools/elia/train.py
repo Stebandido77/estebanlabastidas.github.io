@@ -29,6 +29,7 @@ from __future__ import annotations
 
 import argparse
 import base64
+import csv
 import hashlib
 import json
 import random
@@ -309,67 +310,196 @@ def apply_keys(P, sk, wk, so, w, beta):
 
 W_GRID = (0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3)
 B_GRID = (0.0, 0.25, 0.5, 0.75, 1.0)   # bonus débil acotado: ≤ e^1, la red tiene que dar ≥ ~0.36 para responder
-T_GRID = np.round(np.arange(0.30, 0.901, 0.05), 2)
+T_GRID = np.round(np.arange(0.30, 0.951, 0.05), 2)
 M_GRID = np.round(np.arange(0.00, 0.501, 0.05), 2)
 C_GRID = np.round(np.arange(0.10, 0.601, 0.05), 2)
-MAX_WRONG, MIN_REJECT = 0.05, 0.85
+# Regla elegida con la definición del holdout sobre TODAS las preguntas: equivocadas ≤ 3 % (en todas y en ES)
+# y rechazo de out_of_scope ≥ 85 %; maximiza 2 · correctas + "¿Te refieres a…?" con la opción válida.
+MAX_WRONG, MIN_REJECT = 0.03, 0.85
+OOD_GRID = (None, 80, 85, 90, 95, 98, 99, 100)   # percentil del radio de novedad (None = sin detector)
+
+
+# ───────────────────────── detector de novedad (OOD) ─────────────────────────
+def hidden(Pm, X):
+    return np.maximum(X @ Pm["W1"] + Pm["b1"], 0)
+
+
+def cos_dist(A, proto):
+    """Distancia coseno (1 − cos) de cada fila de A (capa oculta) a cada prototipo; 1 si un vector es cero."""
+    A, proto = np.asarray(A, np.float64), np.asarray(proto, np.float64)
+    na, npr = np.linalg.norm(A, axis=1), np.linalg.norm(proto, axis=1)
+    den = na[:, None] * npr[None, :]
+    D = 1 - (A @ proto.T) / np.where(den > 0, den, 1)
+    D[den <= 0] = 1.0
+    return D
+
+
+def fit_ood(A, yy, K, oos, pcts):
+    """Prototipo = media de la capa oculta de los ejemplos de entrenamiento de cada intención; radio = percentil
+    de sus distancias coseno al prototipo. out_of_scope no lleva prototipo ni radio (aquí: vector cero y radio
+    −1, nunca contiene una pregunta; en elia-model.js, null): lo que quede fuera de todos los radios va al
+    correo. → proto [K, H], {percentil: radios [K]}"""
+    proto = np.zeros((K, A.shape[1]))
+    for k in range(K):
+        if k != oos and (yy == k).any():   # out_of_scope no lleva prototipo (vector cero → distancia 1)
+            proto[k] = A[yy == k].mean(0)
+    D = cos_dist(A, proto)
+    rad = {p: np.full(K, -1.0) for p in pcts}
+    for k in range(K):
+        d = D[yy == k, k]
+        if k != oos and len(d):
+            for p in pcts:
+                rad[p][k] = float(np.percentile(d, p))
+    return proto, rad
+
+
+def ood_arrays(ood, H):
+    """model["ood"] (con null en out_of_scope) → (prototipos [K, H], radios [K]); null → vector cero y radio −1."""
+    proto = np.array([np.zeros(H) if r is None else r for r in ood["proto"]], dtype=np.float64)
+    radius = np.array([-1.0 if r is None else r for r in ood["radius"]], dtype=np.float64)
+    return proto, radius
+
+
+def first_options(o, oos, n=3):
+    """Las n primeras intenciones de cada fila de o (orden de probabilidad) sin out_of_scope."""
+    keep = o != oos
+    return o[keep].reshape(len(o), -1)[:, :n]
 
 
 class Outcomes:
-    """Lo que la regla de decisión necesita de cada pregunta, calculado una vez por matriz P."""
-    def __init__(self, P, y, oos):
+    """Lo que la regla de decisión necesita de cada pregunta, calculado una vez por matriz P.
+    Con detector (inside = [n, K] la pregunta cae dentro del radio de la intención; lock = key fuerte o
+    respuesta forzada, que ganan sobre el detector): si se iba a responder y la pregunta queda fuera del radio
+    de la ganadora, pasa a "¿Te refieres a…?" si otra intención la contiene (primero esas, por probabilidad)
+    y, si no, al correo."""
+    def __init__(self, P, y, oos, lock=None, inside=None):
+        n = len(P)
+        r = np.arange(n)
         o = np.argsort(-P, axis=1, kind="stable")
-        self.top, self.p1 = o[:, 0], P[np.arange(len(P)), o[:, 0]]
-        self.p2 = P[np.arange(len(P)), o[:, 1]]
+        self.o = o
+        self.top, self.p1, self.p2 = o[:, 0], P[r, o[:, 0]], P[r, o[:, 1]]
         self.ok = self.top == y
-        self.hit3 = (o[:, :3] == y[:, None]).any(1)
         self.isoos, self.topoos = y == oos, self.top == oos
+        self.opts = first_options(o, oos)
+        self.hit3 = (self.opts == y[:, None]).any(1)
+        if inside is None:
+            self.cand, self.other_in = np.zeros(n, bool), np.zeros(n, bool)
+            self.ood_opts, self.hit3_ood = self.opts, self.hit3
+        else:
+            self.cand = ~lock & ~inside[r, self.top]
+            ins = inside.copy()
+            ins[r, self.top] = False
+            ins[:, oos] = False
+            self.other_in = ins.any(1)
+            pri = np.argsort(~np.take_along_axis(ins, o, axis=1), axis=1, kind="stable")
+            self.ood_opts = first_options(np.take_along_axis(o, pri, axis=1), oos)
+            self.hit3_ood = (self.ood_opts == y[:, None]).any(1)
 
-    def answered(self, t, m):
-        return ~self.topoos & (self.p1 >= t) & (self.p1 - self.p2 >= m)
+    def decisions(self, t, m, c):
+        base = ~self.topoos & (self.p1 >= t) & (self.p1 - self.p2 >= m)
+        blk = base & self.cand
+        ans = base & ~blk
+        cl = (~base & ~self.topoos & (self.p1 >= c)) | (blk & self.other_in)
+        hit = cl & np.where(blk, self.hit3_ood, self.hit3)
+        return ans, cl, hit, blk
+
+    def row(self, i, t, m, c):
+        """→ ("answer" | "clarify" | "miss", opciones de "¿Te refieres a…?", bloqueada por el detector)"""
+        base =(not self.topoos[i]) and self.p1[i] >= t and self.p1[i] - self.p2[i] >= m
+        b = bool(base and self.cand[i])
+        if base and not b:
+            return "answer", list(self.opts[i]), False
+        if (not base and not self.topoos[i] and self.p1[i] >= c) or (b and self.other_in[i]):
+            return "clarify", list(self.ood_opts[i] if b else self.opts[i]), b
+        return "miss", list(self.ood_opts[i] if b else self.opts[i]), b
 
     def rates(self, S, t, m, c):
-        ans = self.answered(t, m)
-        cl = ~ans & ~self.topoos & (self.p1 >= c)
+        ans, cl, hit, blk = self.decisions(t, m, c)
         I, O = S & ~self.isoos, S & self.isoos
+        mail = ~ans & ~cl
+        corr = (ans & self.ok & ~self.isoos) | (mail & self.isoos)
         mean = lambda a, B: float(a[B].mean()) if B.any() else np.nan
         return {"acc_in": mean(self.ok, I),
                 "answered_correct": mean(ans & self.ok, I), "answered_wrong": mean(ans & ~self.ok, I),
-                "clarify": mean(cl, I), "clarify_hit": mean(cl & self.hit3, I),
-                "miss": mean(~ans & ~cl, I), "oos_reject": mean(~ans, O),
-                "oos_clarify": mean(cl, O)}
+                "clarify": mean(cl, I), "clarify_hit": mean(hit, I),
+                "miss": mean(mail, I), "oos_reject": mean(~ans, O),
+                "oos_clarify": mean(cl, O), "ood_blocked": mean(blk, S),
+                # como en eval_holdout.py, sobre todas las preguntas (out_of_scope al correo = correcta)
+                "correct_all": mean(corr, S), "useful_all": mean(corr | (hit & ~self.isoos), S),
+                "wrong_all": mean(ans & ~self.ok, S)}
+
+    def grid(self, S):
+        """Las mismas cuentas que rates(), vectorizadas sobre T_GRID × M_GRID (× C_GRID)."""
+        ix = np.where(S)[0]
+        p1, gap, nt = self.p1[ix], (self.p1 - self.p2)[ix], ~self.topoos[ix]
+        iso, ok = self.isoos[ix], self.ok[ix]
+        base = nt[:, None, None] & (p1[:, None, None] >= T_GRID[None, :, None]) & (gap[:, None, None] >= M_GRID[None, None, :])
+        blk = base & self.cand[ix][:, None, None]
+        ans = base & ~blk
+        wrong = (ans & ~ok[:, None, None]).mean(0)
+        rej = (~ans[iso]).mean(0) if iso.any() else np.ones(wrong.shape)
+        low = nt[:, None] & (p1[:, None] >= C_GRID[None, :])
+        cl = ((~base)[..., None] & low[:, None, None, :]) | (blk & self.other_in[ix][:, None, None])[..., None]
+        hsel = np.where(blk, self.hit3_ood[ix][:, None, None], self.hit3[ix][:, None, None])
+        hit = cl & hsel[..., None] & ~iso[:, None, None, None]
+        mail = ~ans[..., None] & ~cl
+        corr = (ans & ok[:, None, None] & ~iso[:, None, None])[..., None] | (mail & iso[:, None, None, None])
+        return wrong, rej, corr.mean(0), hit.mean(0)
 
 
-def select(outs, S, ES):
-    """Busca (w, β, threshold, margin) con responde mal ≤ 5 % (en todas y en ES) y rechazo ≥ 85 % que
-    maximice responde bien; luego el clarify que maximiza (aciertos − fallos) en "¿Te refieres a…?"."""
+CMASK = C_GRID[None, None, :] <= T_GRID[:, None, None] + 1e-9   # clarify ≤ threshold
+
+
+def select(outs, S, ES, Sc=None):
+    """Busca (w, β, percentil OOD, threshold, margin, clarify) con equivocadas ≤ MAX_WRONG sobre todas las
+    preguntas (en todas y en ES), rechazo de out_of_scope ≥ 85 % (y, si hay set de calibración Sc, rechazo
+    ≥ 85 % también ahí), que maximice 2 · correctas + "¿Te
+    refieres a…?" con la opción válida (correctas y útiles como en eval_holdout.py). Empates: menos
+    equivocadas, threshold más alto, sin detector antes que con detector."""
     best = None
-    for hk, O in outs.items():
-        for t in T_GRID:
-            for m in M_GRID:
-                r = O.rates(S, t, m, 1.0)
-                if r["answered_wrong"] > MAX_WRONG or r["oos_reject"] < MIN_REJECT:
-                    continue
-                if O.rates(S & ES, t, m, 1.0)["answered_wrong"] > MAX_WRONG:
-                    continue
-                key = (round(r["answered_correct"], 9), -r["answered_wrong"], t)
-                if best is None or key > best[0]:
-                    best = (key, hk, float(t), float(m))
+    for key, O in outs.items():
+        wrong, rej, corr, hit = O.grid(S)
+        wes = O.grid(S & ES)[0]
+        okm = (wrong <= MAX_WRONG + 1e-12) & (wes <= MAX_WRONG + 1e-12) & (rej >= MIN_REJECT)
+        if Sc is not None and Sc.any():
+            okm &= O.grid(Sc)[1] >= MIN_REJECT
+        valid = okm[..., None] & CMASK
+        if not valid.any():
+            continue
+        score = np.round(2 * corr + hit, 9)
+        ti, mi, ci = np.where(valid)
+        sv, wv = score[ti, mi, ci], wrong[ti, mi]
+        j = np.lexsort((-ci, mi, ti, -wv, sv))[-1]
+        cand = (sv[j], -wv[j], T_GRID[ti[j]])
+        if best is None or cand > best[0]:
+            best = (cand, key, float(T_GRID[ti[j]]), float(M_GRID[mi[j]]), float(C_GRID[ci[j]]))
     if best is None:
         return None
-    _, hk, t, m = best
-    O, bc, bv = outs[hk], t, -np.inf
-    for c in C_GRID[C_GRID <= t + 1e-9][::-1]:
-        r = O.rates(S, t, m, c)
-        v = 2 * r["clarify_hit"] - r["clarify"]
-        if v > bv + 1e-9:
-            bv, bc = v, float(c)
-    return {"keyWeight": hk[0], "weakBonus": hk[1], "threshold": t, "margin": m, "clarify": bc}
+    _, (w, b, pct), t, m, c = best
+    return {"keyWeight": w, "weakBonus": b, "threshold": t, "margin": m, "clarify": c, "oodPct": pct}
 
 
-def per_fold(O, fold, nf, L, prm, lang="all"):
-    return [O.rates((fold == f) & ((L == lang) if lang != "all" else True),
-                    prm["threshold"], prm["margin"], prm["clarify"]) for f in range(nf)]
+def okey(p):
+    return (p["keyWeight"], p["weakBonus"], p["oodPct"])
+
+
+def cal_rates(O, Sc, prm):
+    """Set de calibración (solo out_of_scope): % rechazado (no responde) y % al correo."""
+    if not Sc.any():
+        return {"cal_reject": np.nan, "cal_mail": np.nan}
+    ans, cl, _, _ = O.decisions(prm["threshold"], prm["margin"], prm["clarify"])
+    return {"cal_reject": float((~ans[Sc]).mean()), "cal_mail": float((~ans & ~cl)[Sc].mean())}
+
+
+def per_fold(O, fold, nf, L, prm, lang="all", real=None, cal=None):
+    out = []
+    for f in range(nf):
+        S = (fold == f) & ((L == lang) if lang != "all" else True) & (real if real is not None else True)
+        r = O.rates(S, prm["threshold"], prm["margin"], prm["clarify"])
+        if cal is not None:
+            r.update(cal_rates(O, (fold == f) & cal, prm))
+        out.append(r)
+    return out
 
 
 def ms(vals):
@@ -377,23 +507,54 @@ def ms(vals):
     return (v.mean(), v.std()) if len(v) else (np.nan, np.nan)
 
 
-def evaluate_stage(P, y, sk, wk, so, fold, nf, L, oos, hybrids):
-    outs = {hk: Outcomes(apply_keys(P, sk, wk, so, *hk), y, oos) for hk in hybrids}
+def evaluate_stage(P, y, sk, wk, so, fold, nf, L, oos, hybrids, ood=None, cal=None):
+    """ood = (D, R): distancias [n, K] a los prototipos del pliegue y {percentil: radios [n, K]} (cada fila con
+    los radios de su pliegue). Sin ood, solo se prueba la regla sin detector.
+    cal: set de calibración predicho por el modelo de cada pliegue (dict con P, D, R, sk, wk, so, fold); sus filas
+    se agregan al final y solo cuentan en el rechazo de calibración, nunca en las demás métricas."""
+    n = len(y)
+    if cal is not None:
+        P = np.vstack([P, cal["P"]])
+        sk, wk, so = (np.concatenate([a, cal[k]]) for a, k in ((sk, "sk"), (wk, "wk"), (so, "so")))
+        y = np.concatenate([y, np.full(len(cal["P"]), oos)])
+        fold = np.concatenate([fold, cal["fold"]])
+        L = np.concatenate([L, np.full(len(cal["P"]), "cal")])
+        if ood is not None:
+            ood = (np.vstack([ood[0], cal["D"]]), {p: np.vstack([ood[1][p], cal["R"][p]]) for p in ood[1]})
+    real = np.arange(len(y)) < n
+    calm = ~real if cal is not None else None
+    lock = (sk >= 0) | (so >= 0)
+    pcts = OOD_GRID if ood is not None else (None,)
+    outs = {}
+    for hk in hybrids:
+        Ph = apply_keys(P, sk, wk, so, *hk)
+        for pct in pcts:
+            inside = None if pct is None else ood[0] <= ood[1][pct]
+            outs[(hk[0], hk[1], pct)] = Outcomes(Ph, y, oos, lock, inside)
     ES = L == "es"
-    prm = select(outs, np.ones(len(y), bool), ES)
+    prm = select(outs, real, ES, calm)
     res = {"params": prm, "outs": outs}
     if prm:
-        O = outs[(prm["keyWeight"], prm["weakBonus"])]
-        res["folds"] = {lang: per_fold(O, fold, nf, L, prm, lang) for lang in ("all", "es", "en")}
+        O = outs[okey(prm)]
+        res["folds"] = {lang: per_fold(O, fold, nf, L, prm, lang, real, calm) for lang in ("all", "es", "en")}
+        if calm is not None:   # rechazo de calibración por percentil, con el resto de la regla final fija
+            res["cal_by_pct"] = {pct: ms([cal_rates(outs[(prm["keyWeight"], prm["weakBonus"], pct)],
+                                                    (fold == f) & calm, prm)["cal_reject"] for f in range(nf)])
+                                 for pct in pcts}
     # estimación anidada: parámetros elegidos con los otros 4 pliegues, medidos en el que queda fuera
     nested = {"all": [], "es": [], "en": []}
+    res["nested_params"] = []
     for f in range(nf):
-        p = select(outs, fold != f, ES)
+        p = select(outs, (fold != f) & real, ES, None if calm is None else (fold != f) & calm)
+        res["nested_params"].append(p)
         if p:
-            O = outs[(p["keyWeight"], p["weakBonus"])]
+            O = outs[okey(p)]
             for lang in nested:
-                S = (fold == f) & ((L == lang) if lang != "all" else True)
-                nested[lang].append(O.rates(S, p["threshold"], p["margin"], p["clarify"]))
+                S = (fold == f) & ((L == lang) if lang != "all" else True) & real
+                r = O.rates(S, p["threshold"], p["margin"], p["clarify"])
+                if calm is not None:
+                    r.update(cal_rates(O, (fold == f) & calm, p))
+                nested[lang].append(r)
     res["nested"] = nested
     return res
 
@@ -462,11 +623,21 @@ def main():
     ap.add_argument("--batch", type=int, default=64)
     ap.add_argument("--max-epochs", type=int, default=300)
     ap.add_argument("--patience", type=int, default=25)
+    ap.add_argument("--ext-oos", default=str(HERE / "data" / "oos_external.csv"),
+                    help="corpus externo de out_of_scope (solo entrenamiento; '' = sin él)")
+    ap.add_argument("--ext-aug", type=int, default=1, help="variantes por frase del corpus externo")
+    ap.add_argument("--oos-calib", default=str(HERE / "data" / "oos_calib.csv"),
+                    help="set de calibración out_of_scope (nunca se entrena con él; '' = sin él)")
+    ap.add_argument("--no-ood", action="store_true", help="sin detector de novedad")
+    ap.add_argument("--ood-grid", help="percentiles a probar, p. ej. 90,95 (por defecto OOD_GRID; 'none' = sin detector)")
     ap.add_argument("--no-export", action="store_true")
     ap.add_argument("--no-report", action="store_true", help="solo imprime métricas (para experimentos)")
     ap.add_argument("--dump", type=Path, help="guarda las probabilidades fuera de pliegue (.npz) para análisis")
     cfg = ap.parse_args()
     sys.stdout.reconfigure(encoding="utf-8")
+    if cfg.ood_grid:
+        global OOD_GRID
+        OOD_GRID = tuple(None if x == "none" else float(x) for x in cfg.ood_grid.split(","))
 
     elia = load_elia()
     cfg.how_threshold = elia.get("howThreshold", 0.5)
@@ -515,6 +686,28 @@ def main():
                 tx.append(t); ty.append(ids.index(r["intent"])); th.append(r["how"])
         extra = (feats(tx), np.array(ty), np.array(th, dtype=float))
         print(f"plantillas: {len(T)} filas + variantes = {len(tx)} filas de entrenamiento")
+    # set de calibración (CLINC150, disjunto del corpus externo): nunca se entrena con él
+    cal_texts = []
+    if cfg.oos_calib and Path(cfg.oos_calib).exists():
+        with open(cfg.oos_calib, encoding="utf-8", newline="") as f:
+            cal_texts = [r["text"] for r in csv.DictReader(f)]
+    Xcal = feats(cal_texts) if cal_texts else None
+    cal_sk = cal_wk = cal_so = np.zeros(0, int)
+    if cal_texts:   # keys con la promoción de cada pliegue, como las preguntas del pliegue
+        per = [rule_indices(cal_texts, ids, compile_keys(elia, promo_folds[f]), social) for f in range(cfg.folds)]
+        cal_sk, cal_wk, cal_so = (np.concatenate([r[j] for r in per]) for j in range(3))
+    if cal_texts:
+        print(f"calibración: {len(cal_texts)} frases out_of_scope ({cfg.oos_calib}), fuera del entrenamiento")
+    # corpus externo de out_of_scope (CLINC150, build_oos.py): solo entrenamiento, como las plantillas; nunca en
+    # validación, ni en el profesor de la destilación, ni en los prototipos del detector
+    if cfg.ext_oos and Path(cfg.ext_oos).exists() and cfg.tpl:
+        with open(cfg.ext_oos, encoding="utf-8", newline="") as f:
+            ext = [r["text"] for r in csv.DictReader(f)]
+        erng = random.Random(cfg.seed + 31)
+        ex_t = [v for t in ext for v in [t] + variants(t, cfg.ext_aug, erng)]
+        extra = (np.vstack([extra[0], feats(ex_t)]), np.concatenate([extra[1], np.full(len(ex_t), oos)]),
+                 np.concatenate([extra[2], np.zeros(len(ex_t))]))
+        print(f"out_of_scope externo: {len(ext)} frases + variantes = {len(ex_t)} filas de entrenamiento ({cfg.ext_oos})")
 
     pool_base, pool_var, pool_var_all, EMB = [], {}, [], {}
     if cfg.distill:
@@ -536,6 +729,11 @@ def main():
         rng = random.Random(cfg.seed)
         fold = stratified_folds(y, cfg.folds, rng)
         P, HP, eps, Ts = np.zeros((len(y), K)), np.zeros(len(y)), [], []
+        D, R = np.zeros((len(y), K)), {p: np.zeros((len(y), K)) for p in OOD_GRID if p is not None}
+        nc = len(cal_texts)
+        C = {"P": np.zeros((nc * cfg.folds, K)), "D": np.zeros((nc * cfg.folds, K)),
+             "R": {p: np.zeros((nc * cfg.folds, K)) for p in R}, "fold": np.repeat(np.arange(cfg.folds), nc),
+             "sk": cal_sk, "wk": cal_wk, "so": cal_so}
         for f in range(cfg.folds):
             tr_all = [i for i in range(len(y)) if fold[i] != f]
             vi = [i for i in range(len(y)) if fold[i] == f]
@@ -547,41 +745,84 @@ def main():
             T = fit_temperature(lv, y[iv])
             _, _, _, lo, hz = forward(Pm, Xo[vi])
             P[vi], HP[vi] = softmax(lo / T), sigmoid(hz)
+            # detector: prototipos y radios con las preguntas escritas a mano del pliegue (y sus variantes)
+            nh = len(ys) - (len(ex[1]) if ex is not None else 0)
+            proto, rad = fit_ood(hidden(Pm, X[:nh]), ys[:nh], K, oos, R.keys())
+            D[vi] = cos_dist(hidden(Pm, Xo[vi]), proto)
+            for p in R:
+                R[p][vi] = rad[p][None, :]
+            if nc:   # calibración: la predice el modelo del pliegue, que nunca la vio
+                ci = slice(f * nc, (f + 1) * nc)
+                _, _, _, lc, _ = forward(Pm, Xcal)
+                C["P"][ci] = softmax(lc / T)
+                C["D"][ci] = cos_dist(hidden(Pm, Xcal), proto)
+                for p in R:
+                    C["R"][p][ci] = rad[p][None, :]
             eps.append(ep); Ts.append(T)
             print(f"  [{tag}] pliegue {f + 1}: {len(ys)} filas · época {ep} · T={T:.2f} · "
                   f"acc_in={np.mean([P[i].argmax() == y[i] for i in vi if y[i] != oos]):.3f}")
-        return fold, P, HP, eps, Ts
+        return fold, P, HP, eps, Ts, (D, R), (C if nc else None)
 
     hybrids = [(w, b) for w in W_GRID for b in B_GRID]
-    ev = lambda P, s_, w_, o_, hy: evaluate_stage(P, y, s_, w_, o_, fold, cfg.folds, L, oos, hy)
+    ev = lambda P, s_, w_, o_, hy, od=None, ca=None: evaluate_stage(P, y, s_, w_, o_, fold, cfg.folds, L, oos, hy, od, ca)
     fold, stages, PA, PB = fold0, [], None, None
     if not cfg.only_distill:   # --only-distill (para barridos): salta base y plantillas sin destilar
-        fold, PA, HA, epsA, TsA = run_cv(None, "base")
+        fold, PA, HA, epsA, TsA, odA, caA = run_cv(None, "base")
         stages = [("Base (solo red)", ev(PA, none, none, none, [(1.0, 0.0)]), PA, HA, epsA, TsA, False),
                   ("+ keys fuertes/débiles + guardia OOS", ev(PA, sk, wk, none, hybrids), PA, HA, epsA, TsA, False)]
         if extra is not None:
-            _, PB, HB, epsB, TsB = run_cv(extra, "plantillas")
+            _, PB, HB, epsB, TsB, odB, caB = run_cv(extra, "plantillas")
             stages.append(("+ plantillas", ev(PB, sk, wk, none, hybrids), PB, HB, epsB, TsB, True))
         else:
-            PB, HB, epsB, TsB = PA, HA, epsA, TsA
+            PB, HB, epsB, TsB, odB, caB = PA, HA, epsA, TsA, odA, caA
     PD = None
     if cfg.distill:
-        _, PD, HD, epsD, TsD = run_cv(extra, "destilación", distill=True)
+        _, PD, HD, epsD, TsD, odB, caB = run_cv(extra, "destilación", distill=True)
         stages.append(("+ destilación", ev(PD, sk, wk, none, hybrids), PD, HD, epsD, TsD, extra is not None))
         stages.append(("(c) destilación sin keys débiles (con reglas sociales y guardia dura)",
                        ev(PD, sk, none, so, hybrids), PD, HD, epsD, TsD, extra is not None))
         PB, HB, epsB, TsB = PD, HD, epsD, TsD
-    stages.append(("+ reglas sociales y guardia dura (final)", ev(PB, sk, wk, so, hybrids), PB, HB, epsB, TsB, extra is not None))
+    stages.append(("+ reglas sociales y guardia dura (sin detector)", ev(PB, sk, wk, so, hybrids, None, caB), PB, HB, epsB,
+                   TsB, extra is not None))
+    if not cfg.no_ood:
+        stages.append(("+ detector de novedad (final)", ev(PB, sk, wk, so, hybrids, odB, caB), PB, HB, epsB, TsB,
+                       extra is not None))
     if cfg.dump:
-        np.savez(cfg.dump, fold=fold, y=y, sk=sk, wk=wk, so=so, L=L, HB=HB, h=h,
+        np.savez(cfg.dump, fold=fold, y=y, sk=sk, wk=wk, so=so, L=L, HB=HB, h=h, D=odB[0],
+                 **{f"R{p}": v for p, v in odB[1].items()},
                  **{k: v for k, v in (("PA", PA), ("PB", PB), ("PD", PD)) if v is not None})
     for name, st, *_ in stages:
         p = st["params"]
-        if p:
-            a = ms([r["answered_correct"] for r in st["folds"]["all"]])
-            print(f"{name}: {p} → responde bien {a[0]:.3f}")
-        else:
-            print(f"{name}: ninguna combinación cumple las restricciones")
+        nest = lambda k: 100 * ms([r[k] for r in st["nested"]["all"]])[0]
+        nest_es = 100 * ms([r["wrong_all"] for r in st["nested"]["es"]])[0]
+        print(f"{name}: {p}\n    anidada, todas las preguntas: correctas {nest('correct_all'):.1f} % · útiles "
+              f"{nest('useful_all'):.1f} % · equivocadas {nest('wrong_all'):.1f} % (ES {nest_es:.1f} %) · "
+              f"bloqueadas por el detector {nest('ood_blocked'):.1f} % · percentil por pliegue "
+              f"{[q and q['oodPct'] for q in st['nested_params']]}"
+              + (f" · calibración rechazada {nest('cal_reject'):.1f} % (al correo {nest('cal_mail'):.1f} %)"
+                 if st["nested"]["all"] and "cal_reject" in st["nested"]["all"][0] else ""))
+        if st.get("cal_by_pct"):
+            print("    calibración rechazada por percentil (resto de la regla final fija): "
+                  + " · ".join(f"{'sin detector' if k is None else 'p' + format(k, 'g')} {100 * v[0]:.1f} %"
+                               for k, v in st["cal_by_pct"].items()))
+    # 1.ª intención en los fallos (equivocadas, o sin responder sin la opción correcta), regla anidada
+    name, st, *_ = stages[-1]
+    wrong_top, miss_top = Counter(), Counter()
+    for f, p in enumerate(st["nested_params"]):
+        if not p:
+            continue
+        O = st["outs"][okey(p)]
+        ans, cl, hit, _ = O.decisions(p["threshold"], p["margin"], p["clarify"])
+        for i in np.where(fold == f)[0]:
+            if ans[i] and not O.ok[i]:
+                wrong_top[ids[O.top[i]]] += 1
+            elif not ans[i] and y[i] != oos and not hit[i]:
+                miss_top[ids[O.top[i]]] += 1
+    fmt = lambda c: ", ".join(f"{k} {v}" for k, v in c.most_common(8))
+    print(f"1.ª intención en las equivocadas ({sum(wrong_top.values())}): {fmt(wrong_top)}")
+    print(f"1.ª intención en las no útiles dentro del alcance ({sum(miss_top.values())}): {fmt(miss_top)}")
+    for k in ("list_papers", "interests", "skills_finance"):
+        print(f"  {k}: 1.ª en {wrong_top[k]} equivocadas y {miss_top[k]} no útiles")
 
     # se exporta la última etapa (la más completa) si tiene una regla válida
     name, st, Pf, Hf, eps, Ts, use_tpl = stages[-1]
@@ -614,6 +855,13 @@ def main():
         }
         # los sesgos se redondean al exportar: el modelo cuantizado de referencia usa los mismos valores
         Q["b1"], Q["b2"], Q["bh"] = np.array(model["b1"]), np.array(model["b2"]), np.array([model["bh"]])
+        if prm.get("oodPct") is not None:   # detector con la red cuantizada: lo mismo que verá el navegador
+            nh = len(ys) - (len(extra[1]) if use_tpl and extra is not None else 0)
+            proto, rad = fit_ood(hidden(Q, X[:nh]), ys[:nh], K, oos, [prm["oodPct"]])
+            # out_of_scope no lleva prototipo ni radio: null (el navegador lo trata como "nunca la contiene")
+            model["ood"] = {"pct": prm["oodPct"],
+                            "proto": [None if k == oos else [round(float(v), 6) for v in r] for k, r in enumerate(proto)],
+                            "radius": [None if k == oos else round(float(v), 6) for k, v in enumerate(rad[prm["oodPct"]])]}
         pq, _ = quantized_predict(Q, Xo, final_T)
         quant_agree = float((softmax(lf / final_T).argmax(1) == pq.argmax(1)).mean())
         OUT_JS.write_text("/* Generated by tools/elia/train.py. Do not edit: run python tools/elia/train.py */\n"
@@ -645,6 +893,18 @@ def main():
         hs_, hw_, ho_ = rule_indices(hsample, ids, KC, social)
         hp = apply_keys(hq, hs_, hw_, ho_, prm["keyWeight"], prm["weakBonus"])
         name_of = lambda a: [ids[k] if k >= 0 else None for k in a]
+        ood_par = None
+        if "ood" in model:   # detector: distancias y decisión completa (con opciones) en las mismas preguntas
+            oq = sample + hsample
+            o_s, o_w, o_o = rule_indices(oq, ids, KC, social)
+            o_p = apply_keys(quantized_predict(Q, feats(oq), final_T)[0], o_s, o_w, o_o, prm["keyWeight"], prm["weakBonus"])
+            pr, ra = ood_arrays(model["ood"], cfg.hidden)
+            o_d = cos_dist(hidden(Q, feats(oq)), pr)
+            O_ = Outcomes(o_p, np.zeros(len(oq), int), oos, (o_s >= 0) | (o_o >= 0), o_d <= ra)
+            rws = [O_.row(i, prm["threshold"], prm["margin"], prm["clarify"]) for i in range(len(oq))]
+            ood_par = {"questions": oq, "dist": o_d.round(10).tolist(), "decision": [r[0] for r in rws],
+                       "options": [[ids[k] for k in r[1]] for r in rws], "blocked": [r[2] for r in rws],
+                       "threshold": prm["threshold"], "margin": prm["margin"], "clarify": prm["clarify"]}
         norm_cases = ["M&A", "experiencia en m & a?", "M &A deals", "hm&a", "m&ax", "I'm a recruiter",
                       "¿Qué es EL·IA?", "Ñandú, pingüino y CAFÉ", "sa-ccr / bre-b", "  espacios   raros  "]
         PARITY.write_text(json.dumps({
@@ -652,7 +912,8 @@ def main():
             "questions": sample, "probs": pp.round(10).tolist(), "how": ph.round(10).tolist(),
             "hybrid": {"keyWeight": prm["keyWeight"], "weakBonus": prm["weakBonus"], "questions": hsample,
                        "strong": name_of(hs_), "weak": name_of(hw_), "forced": name_of(ho_),
-                       "probs": hp.round(10).tolist()}},
+                       "probs": hp.round(10).tolist()},
+            "ood": ood_par},
             ensure_ascii=False), encoding="utf-8")
         print(f"modelo final ({name}): {final_ep} épocas · T={final_T:.2f} · {OUT_JS.relative_to(ROOT)} = {size_kb:.1f} KB")
         print(f"content.js ← {prm}")
@@ -714,9 +975,16 @@ def write_report(cfg, rows, ids, sk, wk, so, y, Lg, stages, how_cm, how_acc, fin
     L.append(f"- Regla: responder si la 1.ª no es `out_of_scope`, p1 ≥ threshold y p1 − p2 ≥ margin; "
              f"\"¿Te refieres a…?\" (3 opciones) si p1 ≥ clarify; si no, correo. Grilla: threshold "
              f"{T_GRID[0]}–{T_GRID[-1]}, margin {M_GRID[0]}–{M_GRID[-1]}, clarify {C_GRID[0]}–{C_GRID[-1]} (paso 0.05), "
-             f"w ∈ {list(W_GRID)}, β ∈ {list(B_GRID)}. Se elige lo que maximiza \"responde bien\" con responde mal "
-             f"≤ {MAX_WRONG:.0%} en todas **y en ES**, y rechazo de `out_of_scope` ≥ {MIN_REJECT:.0%}; luego el clarify "
-             f"que maximiza aciertos − fallos dentro de \"¿Te refieres a…?\".\n")
+             f"w ∈ {list(W_GRID)}, β ∈ {list(B_GRID)}, percentil del detector ∈ {list(OOD_GRID)}. Las métricas "
+             f"\"todas las preguntas\" se cuentan como en `eval_holdout.py` (out_of_scope al correo = correcta). Se elige "
+             f"lo que maximiza 2 · correctas + \"¿Te refieres a…?\" con la opción correcta, con equivocadas "
+             f"≤ {MAX_WRONG:.0%} en todas **y en ES**, y rechazo de `out_of_scope` ≥ {MIN_REJECT:.0%}.")
+    L.append("- Detector de novedad: en la capa oculta (64), un prototipo (media) por intención y un radio (percentil de "
+             "las distancias coseno de sus preguntas de entrenamiento y variantes al prototipo). Si la regla iba a "
+             "responder y la pregunta queda fuera del radio de la ganadora, pasa a \"¿Te refieres a…?\" (primero las "
+             "intenciones cuyo radio sí la contiene) o, si ninguna la contiene, al correo, aunque p1 sea alta. Un key "
+             "fuerte o una respuesta forzada ganan sobre el detector. El percentil se elige con la misma grilla; en "
+             "la validación cruzada, prototipos y radios salen solo del pliegue de entrenamiento.\n")
 
     L.append("## Reglas solas (sin red)\n")
     L.append("| Regla | Preguntas dentro del alcance que la activan | Con la intención correcta | Fuera de alcance que la activan |")
@@ -746,22 +1014,24 @@ def write_report(cfg, rows, ids, sk, wk, so, y, Lg, stages, how_cm, how_acc, fin
     L.append("## Aporte de cada paso (media ± desviación entre pliegues)\n")
     L.append("Cada etapa con su propia regla óptima de la grilla. \"Anidada\": la regla se elige con 4 pliegues y se mide "
              "en el 5.º (estimación sin optimismo).\n")
-    L.append("| Etapa | Regla elegida | Responde bien | Bien (anidada) | Responde mal | Mal (anidada) | Mal ES (anidada) | \"¿Te refieres a…?\" | Correo | Rechazo OOS |")
-    L.append("|---|---|---|---|---|---|---|---|---|---|")
+    L.append("| Etapa | Regla elegida | Correctas (anidada) | Útiles (anidada) | Equivocadas (anidada) | Equivocadas ES (anidada) | Responde bien | Responde mal | \"¿Te refieres a…?\" | Correo | Rechazo OOS |")
+    L.append("|---|---|---|---|---|---|---|---|---|---|---|")
     for name, st, *_ in stages:
         p, nest = st["params"], st["nested"]
-        nc = ms([r["answered_correct"] for r in nest["all"]])
-        nw = ms([r["answered_wrong"] for r in nest["all"]])
-        nwe = ms([r["answered_wrong"] for r in nest["es"]])
+        nc = ms([r["correct_all"] for r in nest["all"]])
+        nu = ms([r["useful_all"] for r in nest["all"]])
+        nw = ms([r["wrong_all"] for r in nest["all"]])
+        nwe = ms([r["wrong_all"] for r in nest["es"]])
         if not p:
-            L.append(f"| {name} | ninguna cumple | | {pct(nc)} | | {pct(nw)} | {pct(nwe)} | | | |")
+            L.append(f"| {name} | ninguna cumple | {pct(nc)} | {pct(nu)} | {pct(nw)} | {pct(nwe)} | | | | | |")
             continue
         F = st["folds"]["all"]
         g = lambda k: pct(ms([r[k] for r in F]))
         rule = (f"t {p['threshold']:.2f} · m {p['margin']:.2f} · c {p['clarify']:.2f}"
-                + ("" if p["keyWeight"] == 1.0 else f" · w {p['keyWeight']} · β {p['weakBonus']}"))
-        L.append(f"| {name} | {rule} | {g('answered_correct')} | {pct(nc)} | {g('answered_wrong')} | {pct(nw)} | "
-                 f"{pct(nwe)} | {g('clarify')} | {g('miss')} | {g('oos_reject')} |")
+                + ("" if p["keyWeight"] == 1.0 else f" · w {p['keyWeight']} · β {p['weakBonus']}")
+                + ("" if p.get("oodPct") is None else f" · OOD p{p['oodPct']}"))
+        L.append(f"| {name} | {rule} | {pct(nc)} | {pct(nu)} | {pct(nw)} | {pct(nwe)} | {g('answered_correct')} | "
+                 f"{g('answered_wrong')} | {g('clarify')} | {g('miss')} | {g('oos_reject')} |")
     L.append("")
 
     name, st, *_ = stages[-1]
@@ -773,7 +1043,11 @@ def write_report(cfg, rows, ids, sk, wk, so, y, Lg, stages, how_cm, how_acc, fin
                  f"la estimación honesta.\n")
         L.append("| Métrica | Todas | Todas (anidada) | ES | ES (anidada) | EN | EN (anidada) | Meta |")
         L.append("|---|---|---|---|---|---|---|---|")
-        for lbl, k, goal in [("Responde bien", "answered_correct", "≥ 80 % (referencia)"), ("Responde mal", "answered_wrong", "≤ 5 %"),
+        for lbl, k, goal in [("**Correctas, todas las preguntas** (como el holdout)", "correct_all", "≥ 65 %"),
+                             ("**Útiles, todas las preguntas**", "useful_all", "≥ 88 % (interna)"),
+                             ("**Equivocadas, todas las preguntas**", "wrong_all", "≤ 3 % (interna)"),
+                             ("Bloqueadas por el detector", "ood_blocked", ""),
+                             ("Responde bien (dentro del alcance)", "answered_correct", "≥ 80 % (referencia)"), ("Responde mal (dentro del alcance)", "answered_wrong", "≤ 5 %"),
                              ("\"¿Te refieres a…?\"", "clarify", ""), ("  … con la correcta entre las 3 opciones", "clarify_hit", ""),
                              ("Va a correo", "miss", ""), ("Accuracy (argmax, tras reglas)", "acc_in", ""),
                              ("Rechazo de out_of_scope", "oos_reject", "≥ 85 %"),
@@ -784,17 +1058,17 @@ def write_report(cfg, rows, ids, sk, wk, so, y, Lg, stages, how_cm, how_acc, fin
             L.append(f"| {lbl} | " + " | ".join(cells) + f" | {goal} |")
         L.append("")
         G = lambda part, lg, k: ms([r[k] for r in st[part][lg]])[0]
-        checks = [("responde bien", G("nested", "all", "answered_correct") >= 0.80),
-                  ("responde mal", G("nested", "all", "answered_wrong") <= MAX_WRONG),
-                  ("responde mal en ES", G("nested", "es", "answered_wrong") <= MAX_WRONG),
+        checks = [("equivocadas ≤ 3 %", G("nested", "all", "wrong_all") <= 0.03),
+                  ("útiles ≥ 88 %", G("nested", "all", "useful_all") >= 0.88),
+                  ("equivocadas en ES ≤ 3 %", G("nested", "es", "wrong_all") <= 0.03),
                   ("rechazo OOS", G("nested", "all", "oos_reject") >= MIN_REJECT)]
         L.append("**Referencia de la validación cruzada (anidada):** "
                  + " · ".join(f"{n} {'✓' if ok else '✗'}" for n, ok in checks) + " → "
                  + ("se cumplen las referencias. " if all(ok for _, ok in checks) else "no se cumplen todas las referencias. ")
                  + "La puerta de publicación es el holdout (arriba).\n")
 
-        O = st["outs"][(p["keyWeight"], p["weakBonus"])]
-        ans = O.answered(p["threshold"], p["margin"])
+        O = st["outs"][okey(p)]
+        ans = O.decisions(p["threshold"], p["margin"], p["clarify"])[0]
         L.append("## Respuestas equivocadas en validación (etapa final)\n")
         wr = [(rows[i]["text"], ids[y[i]], ids[O.top[i]], O.p1[i],
                "fuerte" if sk[i] >= 0 else "débil" if wk[i] >= 0 else "forzada" if so[i] >= 0 else "red")
