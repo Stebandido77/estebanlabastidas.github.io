@@ -2,13 +2,15 @@
 
   python tools/elia/eval_holdout.py          holdout definitivo (data/holdout.csv): la puerta
   python tools/elia/eval_holdout.py --dev    set de desarrollo (data/dev_holdout.csv): solo referencia
+  python tools/elia/eval_holdout.py --dev2   segundo set de desarrollo (data/dev_holdout2.csv): solo referencia
   python tools/elia/eval_holdout.py --file otra.csv
   python tools/elia/eval_holdout.py --dev --model otro-modelo.js --set weakBonus=0 --set threshold=0.7
       (para comparar variantes sin tocar content.js ni el modelo publicado)
 
 holdout.csv (columnas text,intent,lang y alt y how opcionales) lo escribe Esteban. NUNCA entra al
 entrenamiento ni se usa para ajustar keys, plantillas o umbrales. dev_holdout.csv es el holdout
-anterior: ya se usó para decidir cambios, así que solo sirve de referencia.
+anterior: ya se usó para decidir cambios, así que solo sirve de referencia. dev_holdout2.csv es el
+holdout del 2026-11-19 (100 preguntas, no pasó la puerta): ya se vio, así que también es solo desarrollo.
 
   alt: otras intenciones también válidas, separadas por "|" (puede incluir out_of_scope).
   how: 1 si la pregunta pide el "¿cómo lo hizo?", 0 si no. Solo informativo: se reporta la
@@ -53,6 +55,7 @@ from train import OOS, apply_keys, rule_indices, sigmoid, softmax  # noqa: E402
 MODEL = ROOT / "assets" / "data" / "elia-model.js"
 HOLDOUT = HERE / "data" / "holdout.csv"
 DEV = HERE / "data" / "dev_holdout.csv"
+DEV2 = HERE / "data" / "dev_holdout2.csv"
 GOAL_CORRECT, GOAL_USEFUL, GOAL_WRONG = 0.65, 0.85, 0.05   # puerta: correctas, correctas + opción válida, equivocadas
 WARN_WRONG_ES = 0.06   # aviso (no bloquea) si las equivocadas en español pasan de esto
 OUTCOMES = ("correcta", "equivocada", "¿Te refieres a…?", "correo")
@@ -71,11 +74,13 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--file", type=Path)
     ap.add_argument("--dev", action="store_true", help="evalúa data/dev_holdout.csv (solo referencia)")
+    ap.add_argument("--dev2", action="store_true", help="evalúa data/dev_holdout2.csv (solo referencia)")
     ap.add_argument("--model", type=Path, default=MODEL, help="otro elia-model.js (para comparar variantes)")
     ap.add_argument("--set", action="append", default=[], metavar="CLAVE=VALOR",
                     help="cambia un valor de DATA.elia solo para esta evaluación (p. ej. weakBonus=0)")
     args = ap.parse_args()
-    args.file = args.file or (DEV if args.dev else HOLDOUT)
+    args.file = args.file or (DEV if args.dev else DEV2 if args.dev2 else HOLDOUT)
+    args.dev = args.dev or args.dev2 or (args.file is not None and args.file.resolve() != HOLDOUT.resolve())
     sys.stdout.reconfigure(encoding="utf-8")
 
     with open(args.file, encoding="utf-8", newline="") as f:
@@ -170,7 +175,7 @@ def main():
               (f"correctas + \"¿Te refieres a…?\" con opción válida {100 * useful:.1f} % (≥ {GOAL_USEFUL:.0%})", useful >= GOAL_USEFUL),
               (f"equivocadas {100 * bad:.1f} % (≤ {GOAL_WRONG:.0%})", bad <= GOAL_WRONG)]
     ok = all(c for _, c in checks)
-    name = "Referencia (dev_holdout, no decide)" if args.dev else "Puerta de publicación"
+    name = f"Referencia ({args.file.name}, no decide)" if args.dev else "Puerta de publicación"
     print(f"\n{name}, sobre todas las preguntas:")
     for label, c in checks:
         print(f"  {'✓' if c else '✗'} {label}")

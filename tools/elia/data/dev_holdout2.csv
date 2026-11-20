@@ -1,0 +1,101 @@
+text,intent,lang,alt,how
+¿En qué estás trabajando actualmente?,latest,es,job_current,0
+¿Qué fue lo que te llevó a trabajar en estrategia?,out_of_scope,es,job_current|who,0
+¿Qué experiencia tienes en el sector financiero?,who,es,job_current|exp_ms|jpm|skills_finance,0
+¿Cómo hiciste para automatizar los reportes que usabas en el banco?,jpm,es,proj_abi|job_current|out_of_scope,1
+¿Has trabajado directamente con equipos directivos?,job_current,es,who|exp_ms|out_of_scope,0
+¿Qué herramientas de análisis de datos manejas?,stack,es,,0
+¿Te gustaría trabajar en una startup?,hire,es,out_of_scope,0
+¿Cómo construiste tu aplicación de finanzas personales?,proj_patrion,es,,1
+¿Qué te diferencia de otros candidatos?,out_of_scope,es,who|hire,0
+¿Cuál es tu comida favorita?,out_of_scope,es,,0
+Can you tell me a bit about your background?,who,en,job_current|exp_ms,0
+What are you currently doing at Grupo Aval?,job_current,en,proj_abi,0
+Why did you move from consulting to banking?,out_of_scope,en,job_current|exp_ms|who,0
+How did you build your financial dashboards?,jpm,en,proj_abi,1
+Do you have experience with financial modeling?,skills_finance,en,,0
+Have you ever managed a team?,out_of_scope,en,exp_sekia|who|job_current,0
+What kind of roles are you interested in?,hire,en,out_of_scope,0
+What's the most challenging project you've worked on?,out_of_scope,en,list_projects,0
+Do you prefer working independently or in teams?,out_of_scope,en,,0
+What's the capital of Australia?,out_of_scope,en,,0
+¿Dónde estudiaste economía?,education,es,,0
+¿Por qué decidiste hacer una maestría?,out_of_scope,es,education,0
+¿Qué temas de economía te interesan más?,interests,es,,0
+¿Cómo hiciste el proyecto de análisis de minutas del Banco de la República?,out_of_scope,es,list_projects,1
+¿Has publicado algún artículo académico?,list_papers,es,,0
+¿Qué es Ceteris Paribus?,proj_ceteris,es,,0
+¿Cómo empezaste a investigar sobre inflación?,interests,es,proj_inflation|paper_parsimony|ews|out_of_scope,0
+¿Qué consejo le darías a alguien que quiere aprender econometría?,out_of_scope,es,proj_ceteris,0
+¿Te gusta más la macro o la microeconomía?,out_of_scope,es,interests,0
+¿Por qué los gatos duermen tanto?,out_of_scope,es,,0
+What made you interested in economics?,out_of_scope,en,interests|education,0
+Are you currently working on any research papers?,list_papers,en,latest,0
+How did you use NLP to analyze central bank minutes?,out_of_scope,en,list_projects|mediabias,1
+What's your favorite economics book?,out_of_scope,en,,0
+Do you use Python or R for your research?,stack,en,,0
+Have you worked with causal inference methods?,interests,en,list_papers|paper_coca|desk_minwage|desk_uncoli,0
+What exactly is your Ceteris Paribus project?,proj_ceteris,en,,0
+Do you think AI will change economics research?,out_of_scope,en,paper_llm|interests,0
+Would you ever consider doing a PhD?,out_of_scope,en,education|hire,0
+Can you explain inflation to a 10-year-old?,out_of_scope,en,,0
+¿Qué experiencia tienes haciendo valoraciones?,skills_finance,es,job_current,0
+¿Has trabajado en banca de inversión?,skills_finance,es,job_current,0
+¿Qué tipo de modelos financieros sabes construir?,skills_finance,es,,0
+¿Cómo calculaste el costo de capital de las entidades financieras?,skills_finance,es,,1
+¿Qué sabes de fusiones y adquisiciones?,skills_finance,es,job_current,0
+¿Has tenido exposición a inversionistas institucionales?,job_current,es,skills_finance,0
+¿Cómo seleccionaste los bancos comparables para tus análisis?,skills_finance,es,proj_abi,1
+¿Cuál ha sido tu mayor logro profesional?,out_of_scope,es,list_projects|paper_coca,0
+¿Qué tan avanzado es tu Excel?,stack,es,out_of_scope,0
+¿Qué diferencia hay entre un perro y un lobo?,out_of_scope,es,,0
+Walk me through your professional experience.,who,en,job_current|exp_ms,0
+Have you worked on any M&A transactions?,skills_finance,en,job_current,0
+How comfortable are you with DCF valuation?,skills_finance,en,,0
+How did you automate your banking peer analysis?,proj_abi,en,skills_finance,1
+What's your experience with investor relations?,job_current,en,skills_finance,0
+Do you know how to calculate WACC?,skills_finance,en,,0
+Have you worked with Bloomberg or Capital IQ?,stack,en,skills_finance,0
+Why would you be interested in investment banking?,out_of_scope,en,hire|skills_finance,0
+What would you say is your biggest weakness?,out_of_scope,en,,0
+What do you usually do outside of work?,out_of_scope,en,,0
+"Hola, ¿quién eres?",who,es,elia|greeting,0
+"Vi que trabajas en finanzas, ¿también programas?",stack,es,,0
+¿Qué es Patrion?,proj_patrion,es,,0
+¿Cómo desarrollaste una app desde cero?,proj_patrion,es,,1
+¿Usas inteligencia artificial todos los días?,out_of_scope,es,stack|elia,0
+¿Qué problema estás intentando resolver con tu aplicación?,proj_patrion,es,,0
+¿Has trabajado con bases de datos grandes?,stack,es,proj_abi|proj_pulso,0
+¿Cómo automatizaste procesos que antes eran manuales?,out_of_scope,es,jpm|proj_abi|stack,1
+¿Te interesaría fundar una empresa?,hire,es,out_of_scope|proj_patrion,0
+¿Qué juegos de mesa recomiendas?,out_of_scope,es,,0
+"Hey, what do you actually do?",job_current,en,who,0
+Are you more of a finance guy or a tech guy?,who,en,out_of_scope|stack,0
+What's Patrion all about?,proj_patrion,en,,0
+How did you build the backend of your app?,proj_patrion,en,,1
+Have you ever launched a product?,list_projects,en,proj_ceteris|proj_pulso|out_of_scope,0
+What AI tools do you use?,stack,en,out_of_scope,0
+Can you work with APIs?,stack,en,,0
+What's a project you're really proud of?,out_of_scope,en,list_projects,0
+Would you rather join a startup or build your own?,hire,en,out_of_scope,0
+"If you could travel anywhere tomorrow, where would you go?",out_of_scope,en,,0
+¿Este es el portafolio de Esteban?,site,es,who,0
+¿Qué haces exactamente en tu trabajo?,job_current,es,,0
+¿Cuántos años de experiencia tienes?,who,es,exp_ms|job_current|out_of_scope,0
+¿Trabajas más con números o con personas?,out_of_scope,es,,0
+¿Cómo lograste pasar de ingeniería a finanzas?,out_of_scope,es,education|who,0
+¿Qué proyectos has hecho con Python?,list_projects,es,stack,0
+¿Por qué escribes en Substack?,writing,es,,0
+¿Cómo creaste tus modelos de análisis financiero?,skills_finance,es,,1
+¿Puedo ver tu hoja de vida?,cv,es,,0
+¿Quién ganó el Mundial de 2014?,out_of_scope,es,,0
+"Hi, is this Esteban's personal website?",site,en,who|greeting,0
+What does Esteban do for a living?,job_current,en,who,0
+Where has he worked before?,who,en,exp_ms|job_current|jpm,0
+Is he currently looking for a new job?,hire,en,,0
+How did he get into strategy and finance?,out_of_scope,en,who|education,0
+Does he have experience in machine learning?,stack,en,list_projects|ews|paper_llm|elia,0
+What's the coolest thing he's built?,list_projects,en,out_of_scope,0
+Can I contact him for a job opportunity?,hire,en,contact,0
+Does he write articles about economics?,writing,en,,0
+"What's better, coffee or tea?",out_of_scope,en,,0
